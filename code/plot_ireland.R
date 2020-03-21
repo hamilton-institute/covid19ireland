@@ -1,3 +1,6 @@
+all_tables <- read_rds(
+  "data/scraped/all_tables.rds"
+)
 df <- all_tables %>% 
   map("counties") %>% 
   bind_rows() %>% 
@@ -18,7 +21,7 @@ df <- all_tables %>%
   ungroup() 
 
 pdf("plots/counties_ireland.pdf", 
-    width = 12, height = 10)
+    width = 14, height = 10)
 df %>%   
 ggplot(aes(x = county, y = cases, group = county)) +
   geom_point(aes(colour = pub), size = 6, alpha = 0.75) +
@@ -26,14 +29,14 @@ ggplot(aes(x = county, y = cases, group = county)) +
   geom_text(
     data = df %>% filter(cases > 20),  
     aes(label = label),
-            hjust = +0.5, vjust = -2, size = 3) +
+            hjust = +0.5, vjust = -2, size = 2.5) +
   theme_bw(18) +
   theme(
     legend.position = "bottom"
   ) +
   coord_flip() +
   labs(
-    title "Number of cases evolution per county, with % of daily increase"
+    title = "Number of cases evolution per county, with % of daily increase", 
     colour = "Date Published", x = "County", 
        y = "Number of Cases") 
 
