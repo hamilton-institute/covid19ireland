@@ -8,7 +8,7 @@ library(plotly)
 ecdc = readRDS(file = 'data/scraped/ECDC_data_20200321.rds')
 
 # Pick a country 
-co = 'China'
+co = 'Ireland'
 
 # Extract out the data
 ecdc_plot = ecdc %>% 

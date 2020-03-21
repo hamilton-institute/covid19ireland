@@ -1,5 +1,6 @@
 library(shiny)
 library(plotly)
+library(tidyverse)
 ecdc = readRDS(file = '../../data/scraped/ECDC_data_20200321.rds')
 
 # Define server logic required to draw a histogram

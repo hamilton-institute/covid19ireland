@@ -8,6 +8,7 @@
 #
 
 library(shiny)
+library(tidyverse)
 library(plotly)
 
 # Define UI for application that draws a histogram
