@@ -3,6 +3,7 @@ library(plotly)
 library(tidyverse)
 library(leaflet)
 library(jsonlite)
+library(shinydashboard)
 
 ecdc = readRDS(file = '../../data/scraped/ECDC_data_20200321.rds')
 countiesShapes <- readLines("../../data/counties_simple.geojson", warn = FALSE) %>%
@@ -93,15 +94,31 @@ shinyServer(function(input, output) {
         
     })
     
-    output$tot_cases <- renderText({ 
-        "Total Confirmed Cases in the Republic of Ireland:"
+    output$casesBox <- renderInfoBox({
+        ire_cases <- ecdc %>% 
+              filter(`Countries and territories` == 'Ireland') %>%
+              summarize(Cases = sum(Cases))
+  
+        infoBox(
+            HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
+            ire_cases, 
+            color='black', 
+            fill = FALSE)
     })
     
-    output$tot_deaths <- renderText({ 
-        "Total Deaths in the Republic of Ireland:"
+    output$deathsBox <- renderInfoBox({
+        ire_deaths <- ecdc %>% 
+              filter(`Countries and territories` == 'Ireland') %>%
+              summarize(Deaths = sum(Deaths))
+              
+        infoBox(
+            HTML(paste0("Total Deaths",br()," in Ireland:")), 
+            ire_deaths, 
+            color='red', 
+            fill = FALSE)
     })
-    output$tot_recovered <- renderText({ 
-        "Total Recovered in the Republic of Ireland:"
-    })
-
+    
+    output$countyCasesTable <- renderTable({
+        latest_county_table[,c('County', 'Number of Cases')] %>% map_df(rev)
+  })   
 })
