@@ -27,44 +27,6 @@ sidebar <- dashboardSidebar(
   )
 )
 
-# body <- dashboardBody(
-    # tabItems(
-        # tabItem(tabName = "map",
-            # fluidRow(
-                # column(2,
-                    # box(
-                        # title='Total Confirmed Cases',
-                        # width=12,
-                        # textOutput("tot_deaths")
-                    # )
-                # ),
-                # #column(8, 
-                    # box(
-                      # title = "COVID-19 in Ireland",
-                      # leafletOutput('covidMap')
-                # #    )
-                # ),
-                # column(2,
-                    # box(
-                        # title='Total Deaths',
-                        # width=12,
-                        # textOutput("tot_deaths")
-                    # )
-                # )
-            # )
-        # ),
-
-        # tabItem(tabName = "info",
-            # #fluidRow(
-                # box(
-                    # width = 10,
-                    # plotlyOutput("covidPlot")
-                # )
-            # #)
-        # )
-    # )
-# )
-
 body <- dashboardBody(
     tabItems(
         tabItem(tabName = "map",
@@ -72,11 +34,12 @@ body <- dashboardBody(
                 column(width=4,
                     infoBoxOutput("casesBox"),
                     infoBoxOutput("deathsBox"),
+                    infoBoxOutput('recoverBox'),
                     box(
                         title='Cases by County',
                         width=12,
                         tableOutput("countyCasesTable"),
-                        style = "height: calc((100vh - 80px)/1.5); overflow-y: scroll;overflow-x: scroll;"
+                        style = "height: calc((100vh - 80px)/2); overflow-y: scroll;overflow-x: scroll;"
                     )
                 ),
                 column(width=7, 
@@ -109,6 +72,7 @@ body <- dashboardBody(
     #buggy renderInfoBox function
     tags$style("#casesBox {width:300px;}"),
     tags$style("#deathsBox {width:300px;}"),
+    tags$style("#recoverBox {width:300px;}"),
     tags$style(type = "text/css", "#covidMap {height: calc((100vh - 80px)/2.5) !important;}")
 )
 

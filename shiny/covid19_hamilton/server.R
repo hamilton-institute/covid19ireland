@@ -21,6 +21,9 @@ cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 #Color the counties by number of cases
 pal2 <- colorNumeric("Reds", log2(cs2$Cases))
 
+#Read in summary stats for Ireland
+ire_sum_stats <- read.csv('../../data/scraped/summary_stats.csv')
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
@@ -75,26 +78,37 @@ shinyServer(function(input, output) {
     })
     
     output$casesBox <- renderInfoBox({
-        ire_cases <- ecdc %>% 
-              filter(`Countries and territories` == 'Ireland') %>%
-              summarize(Cases = sum(Cases))
+        
+        #This is an old data source now using summary stats file
+        # ire_cases <- ecdc %>% 
+              # filter(`Countries and territories` == 'Ireland') %>%
+              # summarize(Cases = sum(Cases))
   
         infoBox(
             HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
-            ire_cases, 
+            ire_sum_stats['Cases'], 
             color='black', 
             fill = FALSE)
     })
     
     output$deathsBox <- renderInfoBox({
-        ire_deaths <- ecdc %>% 
-              filter(`Countries and territories` == 'Ireland') %>%
-              summarize(Deaths = sum(Deaths))
+        #This is an old data source now using summary stats file
+        # ire_deaths <- ecdc %>% 
+              # filter(`Countries and territories` == 'Ireland') %>%
+              # summarize(Deaths = sum(Deaths))
               
         infoBox(
             HTML(paste0("Total Deaths",br()," in Ireland:")), 
-            ire_deaths, 
+            ire_sum_stats['Deaths'], 
             color='red', 
+            fill = FALSE)
+    })
+    
+    output$recoverBox <- renderInfoBox({
+        infoBox(
+            HTML(paste0("Total Recovered",br()," in Ireland:")), 
+            ire_sum_stats['Recovered'], 
+            color='green', 
             fill = FALSE)
     })
     
