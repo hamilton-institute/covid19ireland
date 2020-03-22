@@ -10,7 +10,6 @@ webpage <- read_html(url)
 
 summary.stats <- html_nodes(webpage, 'div#maincounter-wrap')
 summary.stats <- html_text(summary.stats)
-head(summary.stats)
 
 
 
