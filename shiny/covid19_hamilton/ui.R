@@ -13,7 +13,6 @@ library(plotly)
 library(leaflet)
 library(shinydashboard)
 
-
 header <- dashboardHeader(
   title = "Hamilton Covid-19 Dashboard",
   titleWidth = 320

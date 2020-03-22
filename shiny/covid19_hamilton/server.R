@@ -36,7 +36,10 @@ shinyServer(function(input, output) {
                 mode = 'lines', color = ~Type) %>% 
             layout(title = paste('Number of cases/deaths for',input$co),
                    xaxis = list(title = 'Date'),
-                   yaxis = list (title = 'Number of individuals'))
+                   yaxis = list (title = 'Number of individuals'),
+                   font = list(color = '#FFFFFF'),
+                   plot_bgcolor='black',
+                   paper_bgcolor='black')
         
     })
     
