@@ -14,25 +14,27 @@ library(leaflet)
 
 # Define UI for application that draws a histogram
 shinyUI(
-
     fluidPage(
-
         # Application title
         titlePanel("Covid-19 visualisation tool"),
-
-        fluidRow(
-            column(2,
-                  textInput("co", "Choose country", "Ireland")
-             ),
-             
-            column(6,
-                leafletOutput("covidMap")
-            ),
-
-            #Show a plot of the generated distribution
-            column(4,
-                    plotlyOutput("covidPlot")
+        
+        tabsetPanel(
+            tabPanel("Map", fluid = TRUE,
+                        mainPanel(
+                            leafletOutput("covidMap")
+                        )
+                   
+            ), #End Map tabsetPanel
+            tabPanel("Plot", fluid = TRUE,
+                sidebarLayout(
+                    sidebarPanel(textInput("co", "Choose country", "Ireland")),
+                        mainPanel(
+                            fluidRow(
+                                column(12,  plotlyOutput("covidPlot"))
+                            )
+                        )
+                ) #End Plot tabPanel
             )
-        )
+        ) #End tabsetPanel
     )
 )
