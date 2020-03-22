@@ -10,22 +10,29 @@
 library(shiny)
 library(tidyverse)
 library(plotly)
+library(leaflet)
 
 # Define UI for application that draws a histogram
-shinyUI(fluidPage(
+shinyUI(
 
-    # Application title
-    titlePanel("Covid-19 visualisation tool"),
+    fluidPage(
 
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            textInput("co", "Choose country", "Ireland")
-        ),
+        # Application title
+        titlePanel("Covid-19 visualisation tool"),
 
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotlyOutput("covidPlot")
+        fluidRow(
+            column(2,
+                  textInput("co", "Choose country", "Ireland")
+             ),
+             
+            column(6,
+                leafletOutput("covidMap")
+            ),
+
+            #Show a plot of the generated distribution
+            column(4,
+                    plotlyOutput("covidPlot")
+            )
         )
     )
-))
+)
