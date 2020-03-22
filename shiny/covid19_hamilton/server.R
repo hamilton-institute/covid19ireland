@@ -6,16 +6,7 @@ library(jsonlite)
 library(shinydashboard)
 
 ecdc = readRDS(file = '../../data/scraped/ECDC_data_20200321.rds')
-countiesShapes <- readLines("../../data/counties_simple.geojson", warn = FALSE) %>%
-      paste(collapse = "\n") %>%
-      fromJSON(simplifyVector = FALSE)
-#Default styles for all features
-countiesShapes$style = list(
-      weight = 1,
-      color = "#555555",
-      opacity = 1,
-      fillOpacity = 0.8
-    )
+
 #All tables contains information on a county-by-county basis
 all_tables <- readRDS('../../data/scraped/all_tables.rds')
 
@@ -24,32 +15,11 @@ latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int
 latest_county_table$Cases <- strtoi(gsub("[^0-9.-]", "", latest_county_table$`Number of Cases`))
 
-#Get the number of cases in each county in the same order as the counties
-#are in the geojson - not sure order is necessary
-countyCases <- sapply(countiesShapes$features, function(feat) {
-  cases <- latest_county_table$Cases[latest_county_table$County == feat$properties$NAME_TAG]
-  
-  if(length(cases)) cases else 0
-})
-
-#Add number of cases as a feature to each county in the geojson
-countiesShapes$features <- lapply(countiesShapes$features, function(feat) {
-  cases <- latest_county_table$Cases[latest_county_table$County == feat$properties$NAME_TAG]
-  cases <- if(length(cases)) cases else 0
-  feat$properties$cases <- cases
-  feat
-})
-
+#Read in the county shapes file and join it with county case info
+cs2 <- rgdal::readOGR("../../data/counties_simple.geojson")
+cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 #Color the counties by number of cases
-pal <- colorNumeric("Reds", countyCases)
-
-# Add a properties$style list to each feature
-countiesShapes$features <- lapply(countiesShapes$features, function(feat) {
-        feat$properties$style <- list(
-            fillColor = pal(feat$properties$cases)
-        )
-        feat
-})
+pal2 <- colorNumeric("Reds", log2(cs2$Cases))
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
@@ -69,13 +39,20 @@ shinyServer(function(input, output) {
                    yaxis = list (title = 'Number of individuals'))
         
     })
+    
     output$covidMap <- renderLeaflet({
-        leaflet() %>% 
+        library(rgdal)
+        
+        leaflet(cs2) %>% 
             addProviderTiles(providers$Stamen.TonerLite,
                     options = providerTileOptions(noWrap = TRUE)
                 ) %>%
             setView(lng = -7.635498, lat = 53.186288, zoom = 6) %>%
-            addGeoJSON(countiesShapes)
+            addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 0.7,
+            fillColor = ~pal2(log2(Cases)),
+            label = ~paste0(NAME_TAG, ": ", formatC(Cases, big.mark = ","), ' cases') ) %>%
+            addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
+            labFormat = labelFormat(transform = function(x) round(2^x)))
     })
     
     output$mapPlot <- renderPlotly({
