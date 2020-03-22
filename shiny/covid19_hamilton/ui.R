@@ -12,6 +12,54 @@ library(tidyverse)
 library(plotly)
 library(leaflet)
 
+body <- dashboardBody(
+  fluidRow(
+    box(
+      title = "Box title", width = 6, status = "primary",
+      "Box content"
+    ),
+    box(
+      status = "warning", width = 6,
+      "Box content"
+    )
+  ),
+    
+  fluidRow(
+    column(width = 4,
+      box(
+        title = "Title 1", width = NULL, solidHeader = TRUE, status = "primary",
+        "Box content"
+      ),
+      box(
+        width = NULL, background = "black",
+        "A box with a solid black background"
+      )
+    ),
+
+    column(width = 4,
+      box(
+        title = "Title 3", width = NULL, solidHeader = TRUE, status = "warning",
+        "Box content"
+      ),
+      box(
+        title = "Title 5", width = NULL, background = "light-blue",
+        "A box with a solid light-blue background"
+      )
+    ),
+
+    column(width = 4,
+      box(
+        title = "Title 2", width = NULL, solidHeader = TRUE,
+        "Box content"
+      ),
+      box(
+        title = "Title 6", width = NULL, background = "maroon",
+        "A box with a solid maroon background"
+      )
+    )
+  )
+)
+
 # Define UI for application that draws a histogram
 shinyUI(
     fluidPage(
@@ -20,9 +68,31 @@ shinyUI(
         
         tabsetPanel(
             tabPanel("Map", fluid = TRUE,
-                        mainPanel(
-                            leafletOutput("covidMap")
-                        )
+                        #mainPanel(
+                            fluidRow(
+                                column(2,
+                                    textOutput("tot_cases")
+                                ),
+                                column(6,  
+                                    leafletOutput("covidMap")
+                                ),
+                                column(4,
+                                    fluidRow(
+                                        column(6,
+                                            textOutput("tot_deaths")
+                                        ),
+                                        column(6,
+                                            textOutput('tot_recovered')
+                                        )
+                                    ),
+                                    fluidRow(
+                                        column(12,
+                                            plotlyOutput("mapPlot")
+                                        )
+                                    )
+                                )
+                            )
+                        #)
                    
             ), #End Map tabsetPanel
             tabPanel("Plot", fluid = TRUE,
@@ -30,7 +100,9 @@ shinyUI(
                     sidebarPanel(textInput("co", "Choose country", "Ireland")),
                         mainPanel(
                             fluidRow(
-                                column(12,  plotlyOutput("covidPlot"))
+                                column(8,  
+                                    plotlyOutput("covidPlot")
+                                )
                             )
                         )
                 ) #End Plot tabPanel
