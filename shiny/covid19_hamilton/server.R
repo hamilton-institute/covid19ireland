@@ -15,6 +15,40 @@ countiesShapes$style = list(
       opacity = 1,
       fillOpacity = 0.8
     )
+#All tables contains information on a county-by-county basis
+all_tables <- readRDS('../../data/scraped/all_tables.rds')
+
+#Get the latest table containing info on all counties
+latest_county_table <- tail(all_tables, n=1)[[1]]$counties
+#Change the number of cases from char to int
+latest_county_table$Cases <- strtoi(gsub("[^0-9.-]", "", latest_county_table$`Number of Cases`))
+
+#Get the number of cases in each county in the same order as the counties
+#are in the geojson - not sure order is necessary
+countyCases <- sapply(countiesShapes$features, function(feat) {
+  cases <- latest_county_table$Cases[latest_county_table$County == feat$properties$NAME_TAG]
+  
+  if(length(cases)) cases else 0
+})
+
+#Add number of cases as a feature to each county in the geojson
+countiesShapes$features <- lapply(countiesShapes$features, function(feat) {
+  cases <- latest_county_table$Cases[latest_county_table$County == feat$properties$NAME_TAG]
+  cases <- if(length(cases)) cases else 0
+  feat$properties$cases <- cases
+  feat
+})
+
+#Color the counties by number of cases
+pal <- colorNumeric("Reds", countyCases)
+
+# Add a properties$style list to each feature
+countiesShapes$features <- lapply(countiesShapes$features, function(feat) {
+        feat$properties$style <- list(
+            fillColor = pal(feat$properties$cases)
+        )
+        feat
+})
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
