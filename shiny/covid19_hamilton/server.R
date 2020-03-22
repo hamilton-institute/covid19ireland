@@ -19,7 +19,7 @@ countiesShapes$style = list(
 all_tables <- readRDS('../../data/scraped/all_tables.rds')
 
 #Get the latest table containing info on all counties
-latest_county_table <- tail(all_tables, n=1)[[1]]$counties
+latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int
 latest_county_table$Cases <- strtoi(gsub("[^0-9.-]", "", latest_county_table$`Number of Cases`))
 
@@ -75,6 +75,33 @@ shinyServer(function(input, output) {
                 ) %>%
             setView(lng = -7.635498, lat = 53.186288, zoom = 6) %>%
             addGeoJSON(countiesShapes)
+    })
+    
+    output$mapPlot <- renderPlotly({
+        
+        # Extract out the data
+        ecdc_plot = ecdc %>% 
+            filter(`Countries and territories` == 'Ireland') %>% 
+            select(-c(Day,Month,Year,`Countries and territories`,GeoId)) %>% 
+            pivot_longer(names_to = 'Type', values_to = 'Number', -DateRep)
+        
+        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines', color = ~Type) %>% 
+            layout(title = paste('Number of cases/deaths for','Ireland'),
+                   xaxis = list(title = 'Date'),
+                   yaxis = list (title = 'Number of individuals'))
+        
+    })
+    
+    output$tot_cases <- renderText({ 
+        "Total Confirmed Cases in the Republic of Ireland:"
+    })
+    
+    output$tot_deaths <- renderText({ 
+        "Total Deaths in the Republic of Ireland:"
+    })
+    output$tot_recovered <- renderText({ 
+        "Total Recovered in the Republic of Ireland:"
     })
 
 })
