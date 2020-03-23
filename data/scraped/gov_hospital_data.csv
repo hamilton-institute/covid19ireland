@@ -1,0 +1,7 @@
+"","dates","Total.number.hospitalised","Total.number.admitted.to.ICU","Total.number.deaths","Case.fatality.rate","Total.number.healthcare.workers","Number.clusters.notified","Median.age"
+"1","21 March 2020",239,25,6,0.7,208,37,44
+"2","20 March 2020",211,17,4,0.6,159,35,44
+"3","19 March 2020",173,13,3,0.5,147,29,44
+"4","18 March 2020",140,12,3,NA,114,27,44
+"5","17 March 2020",108,7,2,NA,84,26,43
+"6","16 March 2020",84,6,2,2,59,23,NA
