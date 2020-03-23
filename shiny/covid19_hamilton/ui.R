@@ -22,8 +22,10 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Map", tabName = "map", icon = icon("dashboard")),
     menuItem("Information", icon = icon("th"), tabName = "info"),
-    sidebarSearchForm(textId = "co", buttonId = "cobutton",
-                    label = "Enter Country")
+    # Input inside of menuSubItem
+      menuSubItem(icon = NULL,
+        uiOutput("choose_country")
+      )
   )
 )
 

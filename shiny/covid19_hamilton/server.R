@@ -27,6 +27,12 @@ ire_sum_stats <- read.csv('../../data/scraped/summary_stats.csv')
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
+    output$choose_country <- renderUI({
+        selectInput("co", 
+        "Select a Country", 
+        unique(ecdc$`Countries and territories`))
+    })
+
     output$covidPlot <- renderPlotly({
         
         # Extract out the data
@@ -71,9 +77,12 @@ shinyServer(function(input, output) {
         
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines', color = ~Type) %>% 
-            layout(title = paste('Number of cases/deaths for','Ireland'),
+            layout(title = paste('Number of new cases/deaths for','Ireland'),
                    xaxis = list(title = 'Date'),
-                   yaxis = list (title = 'Number of individuals'))
+                   yaxis = list (title = 'Number of individuals'),
+                   font = list(color = '#FFFFFF'),
+                   plot_bgcolor='black',
+                   paper_bgcolor='black')
         
     })
     
