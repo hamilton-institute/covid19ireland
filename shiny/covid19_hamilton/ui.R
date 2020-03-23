@@ -12,6 +12,7 @@ library(tidyverse)
 library(plotly)
 library(leaflet)
 library(shinydashboard)
+library(rgdal)
 
 header <- dashboardHeader(
   title = "Hamilton Covid-19 Dashboard",
