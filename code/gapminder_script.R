@@ -92,7 +92,7 @@ animate(p,
         width = 800)
 anim_save('plots/covid_anim.gif',
           renderer = gifski_renderer(loop = FALSE))
-#system("convert covid_anim.gif -loop 1 covid_anim.gif")
+#system("convert ~/GitHub/hamilton-monitor/plot/covid_anim.gif -loop 1 ~/GitHub/hamilton-monitor/plot/covid_anim.gif")
 
 # Cumulative plot
 
@@ -141,5 +141,5 @@ animate(p2,
         width = 800)
 anim_save('plots/covid_anim_cumulative.gif',
           renderer = gifski_renderer(loop = FALSE))
-#system("convert covid_anim_cumulative.gif -loop 1 covid_anim_cumulative2.gif")
+#system("convert ~/GitHub/hamilton-monitor/plot/covid_anim_cumulative.gif -loop 1 ~/GitHub/hamilton-monitor/plot/covid_anim_cumulative2.gif")
 
