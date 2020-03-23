@@ -4,6 +4,7 @@ library(tidyverse)
 library(leaflet)
 library(jsonlite)
 library(shinydashboard)
+library(rgdal)
 
 ecdc = readRDS(file = '../../data/scraped/ECDC_data_20200321.rds')
 
