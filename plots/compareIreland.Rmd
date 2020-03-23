@@ -1,0 +1,223 @@
+---
+title: "Comparing Ireland to other countries"
+author: "Catherine Hurley"
+date: "3/23/2020"
+output: 
+  html_document:
+    
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=5,message=FALSE, warning=FALSE)
+```
+
+```{r echo=FALSE}
+suppressMessages(library(tidyverse))
+suppressMessages(library(ggplot2))
+suppressMessages(library(gridExtra))
+suppressMessages(library(plotly))
+```
+
+#### Get the data
+
+```{r echo=FALSE}
+devtools::install_github("RamiKrispin/coronavirus")
+
+```
+Use the data from coronavirus, which is from Johns Hopkins.
+```{r}
+devtools::install_github("RamiKrispin/coronavirus") # for up to date version
+
+library(coronavirus)
+```
+
+#### Set up a daily dataset
+
+```{r}
+daily <- coronavirus%>% mutate(deaths= ifelse(type=="death", cases, 0)) %>%
+  group_by(Country.Region, date) %>%
+  summarise(cases=sum(cases), deaths=sum(deaths))%>%
+  ungroup()%>%
+  group_by(Country.Region) %>%
+  mutate(totcases=cumsum(cases), totdeaths=cumsum(deaths)) %>%
+  ungroup()%>%
+  filter(totcases >0)
+```
+
+#### To join in populations..
+
+```{r}
+
+if (!require("wbstats")) install.packages("wbstats")
+library(wbstats)
+
+country_data <- 
+  left_join(wb(indicator = c("SP.POP.TOTL", "EN.POP.DNST","SP.URB.TOTL.IN.ZS", "UNDP.HDI.XD"),country="countries_only" ,
+               mrv=1,return_wide = TRUE),
+          wbcountries()) %>%
+  select(country, region, pop=SP.POP.TOTL, popdensity=EN.POP.DNST, percenturban= SP.URB.TOTL.IN.ZS, hdi= SP.URB.TOTL.IN.ZS,income=income)
+
+daily <- left_join(daily, country_data, by=c("Country.Region" ="country"))
+```
+
+To select other indices from wbstats, use wbsearch and pick the index you want.
+
+```{r eval=FALSE}
+View(wbsearch("population"))
+```
+
+
+#### Countries similar to Ireland in population
+
+```{r}
+selcountries <- c("Ireland","Finland", "Denmark", "Norway") # similar populations
+```
+
+or, using pop_data
+
+```{r}
+ipop <- filter(country_data, country=="Ireland") 
+selcountries <- filter(country_data, pop <= ipop$pop/0.8 & pop >= ipop$pop*.8 & region==ipop$region )$country
+daily1 <- filter(daily, Country.Region %in% selcountries)
+
+```
+
+
+
+
+
+#### Plots of selected countries
+
+```{r,fig.width=6, fig.height=3}
+# by date----------- totcases
+
+# Use Ireland's first case
+mindate <- filter(daily1, cases > 0 & Country.Region=="Ireland") %>% summarise(date=min(date))  %>% pull(date)
+
+maxdate <- Sys.Date()
+
+p1 <- ggplotly(ggplot(data=filter(daily1, date >= mindate),
+       aes(x=date, y=totcases, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') +
+  geom_text(data=filter(daily1, date == maxdate-4), aes(label=Country.Region), size=3)+ 
+  theme(legend.position='none'))
+
+
+# by date----------- deaths
+p2<- ggplotly(ggplot(data=filter(daily1, date >= mindate),
+       aes(x=date, y=totdeaths, colour=Country.Region))+ geom_line()+
+  geom_text(data=filter(daily1, date == maxdate-4), aes(label=Country.Region), size=3)+ 
+  theme(legend.position='none'))
+
+
+subplot(p1,p2)
+
+```
+
+
+#### Line up the curves, here by second case
+
+```{r,fig.width=6, fig.height=3}
+
+ncases <- 2
+daysn <- daily1%>% group_by(Country.Region) %>%
+  filter(totcases>=ncases) %>% mutate(dayn =min(date)) %>% 
+  select(Country.Region, dayn) %>%slice(1) 
+
+daily1 <- left_join(daily1, daysn, by="Country.Region") %>%
+  mutate(days = as.numeric(date-dayn))
+
+# by days----------- totcases
+
+p1<-ggplotly(ggplot(data=filter(daily1, days >=0),
+       aes(x=days, y=totcases, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') +
+  geom_text(data=filter(daily1, date == maxdate-4), aes(label=Country.Region), size=3)+ 
+  theme(legend.position='none'))
+
+
+# by days----------- deaths
+
+p2 <- ggplotly(ggplot(data=filter(daily1, days >=0),
+       aes(x=days, y=totdeaths, colour=Country.Region))+ geom_line()+
+  geom_text(data=filter(daily1, date == maxdate-4), aes(label=Country.Region), size=3)+ 
+  theme(legend.position='none'))
+
+subplot(p1,p2)
+
+```
+
+
+#### Facet by percent urban popultion
+
+```{r fig.width=8, fig.height=5, warnings=FALSE}
+
+europe <- filter(daily, region=="Europe & Central Asia")
+groupvar <-europe %>% group_by(Country.Region) %>% slice(1)%>% pull(percenturban)
+facbreaks <- c(0,quantile(groupvar, (1:6)/6,na.rm=T))
+
+europe$percenturbanG <- cut(europe$percenturban,breaks=facbreaks)
+mindate <- filter(europe, totcases > 0 ) %>% summarise(date=min(date))  %>% pull(date)
+
+# by date----------- cases
+ggplotly(ggplot(data=filter(europe, !is.na(percenturban) & date >=mindate),
+       aes(x=date, y=totcases, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') + facet_wrap(~percenturbanG)  +theme(legend.position='none'))
+
+# by date----------- deaths
+
+mindate1 <- filter(europe, totdeaths > 1 ) %>% summarise(date=min(date))  %>% pull(date)
+ggplotly(ggplot(data=filter(europe, !is.na(percenturban) & date >=mindate1 ),
+       aes(x=date, y=totdeaths, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') + facet_wrap(~percenturbanG)  +theme(legend.position='none'))
+
+```
+
+#### Facet by HDI
+
+```{r fig.width=8, fig.height=5, warnings=FALSE}
+
+europe <- filter(daily, region=="Europe & Central Asia")
+groupvar <-europe %>% group_by(Country.Region) %>% slice(1)%>% pull(hdi)
+facbreaks <- c(0,quantile(groupvar, (1:6)/6,na.rm=T))
+
+europe$hdiG <- cut(europe$percenturban,breaks=facbreaks)
+mindate <- filter(europe, totcases > 0 ) %>% summarise(date=min(date))  %>% pull(date)
+
+# by date----------- cases
+ggplotly(ggplot(data=filter(europe, !is.na(percenturban) & date >=mindate),
+       aes(x=date, y=totcases, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') + facet_wrap(~hdiG)  +theme(legend.position='none'))
+
+# by date----------- deaths
+
+mindate1 <- filter(europe, totdeaths > 1 ) %>% summarise(date=min(date))  %>% pull(date)
+ggplotly(ggplot(data=filter(europe, !is.na(percenturban) & date >=mindate1 ),
+       aes(x=date, y=totdeaths, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') + facet_wrap(~hdiG)  +theme(legend.position='none'))
+
+```
+
+#### Facet by income
+
+Not so useful becuase almost all European countries are high income
+
+```{r fig.width=8, fig.height=2.5, warnings=FALSE,  eval=FALSE}
+
+europe <- filter(daily, region=="Europe & Central Asia")
+
+# by date----------- cases
+ggplotly(ggplot(data=filter(europe, !is.na(percenturban) & date >=mindate),
+       aes(x=date, y=totcases, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') + facet_wrap(~income)  +theme(legend.position='none'))
+
+# by date----------- deaths
+
+mindate1 <- filter(europe, totdeaths > 1 ) %>% summarise(date=min(date))  %>% pull(date)
+ggplotly(ggplot(data=filter(europe, !is.na(percenturban) & date >=mindate1 ),
+       aes(x=date, y=totdeaths, colour=Country.Region))+ geom_line()+
+  scale_y_continuous(trans='log10') + facet_wrap(~income)  +theme(legend.position='none'))
+
+```
