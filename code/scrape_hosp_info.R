@@ -11,7 +11,7 @@ webpage <- read_html(url)
 
 all.urls <- html_attr(html_nodes(webpage, "a"), "href")  
 
-publications <- all.urls[which(str_detect(urls, pattern = "/en/publication/"))] 
+publications <- all.urls[which(str_detect(all.urls, pattern = "/en/publication/"))] 
 
 
 Total.number.hospitalised <- c()
@@ -91,4 +91,58 @@ data <- data.frame(dates,
                    Median.age)
         
 
+
+
+####################################################
+#####   get age ranges of those hospitalised   ##### 
+####################################################
+
+latest.analysis <- paste0("https://www.gov.ie", publications[1])
+latest.analysis <- read_html(latest.analysis) 
+
+#getting date in nice format
+h.ones <- html_nodes(latest.analysis, 'h1')
+h.ones <- html_text(h.ones)
+h.ones <- gsub("[\\(\\)]", "", regmatches(h.ones, gregexpr("\\(.*?\\)", h.ones))[[1]])
+h.ones <- gsub('as of ', '', h.ones)
+latest.date <- sub(".*? ", "", h.ones)
+
+
+
+
+all.tables <- html_nodes(latest.analysis, 'table')
+
+age.ranges <- c('<5',
+                '5 - 14',
+                '15 - 24',
+                '25 - 34',
+                '35 - 44',
+                '45 - 54',
+                '55 - 64', 
+                '65+')
+
+age.count <- c()
+for(i in seq(1, length(all.tables))){
+  x <- html_table(all.tables[[i]], fill = TRUE, header = TRUE)
+  
+
+  
+  if((names(x)[1] == '<5')){
+    first.obs <- (names(x))
+    age.count <- c(age.count,first.obs[2])
+    names(x) <- c('age', 'count')
+    age.count <- c(age.count,x$count)
+  }
+}
+
+
+age.data <- data.frame(age.ranges,age.count)
+names(age.data) <- c('age', 'number.hospitalised')           
+
+
+####################################################
+##################   save data   ###################
+####################################################
+
 write.csv(data, 'data/scraped/gov_hospital_data.csv')
+write.csv(age.data, 'data/scraped/hospitalised_by_age.csv')
