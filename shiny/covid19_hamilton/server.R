@@ -72,7 +72,7 @@ shinyServer(function(input, output) {
             unite(`Countries and territories`, Type, col='CountryType', sep=' ')
             
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines', color = ~CountryType) %>% 
+                mode = 'lines+markers', color = ~CountryType) %>% 
                 layout(title = 'Number of cumulative cases/deaths for selected countries',
                    xaxis = list(title = 'Date'),
                    yaxis = list (title = 'Number of individuals'))        
@@ -87,7 +87,7 @@ shinyServer(function(input, output) {
             unite(`Countries and territories`, Type, col='CountryType', sep=' ')
             
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines', color = ~CountryType) %>% 
+                mode = 'lines+markers', color = ~CountryType) %>% 
                 layout(title = 'Number of new cases/deaths for selected countries',
                    xaxis = list(title = 'Date'),
                    yaxis = list (title = 'Number of individuals'))        
@@ -124,7 +124,7 @@ shinyServer(function(input, output) {
     #Worldwide plot in Summary tab
     output$summaryWorldPlot <- renderPlotly({
         plot_ly(ecdc_world_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines', color = ~Type) %>% 
+                mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Worldwide number of cumulative cases/deaths',
                    xaxis = list(title = 'Date'),
                    yaxis = list (title = 'Number of individuals'))
@@ -138,7 +138,7 @@ shinyServer(function(input, output) {
             filter(Type == 'Total Cases' | Type == 'Total Deaths')
             
         plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines', color = ~Type) %>% 
+                mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Number of cumulative cases/deaths for Ireland',
                    xaxis = list(title = 'Date'),
                    yaxis = list (title = 'Number of individuals'))
