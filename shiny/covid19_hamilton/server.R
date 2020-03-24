@@ -6,6 +6,9 @@ library(jsonlite)
 library(shinydashboard)
 library(rgdal)
 library(DT)
+library(leafpop)
+
+
 
 ecdc <- readRDS('ECDC_data_current.rds')
 #For summary of world plot
@@ -50,6 +53,28 @@ cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
 
 #Read in summary stats for Ireland
 sum_stats <- read.csv('summary_stats_current.csv')
+
+#Create the datable with county and date information
+county_total_date<-map_df(all_tables,~add_column(.x$counties,date=lubridate::dmy(.x$published)))%>% arrange(desc(date))
+
+#Aproximate to 5 the "<= 5 cases"
+county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.numeric %>% ifelse(is.na(.),5,.) 
+
+#Create the plots for county cumulatie
+county_cumulative_cases<-map(cs2$NAME_TAG[-c(2,6,20,23,29,32)],~ggplot(county_total_date %>% filter(County==as.character(.x)),aes(x=date,y=`Number of Cases`,group=County))+
+                               geom_point()+geom_line()+
+                               ggtitle(label = paste0("Total cases in ",.x, " at ",county_total_date$date[[1]],": ",
+                                                      county_total_date$`Number of Cases`[county_total_date$date==county_total_date$date[[1]] & county_total_date$County==.x]))+
+                               
+                               xlab('Date')+
+                               ylab('Number of individuals')+
+                               #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
+                               theme_bw())
+
+#Defining the trend icon to the county map
+trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awesome/1792/line-chart-512.png",
+                     iconWidth = 15,iconHeight = 15)
+
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
@@ -113,7 +138,8 @@ shinyServer(function(input, output) {
             addProviderTiles(providers$Stamen.TonerLite,
                     options = providerTileOptions(noWrap = TRUE)
                 ) %>%
-            setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>%
+            setView(lng = -7.635498, lat = 53.186288, zoom = 7)  %>% addMarkers(lat = ~LATITUDE[-c(2,6,20,23,29,32)],lng = ~LONGITUDE[-c(2,6,20,23,29,32)],
+                                                                                icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
             addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 0.7,
             fillColor = ~pal2(log2(Cases)),
             label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
