@@ -29,17 +29,26 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
     tabItems(
         tabItem(tabName = 'summary',
-            fluidRow(
-                infoBoxOutput("ireCasesBox"),
-                infoBoxOutput("ireDeathsBox"),
-                infoBoxOutput('ireRecoverBox')
             
+            fluidRow(
+                column( width = 3,
+                    fluidRow(infoBoxOutput("ireCasesBox")),
+                    fluidRow(infoBoxOutput("ireDeathsBox")),
+                    fluidRow(infoBoxOutput('ireRecoverBox'))
+                ),
+                column(width=9,
+                    box(width = 12, plotlyOutput("summaryIrelandPlot") )
+                )
             ),
             fluidRow(
-                infoBoxOutput("wCasesBox"),
-                infoBoxOutput("wDeathsBox"),
-                infoBoxOutput('wRecoverBox')
-            
+                column( width = 3,
+                    fluidRow(infoBoxOutput("wCasesBox")),
+                    fluidRow(infoBoxOutput("wDeathsBox")),
+                    fluidRow(infoBoxOutput('wRecoverBox'))
+                ),
+                column(width=9,
+                    box(width = 12, plotlyOutput("summaryWorldPlot"))
+                )
             )
         
         ),
@@ -83,9 +92,12 @@ body <- dashboardBody(
     ),
     #These style tags are necessary to cope with the
     #buggy renderInfoBox function
-    #tags$style("#ireCasesBox {width:300px;}"),
-    #tags$style("#ireDeathsBox {width:300px;}"),
-    #tags$style("#ireRecoverBox {width:300px;}"),
+    tags$style("#ireCasesBox {width:300px;}"),
+    tags$style("#ireDeathsBox {width:300px;}"),
+    tags$style("#ireRecoverBox {width:300px;}"),
+    tags$style("#wCasesBox {width:300px;}"),
+    tags$style("#wDeathsBox {width:300px;}"),
+    tags$style("#wRecoverBox {width:300px;}"),
     tags$style(type = "text/css", "#covidMap {height: calc((100vh - 80px)/1.0) !important;}")
 )
 

@@ -6,8 +6,28 @@ library(jsonlite)
 library(shinydashboard)
 library(rgdal)
 
-ecdc = readRDS(file = '../../data/scraped/ECDC_data_20200321.rds')
+ecdc <- readRDS('../../data/scraped/ECDC_data_20200324.rds')
+#For summary of world plot
+ecdc_world_agg <- ecdc %>%
+  select(-c(Day, Month, Year, `Countries and territories`, GeoId)) %>%
+  group_by(DateRep) %>% 
+  summarise(New_Cases = sum(Cases), New_Deaths = sum(Deaths)) %>% 
+  mutate(`Total Cases` = cumsum(New_Cases), `Total Deaths` = cumsum(New_Deaths)) %>%
+  gather('Type', 'Number', -DateRep) %>%
+  filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
+  arrange(DateRep)
 
+#For summary of Ireland plot
+ecdc_ire_agg <- ecdc %>%
+  filter(`Countries and territories` == 'Ireland') %>%
+  select(-c(Day, Month, Year, `Countries and territories`, GeoId)) %>%
+  group_by(DateRep) %>% 
+  summarise(New_Cases = sum(Cases), New_Deaths = sum(Deaths)) %>% 
+  mutate(`Total Cases` = cumsum(New_Cases), `Total Deaths` = cumsum(New_Deaths)) %>%
+  gather('Type', 'Number', -DateRep) %>%
+  filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
+  arrange(DateRep)
+  
 #All tables contains information on a county-by-county basis
 all_tables <- readRDS('../../data/scraped/all_tables.rds')
 
@@ -46,7 +66,7 @@ shinyServer(function(input, output) {
             
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines', color = ~CountryType) %>% 
-                layout(title = 'Number of cases/deaths for selected countries',
+                layout(title = 'Number of new cases/deaths for selected countries',
                    xaxis = list(title = 'Date'),
                    yaxis = list (title = 'Number of individuals'),
                    font = list(color = '#FFFFFF'),
@@ -69,22 +89,21 @@ shinyServer(function(input, output) {
             labFormat = labelFormat(transform = function(x) round(2^x)))
     })
     
-    output$mapPlot <- renderPlotly({
-        
-        # Extract out the data
-        ecdc_plot = ecdc %>% 
-            filter(`Countries and territories` == 'Ireland') %>% 
-            select(-c(Day,Month,Year,`Countries and territories`,GeoId)) %>% 
-            pivot_longer(names_to = 'Type', values_to = 'Number', -DateRep)
-        
-        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+    output$summaryWorldPlot <- renderPlotly({
+        plot_ly(ecdc_world_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines', color = ~Type) %>% 
-            layout(title = paste('Number of new cases/deaths for','Ireland'),
+            layout(title = 'Worldwide number of cumulative cases/deaths',
                    xaxis = list(title = 'Date'),
-                   yaxis = list (title = 'Number of individuals'),
-                   font = list(color = '#FFFFFF'),
-                   plot_bgcolor='black',
-                   paper_bgcolor='black')
+                   yaxis = list (title = 'Number of individuals'))
+        
+    })
+    
+    output$summaryIrelandPlot <- renderPlotly({
+        plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines', color = ~Type) %>% 
+            layout(title = 'Number of cumulative cases/deaths for Ireland',
+                   xaxis = list(title = 'Date'),
+                   yaxis = list (title = 'Number of individuals'))
         
     })
     
