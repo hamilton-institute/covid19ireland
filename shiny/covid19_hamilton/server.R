@@ -75,10 +75,7 @@ shinyServer(function(input, output) {
                 mode = 'lines', color = ~CountryType) %>% 
                 layout(title = 'Number of cumulative cases/deaths for selected countries',
                    xaxis = list(title = 'Date'),
-                   yaxis = list (title = 'Number of individuals'),
-                   font = list(color = '#FFFFFF'),
-                   plot_bgcolor='black',
-                   paper_bgcolor='black')        
+                   yaxis = list (title = 'Number of individuals'))        
     })
     
     #New plot in Trends tab
@@ -93,10 +90,7 @@ shinyServer(function(input, output) {
                 mode = 'lines', color = ~CountryType) %>% 
                 layout(title = 'Number of new cases/deaths for selected countries',
                    xaxis = list(title = 'Date'),
-                   yaxis = list (title = 'Number of individuals'),
-                   font = list(color = '#FFFFFF'),
-                   plot_bgcolor='black',
-                   paper_bgcolor='black')        
+                   yaxis = list (title = 'Number of individuals'))        
     })
     
     #Counties table in Counties tab
