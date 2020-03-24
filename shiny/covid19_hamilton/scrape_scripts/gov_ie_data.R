@@ -167,7 +167,7 @@ all_tables <- corona_urls %>%
   )
   })
 
-saveRDS(all_tables, "data/scraped/all_tables.rds")
-saveRDS(all_tables, "shiny/covid19_hamilton/all_tables_current.rds")
+#saveRDS(all_tables, "data/scraped/all_tables.rds")
+saveRDS(all_tables, "all_tables_current.rds")
 
 

@@ -53,5 +53,5 @@ all.data <- rbind(summary_stats_world, summary_stats_irl)
 
 
 # write data
-write_csv(all.data, "data/scraped/summary_stats.csv")
-write_csv(all.data, "shiny/covid19_hamilton/summary_stats_current.csv")
+#write_csv(all.data, "data/scraped/summary_stats.csv")
+write_csv(all.data, "summary_stats_current.csv")
