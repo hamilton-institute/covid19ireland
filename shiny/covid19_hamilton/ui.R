@@ -20,8 +20,9 @@ header <- dashboardHeader(
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    menuItem("Map", tabName = "map", icon = icon("dashboard")),
-    menuItem("Information", icon = icon("th"), tabName = "info"),
+    menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
+    menuItem("By County", tabName = "county", icon = icon("dashboard")),
+    menuItem("Trends", icon = icon("th"), tabName = "trends"),
     # Input inside of menuSubItem
       menuSubItem(icon = NULL,
         uiOutput("choose_country")
@@ -31,12 +32,25 @@ sidebar <- dashboardSidebar(
 
 body <- dashboardBody(
     tabItems(
-        tabItem(tabName = "map",
+        tabItem(tabName = 'summary',
+            fluidRow(
+                infoBoxOutput("ireCasesBox"),
+                infoBoxOutput("ireDeathsBox"),
+                infoBoxOutput('ireRecoverBox')
+            
+            ),
+            fluidRow(
+                infoBoxOutput("wCasesBox"),
+                infoBoxOutput("wDeathsBox"),
+                infoBoxOutput('wRecoverBox')
+            
+            )
+        
+        ),
+        
+        tabItem(tabName = "county",
             fluidRow(
                 column(width=4,
-                    infoBoxOutput("casesBox"),
-                    infoBoxOutput("deathsBox"),
-                    infoBoxOutput('recoverBox'),
                     box(
                         title='Cases by County',
                         width=12,
@@ -59,7 +73,7 @@ body <- dashboardBody(
             
         ),
 
-        tabItem(tabName = "info",
+        tabItem(tabName = "trends",
             fluidRow(
                 column(width=12,
                     box(
@@ -72,9 +86,9 @@ body <- dashboardBody(
     ),
     #These style tags are necessary to cope with the
     #buggy renderInfoBox function
-    tags$style("#casesBox {width:300px;}"),
-    tags$style("#deathsBox {width:300px;}"),
-    tags$style("#recoverBox {width:300px;}"),
+    #tags$style("#ireCasesBox {width:300px;}"),
+    #tags$style("#ireDeathsBox {width:300px;}"),
+    #tags$style("#ireRecoverBox {width:300px;}"),
     tags$style(type = "text/css", "#covidMap {height: calc((100vh - 80px)/2.5) !important;}")
 )
 

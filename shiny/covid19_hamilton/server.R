@@ -23,7 +23,7 @@ cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 pal2 <- colorNumeric("Reds", log2(cs2$Cases))
 
 #Read in summary stats for Ireland
-ire_sum_stats <- read.csv('../../data/scraped/summary_stats.csv')
+sum_stats <- read.csv('../../data/scraped/summary_stats.csv')
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
@@ -87,7 +87,7 @@ shinyServer(function(input, output) {
         
     })
     
-    output$casesBox <- renderInfoBox({
+    output$ireCasesBox <- renderInfoBox({
         
         #This is an old data source now using summary stats file
         # ire_cases <- ecdc %>% 
@@ -96,12 +96,12 @@ shinyServer(function(input, output) {
   
         infoBox(
             HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
-            ire_sum_stats['Cases'], 
+            sum_stats$Cases[sum_stats$Region == 'ireland'], 
             color='black', 
             fill = FALSE)
     })
     
-    output$deathsBox <- renderInfoBox({
+    output$ireDeathsBox <- renderInfoBox({
         #This is an old data source now using summary stats file
         # ire_deaths <- ecdc %>% 
               # filter(`Countries and territories` == 'Ireland') %>%
@@ -109,15 +109,39 @@ shinyServer(function(input, output) {
               
         infoBox(
             HTML(paste0("Total Deaths",br()," in Ireland:")), 
-            ire_sum_stats['Deaths'], 
+            sum_stats$Deaths[sum_stats$Region == 'ireland'], 
             color='red', 
             fill = FALSE)
     })
     
-    output$recoverBox <- renderInfoBox({
+    output$ireRecoverBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Total Recovered",br()," in Ireland:")), 
-            ire_sum_stats['Recovered'], 
+            sum_stats$Recovered[sum_stats$Region == 'ireland'], 
+            color='green', 
+            fill = FALSE)
+    })
+    
+    output$wCasesBox <- renderInfoBox({
+        infoBox(
+            HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
+            sum_stats$Cases[sum_stats$Region == 'world'], 
+            color='black', 
+            fill = FALSE)
+    })
+    
+    output$wDeathsBox <- renderInfoBox({      
+        infoBox(
+            HTML(paste0("Total Deaths",br()," Worldwide:")), 
+            sum_stats$Deaths[sum_stats$Region == 'world'], 
+            color='red', 
+            fill = FALSE)
+    })
+    
+    output$wRecoverBox <- renderInfoBox({
+        infoBox(
+            HTML(paste0("Total Recovered",br()," Worldwide:")), 
+            sum_stats$Recovered[sum_stats$Region == 'world'], 
             color='green', 
             fill = FALSE)
     })
