@@ -141,7 +141,9 @@ shinyServer(function(input, output) {
                 mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Number of cumulative cases/deaths for Ireland',
                    xaxis = list(title = 'Date'),
-                   yaxis = list (title = 'Number of individuals'))
+                   yaxis = list (title = 'Number of individuals'),
+                   dragmode='pan') %>%
+            config(scrollZoom = TRUE)
         
     })
     
@@ -154,7 +156,7 @@ shinyServer(function(input, output) {
   
         infoBox(
             HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
-            sum_stats$Cases[sum_stats$Region == 'ireland'], 
+            format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
             color='black', 
             fill = FALSE)
     })
@@ -167,7 +169,7 @@ shinyServer(function(input, output) {
               
         infoBox(
             HTML(paste0("Total Deaths",br()," in Ireland:")), 
-            sum_stats$Deaths[sum_stats$Region == 'ireland'], 
+            format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 
             color='red', 
             fill = FALSE)
     })
@@ -175,7 +177,7 @@ shinyServer(function(input, output) {
     output$ireRecoverBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Total Recovered",br()," in Ireland:")), 
-            sum_stats$Recovered[sum_stats$Region == 'ireland'], 
+            format(sum_stats$Recovered[sum_stats$Region == 'ireland'], big.mark=','), 
             color='green', 
             fill = FALSE)
     })
@@ -183,7 +185,7 @@ shinyServer(function(input, output) {
     output$wCasesBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
-            sum_stats$Cases[sum_stats$Region == 'world'], 
+            format(sum_stats$Cases[sum_stats$Region == 'world'], , big.mark=','), 
             color='black', 
             fill = FALSE)
     })
@@ -191,7 +193,7 @@ shinyServer(function(input, output) {
     output$wDeathsBox <- renderInfoBox({      
         infoBox(
             HTML(paste0("Total Deaths",br()," Worldwide:")), 
-            sum_stats$Deaths[sum_stats$Region == 'world'], 
+            format(sum_stats$Deaths[sum_stats$Region == 'world'], , big.mark=','), 
             color='red', 
             fill = FALSE)
     })
@@ -199,7 +201,7 @@ shinyServer(function(input, output) {
     output$wRecoverBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Total Recovered",br()," Worldwide:")), 
-            sum_stats$Recovered[sum_stats$Region == 'world'], 
+            format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 
             color='green', 
             fill = FALSE)
     }) 
