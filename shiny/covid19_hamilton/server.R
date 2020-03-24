@@ -169,7 +169,7 @@ shinyServer(function(input, output) {
                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
                    yaxis = list (title = 'Number of individuals'),
                    dragmode='pan') %>%
-            config(scrollZoom = TRUE)
+            plotly::config(scrollZoom = TRUE)
         
     })
     
