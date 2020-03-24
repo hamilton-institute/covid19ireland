@@ -31,7 +31,8 @@ shinyServer(function(input, output) {
     output$choose_country <- renderUI({
         selectInput("co", 
         "Select a Country", 
-        unique(ecdc$`Countries and territories`))
+        unique(ecdc$`Countries and territories`),
+        selected = 'Ireland')
     })
 
     output$covidPlot <- renderPlotly({
