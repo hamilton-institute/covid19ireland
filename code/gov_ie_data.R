@@ -76,7 +76,9 @@ all_tables <- corona_urls %>%
     age_hospitalised <- 
       tryCatch(
         all_tables[[
-          which(str_detect(all_tables_names, "<5")) 
+          max(
+            which(str_detect(all_tables_names, "<5") |
+                    str_detect(all_tables_names, "Age|age"))) 
           ]] %>% 
           select(1:3) %>% 
           setNames(c("Hospitalised Age",
@@ -97,7 +99,10 @@ all_tables <- corona_urls %>%
     setNames(c("Age", "Number of Cases", "% Total"))  %>% 
     slice(-1)
   
-  
+  eqs <- all.equal(age, age_hospitalised)
+  if(length(eqs) == 1){
+    age_hospitalised <- NULL
+  }
   
   totals <- 
     tryCatch(
