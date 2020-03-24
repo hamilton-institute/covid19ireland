@@ -73,8 +73,22 @@ all_tables <- corona_urls %>%
     }
     
     
-  
-  # Age table
+    age_hospitalised <- 
+      tryCatch(
+        all_tables[[
+          which(str_detect(all_tables_names, "<5")) 
+          ]] %>% 
+          select(1:3) %>% 
+          setNames(c("Hospitalised Age",
+                     "Number of Cases", "% Total"))  %>% 
+          slice(-1), 
+        error = function(e) e )
+    
+    if("error" %in% class(age_hospitalised)){
+      age_hospitalised <-  NULL
+    }
+    
+        # Age table
   age <- all_tables[[
     min(which(str_detect(all_tables_names, "Age|age") | 
                 all_tables_rows %in% c(10, 11, 12))) 
@@ -140,6 +154,7 @@ all_tables <- corona_urls %>%
   list(counties = counties, 
        travel = travel, 
        age = age, 
+       age_hospitalised = age_hospitalised, 
        gender = gender, 
        transmission = transmission, 
        published = published, 
