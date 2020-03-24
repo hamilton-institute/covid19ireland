@@ -2,7 +2,7 @@ library(plotly)
 library(tidyverse)
 library(lubridate)
 
-age.hosp.data <- read.csv('data/scraped/hospitalised_by_age_asof_21March2020.csv')
+age.hosp.data <- read.csv('data/scraped/hospitalised_by_age.csv')
 
 x<-as.character(age.hosp.data$age)
 
