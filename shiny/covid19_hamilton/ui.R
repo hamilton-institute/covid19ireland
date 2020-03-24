@@ -22,8 +22,8 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
-    menuItem("By County", tabName = "county", icon = icon("dashboard")),
-    menuItem("Trends", icon = icon("th"), tabName = "trends")
+    menuItem("By County", tabName = "county", icon = icon("map")),
+    menuItem("Trends", icon = icon("chart-line"), tabName = "trends")
   )
 )
 
