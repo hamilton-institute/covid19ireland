@@ -14,9 +14,12 @@ library(leaflet)
 library(shinydashboard)
 library(DT)
 
+last_update = format(file.info('summary_stats_current.csv')$mtime,
+                     "%d-%b-%Y, %H:%M")
+
 header <- dashboardHeader(
-  title = "Hamilton Covid-19 Dashboard",
-  titleWidth = 320
+  title = paste("Hamilton Covid-19 Dashboard: Updated", last_update),
+  titleWidth = 600
 )
 
 sidebar <- dashboardSidebar(
