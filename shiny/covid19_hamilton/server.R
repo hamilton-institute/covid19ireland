@@ -74,7 +74,7 @@ shinyServer(function(input, output) {
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines+markers', color = ~CountryType) %>% 
                 layout(title = 'Number of cumulative cases/deaths for selected countries',
-                   xaxis = list(title = 'Date'),
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
                    yaxis = list (title = 'Number of individuals'))        
     })
     
@@ -89,7 +89,7 @@ shinyServer(function(input, output) {
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines+markers', color = ~CountryType) %>% 
                 layout(title = 'Number of new cases/deaths for selected countries',
-                   xaxis = list(title = 'Date'),
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
                    yaxis = list (title = 'Number of individuals'))        
     })
     
@@ -113,7 +113,7 @@ shinyServer(function(input, output) {
             addProviderTiles(providers$Stamen.TonerLite,
                     options = providerTileOptions(noWrap = TRUE)
                 ) %>%
-            setView(lng = -7.635498, lat = 53.186288, zoom = 6) %>%
+            setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>%
             addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 0.7,
             fillColor = ~pal2(log2(Cases)),
             label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
