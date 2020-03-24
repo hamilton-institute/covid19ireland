@@ -30,27 +30,27 @@ shinyServer(function(input, output) {
 
     output$choose_country <- renderUI({
         selectInput("co", 
-        "Select a Country", 
-        unique(ecdc$`Countries and territories`))
+            "Select a Country", 
+            unique(ecdc$`Countries and territories`),
+            multiple=TRUE)
     })
 
     output$covidPlot <- renderPlotly({
-        
         # Extract out the data
         ecdc_plot = ecdc %>% 
-            filter(`Countries and territories` == input$co) %>% 
-            select(-c(Day,Month,Year,`Countries and territories`,GeoId)) %>% 
-            pivot_longer(names_to = 'Type', values_to = 'Number', -DateRep)
-        
+            filter(`Countries and territories` %in% input$co) %>% 
+            select(-c(Day,Month,Year,GeoId)) %>%
+            gather('Type', 'Number', -c(DateRep, `Countries and territories`)) %>%
+            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+            
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines', color = ~Type) %>% 
-            layout(title = paste('Number of cases/deaths for',input$co),
+                mode = 'lines', color = ~CountryType) %>% 
+                layout(title = 'Number of cases/deaths for selected countries',
                    xaxis = list(title = 'Date'),
                    yaxis = list (title = 'Number of individuals'),
                    font = list(color = '#FFFFFF'),
                    plot_bgcolor='black',
-                   paper_bgcolor='black')
-        
+                   paper_bgcolor='black')        
     })
     
     output$covidMap <- renderLeaflet({
