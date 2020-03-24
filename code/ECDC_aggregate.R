@@ -1,5 +1,5 @@
 # -------------------------------
-# A simple scrip to aggregate worldwide cases
+# A simple script to aggregate worldwide cases
 # -------------------------------
 library(tidyverse)
 
