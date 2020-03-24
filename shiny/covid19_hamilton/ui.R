@@ -22,11 +22,7 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("By County", tabName = "county", icon = icon("dashboard")),
-    menuItem("Trends", icon = icon("th"), tabName = "trends"),
-    # Input inside of menuSubItem
-      menuSubItem(icon = NULL,
-        uiOutput("choose_country")
-      )
+    menuItem("Trends", icon = icon("th"), tabName = "trends")
   )
 )
 
@@ -50,23 +46,18 @@ body <- dashboardBody(
         
         tabItem(tabName = "county",
             fluidRow(
-                column(width=4,
+                column(width=3,
                     box(
                         title='Cases by County',
                         width=12,
-                        tableOutput("countyCasesTable"),
-                        style = "height: calc((100vh - 80px)/2); overflow-y: scroll;overflow-x: scroll;"
+                        tableOutput("countyCasesTable")
                     )
                 ),
-                column(width=7, 
+                column(width=9, 
                     box(
                       title = "COVID-19 in Ireland",
                       width=12,
                       leafletOutput('covidMap')
-                    ),
-                    box(
-                        width=12,
-                        plotlyOutput('mapPlot')
                     )
                 )
             )
@@ -75,7 +66,13 @@ body <- dashboardBody(
 
         tabItem(tabName = "trends",
             fluidRow(
-                column(width=12,
+                column(width=2, 
+                    # Input inside of menuSubItem
+                    menuSubItem(icon = NULL,
+                        uiOutput("choose_country")
+                    )
+                ),
+                column(width=10,
                     box(
                         width=12,
                         plotlyOutput("covidPlot")
@@ -89,7 +86,7 @@ body <- dashboardBody(
     #tags$style("#ireCasesBox {width:300px;}"),
     #tags$style("#ireDeathsBox {width:300px;}"),
     #tags$style("#ireRecoverBox {width:300px;}"),
-    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 80px)/2.5) !important;}")
+    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 80px)/1.0) !important;}")
 )
 
 # Put them together into a dashboardPage
