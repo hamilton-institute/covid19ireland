@@ -17,15 +17,14 @@ ecdc_world_agg <- ecdc %>%
   filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
   arrange(DateRep)
 
-#For summary of Ireland plot
-ecdc_ire_agg <- ecdc %>%
-  filter(`Countries and territories` == 'Ireland') %>%
-  select(-c(Day, Month, Year, `Countries and territories`, GeoId)) %>%
-  group_by(DateRep) %>% 
-  summarise(New_Cases = sum(Cases), New_Deaths = sum(Deaths)) %>% 
-  mutate(`Total Cases` = cumsum(New_Cases), `Total Deaths` = cumsum(New_Deaths)) %>%
-  gather('Type', 'Number', -DateRep) %>%
-  filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
+#For Trends tab plots
+ecdc_country_agg <- ecdc %>%
+  select(-c(Day, Month, Year, GeoId)) %>%
+  group_by(`Countries and territories`, DateRep) %>% 
+  summarise(`New Cases` = sum(Cases), `New Deaths` = sum(Deaths)) %>% 
+  mutate(`Total Cases` = cumsum(`New Cases`), `Total Deaths` = cumsum(`New Deaths`)) %>%
+  gather('Type', 'Number', -c(DateRep, `Countries and territories`)) %>%
+  #filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
   arrange(DateRep)
   
 #All tables contains information on a county-by-county basis
@@ -56,12 +55,28 @@ shinyServer(function(input, output) {
             multiple=TRUE)
     })
 
-    output$covidPlot <- renderPlotly({
+    output$covidCumPlot <- renderPlotly({
         # Extract out the data
-        ecdc_plot = ecdc %>% 
-            filter(`Countries and territories` %in% input$co) %>% 
-            select(-c(Day,Month,Year,GeoId)) %>%
-            gather('Type', 'Number', -c(DateRep, `Countries and territories`)) %>%
+        ecdc_plot = ecdc_country_agg %>% 
+            filter(`Countries and territories` %in% input$co) %>%
+            filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
+            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+            
+        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines', color = ~CountryType) %>% 
+                layout(title = 'Number of cumulative cases/deaths for selected countries',
+                   xaxis = list(title = 'Date'),
+                   yaxis = list (title = 'Number of individuals'),
+                   font = list(color = '#FFFFFF'),
+                   plot_bgcolor='black',
+                   paper_bgcolor='black')        
+    })
+    
+    output$covidNewPlot <- renderPlotly({
+        # Extract out the data
+        ecdc_plot = ecdc_country_agg %>% 
+            filter(`Countries and territories` %in% input$co) %>%
+            filter(Type == 'New Cases' | Type == 'New Deaths') %>%
             unite(`Countries and territories`, Type, col='CountryType', sep=' ')
             
         plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
@@ -99,6 +114,10 @@ shinyServer(function(input, output) {
     })
     
     output$summaryIrelandPlot <- renderPlotly({
+        ecdc_ire_agg = ecdc_country_agg %>%
+            filter(`Countries and territories` == 'Ireland') %>%
+            filter(Type == 'Total Cases' | Type == 'Total Deaths')
+            
         plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines', color = ~Type) %>% 
             layout(title = 'Number of cumulative cases/deaths for Ireland',

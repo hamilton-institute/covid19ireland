@@ -84,7 +84,11 @@ body <- dashboardBody(
                 column(width=10,
                     box(
                         width=12,
-                        plotlyOutput("covidPlot")
+                        plotlyOutput("covidCumPlot")
+                    ),
+                    box(
+                        width=12,
+                        plotlyOutput("covidNewPlot")
                     )
                 )
             )
