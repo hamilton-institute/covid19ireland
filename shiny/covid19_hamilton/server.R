@@ -5,6 +5,7 @@ library(leaflet)
 library(jsonlite)
 library(shinydashboard)
 library(rgdal)
+library(DT)
 
 ecdc <- readRDS('../../data/scraped/ECDC_data_20200324.rds')
 #For summary of world plot
@@ -99,8 +100,17 @@ shinyServer(function(input, output) {
     })
     
     #Counties table in Counties tab
-    output$countyCasesTable <- renderTable({
-        latest_county_table[,c('County', 'Number of Cases')] %>% map_df(rev)
+    output$countyCasesTable <- DT::renderDataTable({
+        DT::datatable(
+            latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
+            options = list(
+                pageLength = 20,
+                scrollY='calc((100vh - 290px)/1.0)',
+                searching = FALSE,
+                paging=FALSE
+            ),
+            rownames=FALSE
+        )
     })  
     
     #Map in Counties tab
@@ -112,7 +122,7 @@ shinyServer(function(input, output) {
             setView(lng = -7.635498, lat = 53.186288, zoom = 6) %>%
             addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 0.7,
             fillColor = ~pal2(log2(Cases)),
-            label = ~paste0(NAME_TAG, ": ", formatC(Cases, big.mark = ","), ' cases') ) %>%
+            label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
             addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
             labFormat = labelFormat(transform = function(x) round(2^x)))
     })

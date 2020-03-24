@@ -12,6 +12,7 @@ library(tidyverse)
 library(plotly)
 library(leaflet)
 library(shinydashboard)
+library(DT)
 
 header <- dashboardHeader(
   title = "Hamilton Covid-19 Dashboard",
@@ -59,7 +60,7 @@ body <- dashboardBody(
                     box(
                         title='Cases by County',
                         width=12,
-                        tableOutput("countyCasesTable")
+                        DT::dataTableOutput("countyCasesTable")
                     )
                 ),
                 column(width=9, 
@@ -102,7 +103,8 @@ body <- dashboardBody(
     tags$style("#wCasesBox {width:300px;}"),
     tags$style("#wDeathsBox {width:300px;}"),
     tags$style("#wRecoverBox {width:300px;}"),
-    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 80px)/1.0) !important;}")
+    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}")
+    #tags$style(type = "text/css", "#countyCasesTable {height: calc((100vh - 200px)/1.0) !important;}")
 )
 
 # Put them together into a dashboardPage
