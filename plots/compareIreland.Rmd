@@ -53,11 +53,25 @@ daily <- coronavirus%>% mutate(deaths= ifelse(type=="death", cases, 0)) %>%
 if (!require("wbstats")) install.packages("wbstats")
 library(wbstats)
 
-country_data <- 
-  left_join(wb(indicator = c("SP.POP.TOTL", "EN.POP.DNST","SP.URB.TOTL.IN.ZS", "UNDP.HDI.XD"),country="countries_only" ,
-               mrv=1,return_wide = TRUE),
-          wbcountries()) %>%
-  select(country, region, pop=SP.POP.TOTL, popdensity=EN.POP.DNST, percenturban= SP.URB.TOTL.IN.ZS, hdi= SP.URB.TOTL.IN.ZS,income=income)
+indicators <- c("SP.POP.TOTL", "EN.POP.DNST","SP.URB.TOTL.IN.ZS", "UNDP.HDI.XD")
+
+country_data <-wb(indicator = indicators[1],
+                  country="countries_only" ,
+                  mrv=1,return_wide = TRUE)
+
+for (ind in indicators[-1]){
+  country_data1 <-wb(indicator = ind,
+                  country="countries_only" ,
+                  mrv=1,return_wide = TRUE)
+  country_data <- left_join(country_data, country_data1[, c("iso3c", ind)], by="iso3c")
+}
+
+
+
+country_data <-  country_data %>%
+  left_join(wbcountries()) %>%
+  select(country, region, pop=SP.POP.TOTL, popdensity=EN.POP.DNST, percenturban= SP.URB.TOTL.IN.ZS, 
+         hdi= SP.URB.TOTL.IN.ZS,income=income)
 
 daily <- left_join(daily, country_data, by=c("Country.Region" ="country"))
 ```
