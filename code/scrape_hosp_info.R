@@ -145,4 +145,4 @@ names(age.data) <- c('age', 'number.hospitalised')
 ####################################################
 
 write.csv(data, 'data/scraped/gov_hospital_data.csv')
-write.csv(age.data, paste0('data/scraped/hospitalised_by_age_asof_', latest.date ,'.csv'))
+write.csv(age.data, paste0('data/scraped/hospitalised_by_age.csv'))
