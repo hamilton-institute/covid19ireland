@@ -4,28 +4,53 @@ library(rvest)
 library(stringr)
 
 
+
+# get ireland data
 url <- 'https://www.worldometers.info/coronavirus/country/ireland'
 webpage <- read_html(url)
 
 
-summary.stats <- html_nodes(webpage, 'div#maincounter-wrap')
-summary.stats <- html_text(summary.stats)
+summary_stats_irl <- html_nodes(webpage, 'div#maincounter-wrap')
+summary_stats_irl <- html_text(summary_stats_irl)
 
 
 
 # replace new lines and spaces
-summary.stats <- str_replace_all(summary.stats, '[\r\n\t]' , '')
-summary.stats <- str_replace_all(summary.stats, ' ' , '')
-summary.stats <- str_trim(summary.stats)
+summary_stats_irl <- str_replace_all(summary_stats_irl, '[\r\n\t]' , '')
+summary_stats_irl <- str_replace_all(summary_stats_irl, ' ' , '')
+summary_stats_irl <- str_trim(summary_stats_irl)
 
 
 
 
-summary_stats <- data.frame(as.numeric(gsub("[^0-9.]", "",  summary.stats[1])),
-                            as.numeric(gsub("[^0-9.]", "",  summary.stats[2])),
-                            as.numeric(gsub("[^0-9.]", "",  summary.stats[3])))
+summary_stats_irl <- data.frame('ireland',as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[1])),
+                            as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[2])),
+                            as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[3])))
 
-names(summary_stats) <- c('Cases', 'Deaths', 'Recovered')
+names(summary_stats_irl) <- c('Region', 'Cases', 'Deaths', 'Recovered')
 
 
-write_csv(summary_stats, "data/scraped/summary_stats.csv")
+
+# get world data
+url <- 'https://www.worldometers.info/coronavirus/'
+webpage <- read_html(url)
+
+summary_stats_world <- html_nodes(webpage, 'div#maincounter-wrap')
+summary_stats_world <- html_text(summary_stats_world)
+
+# replace new lines and spaces
+summary_stats_world <- str_replace_all(summary_stats_world, '[\r\n\t]' , '')
+summary_stats_world <- str_replace_all(summary_stats_world, ' ' , '')
+summary_stats_world <- str_trim(summary_stats_world)
+
+summary_stats_world <- data.frame('world',as.numeric(gsub("[^0-9.]", "",  summary_stats_world[1])),
+                            as.numeric(gsub("[^0-9.]", "",  summary_stats_world[2])),
+                            as.numeric(gsub("[^0-9.]", "",  summary_stats_world[3])))
+
+names(summary_stats_world) <- c('Region', 'Cases', 'Deaths', 'Recovered')
+
+all.data <- rbind(summary_stats_world, summary_stats_irl)
+
+
+# write data
+write_csv(all.data, "data/scraped/summary_stats.csv")
