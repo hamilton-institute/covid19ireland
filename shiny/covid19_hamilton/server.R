@@ -126,7 +126,7 @@ shinyServer(function(input, output) {
         plot_ly(ecdc_world_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Worldwide number of cumulative cases/deaths',
-                   xaxis = list(title = 'Date'),
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
                    yaxis = list (title = 'Number of individuals'))
         
     })
@@ -140,7 +140,7 @@ shinyServer(function(input, output) {
         plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Number of cumulative cases/deaths for Ireland',
-                   xaxis = list(title = 'Date'),
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
                    yaxis = list (title = 'Number of individuals'),
                    dragmode='pan') %>%
             config(scrollZoom = TRUE)
