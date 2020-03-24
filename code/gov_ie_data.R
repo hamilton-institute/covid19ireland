@@ -10,9 +10,10 @@ urls <- html_attr(html_nodes(main_url, "a"), "href")
 corona_urls <- urls[
   which(str_detect(urls, pattern = "\\/en\\/publication\\/"))] 
 
+corona_urls <- corona_urls[
+  str_detect(corona_urls, "analysis")]
 
-all_tables <- corona_urls[
-  str_detect(corona_urls, "analysis")] %>% 
+all_tables <- corona_urls %>% 
   map(~{
   all_tables <- paste0(
     "https://www.gov.ie", .x) %>% 
@@ -24,7 +25,7 @@ all_tables <- corona_urls[
   
   # Counties'table
   counties <- all_tables[[
-    which(all_tables_rows %in% c(26, 24)) 
+    which(all_tables_rows %in% c(26, 25, 24)) 
   ]] %>% 
     setNames(c("County", "Number of Cases", "% Total")) %>% 
     slice(-1)
@@ -44,8 +45,9 @@ all_tables <- corona_urls[
   
   # Age table
   age <- all_tables[[
-    min(which(all_tables_rows %in% c(10, 11))) 
+    min(which(all_tables_rows %in% c(10, 11, 12))) 
     ]] %>% 
+    select(1:3) %>% 
     setNames(c("Age", "Number of Cases", "% Total"))  %>% 
     slice(-1)
   
@@ -64,6 +66,7 @@ all_tables <- corona_urls[
        published = published
   )
   })
+
 
 saveRDS(all_tables, "data/scraped/all_tables.rds")
 

@@ -32,6 +32,7 @@ shinyServer(function(input, output) {
         selectInput("co", 
             "Select a Country", 
             unique(ecdc$`Countries and territories`),
+            selected = 'Ireland',
             multiple=TRUE)
     })
 
