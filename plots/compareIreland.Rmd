@@ -63,7 +63,8 @@ for (ind in indicators[-1]){
   country_data1 <-wb(indicator = ind,
                   country="countries_only" ,
                   mrv=1,return_wide = TRUE)
-  country_data <- left_join(country_data, country_data1[, c("iso3c", ind)], by="iso3c")
+  country_data1 <- country_data1[, c("country", ind)]
+  country_data <- full_join(country_data, country_data1, by="country")
 }
 
 
