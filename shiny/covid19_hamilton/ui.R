@@ -26,7 +26,8 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("By County", tabName = "county", icon = icon("map")),
-    menuItem("Trends", icon = icon("chart-line"), tabName = "trends")
+    menuItem("Trends", icon = icon("chart-line"), tabName = "trends")#,
+    #menuItem("Animation", icon = icon("chart-bar"), tabName = "animation")
   )
 )
 
@@ -96,7 +97,13 @@ body <- dashboardBody(
                     )
                 )
             )
-        )
+        )#,
+        
+        # tabItem(tabName = "animation",
+        #         fluidRow(
+        #           HTML('<iframe width="560" height="315" src="https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/plots/covid_anim_cumulative.gif" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>')
+        #         )
+        # )
     ),
     #These style tags are necessary to cope with the
     #buggy renderInfoBox function
