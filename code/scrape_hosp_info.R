@@ -106,7 +106,7 @@ h.ones <- html_text(h.ones)
 h.ones <- gsub("[\\(\\)]", "", regmatches(h.ones, gregexpr("\\(.*?\\)", h.ones))[[1]])
 h.ones <- gsub('as of ', '', h.ones)
 latest.date <- sub(".*? ", "", h.ones)
-
+latest.date <- gsub(" ", "", latest.date)
 
 
 
@@ -145,4 +145,4 @@ names(age.data) <- c('age', 'number.hospitalised')
 ####################################################
 
 write.csv(data, 'data/scraped/gov_hospital_data.csv')
-write.csv(age.data, 'data/scraped/hospitalised_by_age.csv')
+write.csv(age.data, paste0('data/scraped/hospitalised_by_age_asof_', latest.date ,'.csv'))
