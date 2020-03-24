@@ -28,6 +28,7 @@ ecdc_country_agg <- ecdc %>%
   arrange(DateRep)
   
 #All tables contains information on a county-by-county basis
+#will be used in the Counties tab
 all_tables <- readRDS('../../data/scraped/all_tables.rds')
 
 #Get the latest table containing info on all counties
@@ -41,12 +42,18 @@ cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 #Color the counties by number of cases
 pal2 <- colorNumeric("Reds", log2(cs2$Cases))
 
+#Since we don't have data on a county by county basis for
+#Nor Ire, we fill it with data for the whole region
+nor_ire_counties = c('Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry','Tyrone')
+cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
+
 #Read in summary stats for Ireland
 sum_stats <- read.csv('../../data/scraped/summary_stats.csv')
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
+    #Input selection tool in Trends tab
     output$choose_country <- renderUI({
         selectInput("co", 
             "Select a Country", 
@@ -55,6 +62,7 @@ shinyServer(function(input, output) {
             multiple=TRUE)
     })
 
+    #Cumulative plot in Trends tab
     output$covidCumPlot <- renderPlotly({
         # Extract out the data
         ecdc_plot = ecdc_country_agg %>% 
@@ -72,6 +80,7 @@ shinyServer(function(input, output) {
                    paper_bgcolor='black')        
     })
     
+    #New plot in Trends tab
     output$covidNewPlot <- renderPlotly({
         # Extract out the data
         ecdc_plot = ecdc_country_agg %>% 
@@ -89,9 +98,13 @@ shinyServer(function(input, output) {
                    paper_bgcolor='black')        
     })
     
+    #Counties table in Counties tab
+    output$countyCasesTable <- renderTable({
+        latest_county_table[,c('County', 'Number of Cases')] %>% map_df(rev)
+    })  
+    
+    #Map in Counties tab
     output$covidMap <- renderLeaflet({
-        library(rgdal)
-        
         leaflet(cs2) %>% 
             addProviderTiles(providers$Stamen.TonerLite,
                     options = providerTileOptions(noWrap = TRUE)
@@ -104,6 +117,7 @@ shinyServer(function(input, output) {
             labFormat = labelFormat(transform = function(x) round(2^x)))
     })
     
+    #Worldwide plot in Summary tab
     output$summaryWorldPlot <- renderPlotly({
         plot_ly(ecdc_world_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines', color = ~Type) %>% 
@@ -113,6 +127,7 @@ shinyServer(function(input, output) {
         
     })
     
+    #Ireland plot in Summary tab
     output$summaryIrelandPlot <- renderPlotly({
         ecdc_ire_agg = ecdc_country_agg %>%
             filter(`Countries and territories` == 'Ireland') %>%
@@ -183,9 +198,5 @@ shinyServer(function(input, output) {
             sum_stats$Recovered[sum_stats$Region == 'world'], 
             color='green', 
             fill = FALSE)
-    })
-    
-    output$countyCasesTable <- renderTable({
-        latest_county_table[,c('County', 'Number of Cases')] %>% map_df(rev)
-  })   
+    }) 
 })
