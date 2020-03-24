@@ -7,7 +7,7 @@ library(shinydashboard)
 library(rgdal)
 library(DT)
 
-ecdc <- readRDS('../../data/scraped/ECDC_data_20200324.rds')
+ecdc <- readRDS('ECDC_data_current.rds')
 #For summary of world plot
 ecdc_world_agg <- ecdc %>%
   select(-c(Day, Month, Year, `Countries and territories`, GeoId)) %>%
@@ -30,7 +30,7 @@ ecdc_country_agg <- ecdc %>%
   
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
-all_tables <- readRDS('../../data/scraped/all_tables.rds')
+all_tables <- readRDS('all_tables_current.rds')
 
 #Get the latest table containing info on all counties
 latest_county_table <- head(all_tables, n=1)[[1]]$counties
@@ -38,7 +38,7 @@ latest_county_table <- head(all_tables, n=1)[[1]]$counties
 latest_county_table$Cases <- strtoi(gsub("[^0-9.-]", "", latest_county_table$`Number of Cases`))
 
 #Read in the county shapes file and join it with county case info
-cs2 <- rgdal::readOGR("../../data/counties_simple.geojson")
+cs2 <- rgdal::readOGR("counties_simple.geojson")
 cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 #Color the counties by number of cases
 pal2 <- colorNumeric("Reds", log2(cs2$Cases))
@@ -49,7 +49,7 @@ nor_ire_counties = c('Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry','Tyr
 cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
 
 #Read in summary stats for Ireland
-sum_stats <- read.csv('../../data/scraped/summary_stats.csv')
+sum_stats <- read.csv('summary_stats_current.csv')
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
