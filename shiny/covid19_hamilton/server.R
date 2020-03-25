@@ -80,101 +80,8 @@ trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awes
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-
-    #Input selection tool in Trends tab
-    output$choose_country <- renderUI({
-        selectInput("co", 
-            "Select Countries", 
-            unique(ecdc$`Countries and territories`),
-            selected = 'Ireland',
-            multiple=TRUE)
-    })
     
-    output$compareTable <- DT::renderDataTable({
-        # Extract out the data
-        ecdc_table = ecdc_country_agg %>% 
-            filter(`Countries and territories` %in% input$co) %>%
-            pivot_wider(names_from = Type, values_from = Number) %>%
-            group_by(`Countries and territories`) %>%
-            summarise(`Total Cases` = sum(`New Cases`), `Total Deaths` = sum(`New Deaths`))
-            
-        DT::datatable(
-            ecdc_table,
-            caption='Comparison of selected countries',
-            options = list(
-                pageLength = 20,
-                scrollY='calc((100vh - 290px)/1.0)',
-                searching = FALSE,
-                paging=FALSE
-            ),
-            rownames=FALSE
-        )
-    })
-
-    #Cumulative plot in Trends tab
-    output$covidCumPlot <- renderPlotly({
-        # Extract out the data
-        ecdc_plot = ecdc_country_agg %>% 
-            filter(`Countries and territories` %in% input$co) %>%
-            filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
-            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
-            
-        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~CountryType) %>% 
-                layout(title = 'Number of cumulative cases/deaths for selected countries',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals',
-                                  type = if(input$logY) "log" else "linear"))        
-    })
-    
-    #New plot in Trends tab
-    output$covidNewPlot <- renderPlotly({
-        # Extract out the data
-        ecdc_plot = ecdc_country_agg %>% 
-            filter(`Countries and territories` %in% input$co) %>%
-            filter(Type == 'New Cases' | Type == 'New Deaths') %>%
-            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
-            
-        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~CountryType) %>% 
-                layout(title = 'Number of new cases/deaths for selected countries',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals',
-                                 type = if(input$logY) "log" else "linear"))        
-    })
-    
-    #Counties table in Counties tab
-    output$countyCasesTable <- DT::renderDataTable({
-        DT::datatable(
-            latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
-            options = list(
-                pageLength = 20,
-                scrollY='calc((100vh - 290px)/1.0)',
-                searching = FALSE,
-                paging=FALSE
-            ),
-            rownames=FALSE
-        )
-    })  
-    
-    #Map in Counties tab
-    output$covidMap <- renderLeaflet({
-        leaflet(cs2) %>% 
-            addProviderTiles(providers$Stamen.TonerLite,
-                    options = providerTileOptions(noWrap = TRUE)
-                ) %>%
-            setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
-            addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
-                       icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
-            addPolygons(stroke = FALSE, 
-                smoothFactor = 0.3, 
-                fillOpacity = 0.7,
-                fillColor = ~pal2(log2(Cases)),
-                label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
-            addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
-            labFormat = labelFormat(transform = function(x) round(2^x)))
-    })
-    
+    #################################SUMMARY TAB#################################
     #Worldwide cumulative plot in Summary tab
     output$cumSumWorldPlot <- renderPlotly({
         ecdc_world_plot <- ecdc_world_agg %>%
@@ -299,4 +206,101 @@ shinyServer(function(input, output) {
             color='green', 
             fill = FALSE)
     }) 
+    
+    #################################COUNTIES TAB#################################
+    #Counties table in Counties tab
+    output$countyCasesTable <- DT::renderDataTable({
+        DT::datatable(
+            latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
+            options = list(
+                pageLength = 20,
+                scrollY='calc((100vh - 290px)/1.0)',
+                searching = FALSE,
+                paging=FALSE
+            ),
+            rownames=FALSE
+        )
+    })  
+    
+    #Map in Counties tab
+    output$covidMap <- renderLeaflet({
+        leaflet(cs2) %>% 
+            addProviderTiles(providers$Stamen.TonerLite,
+                    options = providerTileOptions(noWrap = TRUE)
+                ) %>%
+            setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
+            addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
+                       icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
+            addPolygons(stroke = FALSE, 
+                smoothFactor = 0.3, 
+                fillOpacity = 0.7,
+                fillColor = ~pal2(log2(Cases)),
+                label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
+            addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
+            labFormat = labelFormat(transform = function(x) round(2^x)))
+    })
+    
+    #################################INTERNATIONAL TRENDS TAB#################################
+    #Input selection tool in Trends tab
+    output$choose_country <- renderUI({
+        selectInput("co", 
+            "Select Countries", 
+            unique(ecdc$`Countries and territories`),
+            selected = 'Ireland',
+            multiple=TRUE)
+    })
+    
+    #Country comparison table in trends tab
+    output$compareTable <- DT::renderDataTable({
+        # Extract out the data
+        ecdc_table = ecdc_country_agg %>% 
+            filter(`Countries and territories` %in% input$co) %>%
+            pivot_wider(names_from = Type, values_from = Number) %>%
+            group_by(`Countries and territories`) %>%
+            summarise(`Total Cases` = sum(`New Cases`), `Total Deaths` = sum(`New Deaths`))
+            
+        DT::datatable(
+            ecdc_table,
+            caption='Comparison of selected countries',
+            options = list(
+                pageLength = 20,
+                scrollY='calc((100vh - 290px)/1.0)',
+                searching = FALSE,
+                paging=FALSE
+            ),
+            rownames=FALSE
+        )
+    })
+
+    #Cumulative plot in Trends tab
+    output$covidCumPlot <- renderPlotly({
+        # Extract out the data
+        ecdc_plot = ecdc_country_agg %>% 
+            filter(`Countries and territories` %in% input$co) %>%
+            filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
+            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+            
+        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines+markers', color = ~CountryType) %>% 
+                layout(title = 'Number of cumulative cases/deaths for selected countries',
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
+                   yaxis = list (title = 'Number of individuals',
+                                  type = if(input$logY) "log" else "linear"))        
+    })
+    
+    #New plot in Trends tab
+    output$covidNewPlot <- renderPlotly({
+        # Extract out the data
+        ecdc_plot = ecdc_country_agg %>% 
+            filter(`Countries and territories` %in% input$co) %>%
+            filter(Type == 'New Cases' | Type == 'New Deaths') %>%
+            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+            
+        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines+markers', color = ~CountryType) %>% 
+                layout(title = 'Number of new cases/deaths for selected countries',
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
+                   yaxis = list (title = 'Number of individuals',
+                                 type = if(input$logY) "log" else "linear"))        
+    })
 })
