@@ -4,3 +4,6 @@ A visualisation tool of Covid-19 for Ireland. We are actively looking for collab
 
 Website here: https://hamilton-institute.github.io/covid19ireland/
 
+1 minute animation:
+
+<img src="https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/plots/covid_anim_cumulative.gif">

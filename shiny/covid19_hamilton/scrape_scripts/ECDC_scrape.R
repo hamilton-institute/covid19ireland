@@ -16,5 +16,5 @@ GET(url, authenticate(":", ":", type="ntlm"), write_disk(tf <- tempfile(fileext 
 data <- read_excel(tf)
 
 # Output to the scrape folder
-#saveRDS(data, file = paste0('data/scraped/ECDC_data_',format(Sys.time(), "%Y%m%d"),'.rds'))
+saveRDS(data, file = paste0('data/scraped/ECDC_data_',format(Sys.time(), "%Y%m%d"),'.rds'))
 saveRDS(data, file = paste0('ECDC_data_current.rds'))

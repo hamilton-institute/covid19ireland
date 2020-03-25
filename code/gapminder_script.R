@@ -103,15 +103,15 @@ ecdc_plot2 = ecdc_plot %>%
          cum_sum_death = cumsum(Deaths)) %>% 
   ungroup()
 
-# p2_tmp = ggplot(ecdc_plot2 %>% top_n(1000), aes(cum_sum_cases, cum_sum_death, colour = Country, size = cum_sum_cases)) +
+# p2_tmp = ggplot(ecdc_plot2 %>% top_n(200), aes(cum_sum_cases, cum_sum_death, colour = Country, size = cum_sum_cases)) +
 #   #geom_text(aes(x = 20000, y = 1000, label = day_month),  size = 50, col = 'grey') +
 #   # annotation_custom(grid::textGrob(ecdc_plot$day_month[1],
 #   #                                  gp = gpar(fontsize = 100, col = 'grey')),
 #   #                   xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
 #   geom_label(aes(label = Country)) +
-#   labs(title = 'Daily Covid-19 cases', x = 'Cases', y = 'Deaths')
-#   scale_x_sqrt() +
-#   scale_y_sqrt() +
+#   labs(title = 'Daily Covid-19 cases', x = 'Cases', y = 'Deaths') +
+#   scale_x_sqrt(breaks = scales::pretty_breaks(n = 10)) +
+#   scale_y_sqrt(breaks = scales::pretty_breaks(n = 10)) +
 #   theme_bw() +
 #   theme(legend.position = 'None')
 # print(p2_tmp)
@@ -122,8 +122,8 @@ p2 = ggplot(ecdc_plot2, aes(cum_sum_cases, cum_sum_death, colour = Country, size
   geom_label(aes(label = Country)) +
   #scale_colour_manual(aes(values = Colours)) +
   scale_size(range = c(2, 12)) +
-  scale_x_sqrt() +
-  scale_y_sqrt() +
+  scale_x_sqrt(breaks = scales::pretty_breaks(n = 10)) +
+  scale_y_sqrt(breaks = scales::pretty_breaks(n = 10)) +
   #facet_wrap(~continent) +
   # annotation_custom(grid::textGrob(day_time,
   #                                  gp = gpar(fontsize = 80, col = 'grey')),
@@ -139,10 +139,12 @@ p2_anim = animate(p2,
         duration = 60,
         height = 600,
         width = 800)
-# anim_save('plots/covid_anim_cumulative.gif',
-#           renderer = gifski_renderer(loop = FALSE))
-anim_save('covid_anim_cumulative.mp4',
-          renderer = av_renderer(loop = FALSE))
+anim_save(filename = 'plots/covid_anim_cumulative.gif',
+          animation = p2_anim,
+          renderer = gifski_renderer(loop = FALSE))
+# anim_save('covid_anim_cumulative.mp4',
+#           animation = p2_anim,
+#           renderer = av_renderer(loop = FALSE))
 
-#system("convert ~/GitHub/hamilton-monitor/plot/covid_anim_cumulative.gif -loop 1 ~/GitHub/hamilton-monitor/plot/covid_anim_cumulative2.gif")
+#system("convert covid_anim_cumulative.gif -loop 1 covid_anim_cumulative.gif")
 
