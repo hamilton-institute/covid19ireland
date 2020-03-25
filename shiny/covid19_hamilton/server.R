@@ -18,7 +18,6 @@ ecdc_world_agg <- ecdc %>%
   summarise(New_Cases = sum(Cases), New_Deaths = sum(Deaths)) %>% 
   mutate(`Total Cases` = cumsum(New_Cases), `Total Deaths` = cumsum(New_Deaths)) %>%
   gather('Type', 'Number', -DateRep) %>%
-  filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
   arrange(DateRep)
 
 #For Trends tab plots
@@ -176,9 +175,12 @@ shinyServer(function(input, output) {
             labFormat = labelFormat(transform = function(x) round(2^x)))
     })
     
-    #Worldwide plot in Summary tab
-    output$summaryWorldPlot <- renderPlotly({
-        plot_ly(ecdc_world_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+    #Worldwide cumulative plot in Summary tab
+    output$cumSumWorldPlot <- renderPlotly({
+        ecdc_world_plot <- ecdc_world_agg %>%
+            filter(Type == 'Total Cases' | Type == 'Total Deaths')
+            
+        plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Worldwide number of cumulative cases/deaths',
                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
@@ -187,8 +189,22 @@ shinyServer(function(input, output) {
         
     })
     
-    #Ireland plot in Summary tab
-    output$summaryIrelandPlot <- renderPlotly({
+    #Worldwide new daily plot in Summary tab
+    output$newSumWorldPlot <- renderPlotly({
+        ecdc_world_plot <- ecdc_world_agg %>%
+            filter(Type == 'New_Cases' | Type == 'New_Deaths')
+            
+        plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines+markers', color = ~Type) %>% 
+            layout(title = 'Worldwide number of new daily cases/deaths',
+                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
+                   yaxis = list (title = 'Number of individuals',
+                                  type = if(input$logY) "log" else "linear"))
+        
+    })
+    
+    #Ireland cumulative plot in Summary tab
+    output$cumSumIrelandPlot <- renderPlotly({
         ecdc_ire_agg = ecdc_country_agg %>%
             filter(`Countries and territories` == 'Ireland') %>%
             filter(Type == 'Total Cases' | Type == 'Total Deaths')
@@ -203,6 +219,23 @@ shinyServer(function(input, output) {
             plotly::config(scrollZoom = TRUE)
     })
     
+     #Ireland new daily plot in Summary tab
+    output$newSumIrelandPlot <- renderPlotly({
+        ecdc_ire_agg = ecdc_country_agg %>%
+            filter(`Countries and territories` == 'Ireland') %>%
+            filter(Type == 'New Cases' | Type == 'New Deaths')
+            
+        plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+                mode = 'lines+markers', color = ~Type) %>% 
+            layout(title = 'Number of new daily cases/deaths for Ireland',
+                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
+                    yaxis = list (title = 'Number of individuals',
+                                  type = if(input$logY) "log" else "linear"),
+                   dragmode='pan') %>%
+            plotly::config(scrollZoom = TRUE)
+    })
+    
+    #Ireland cases infobox in summary tab
     output$ireCasesBox <- renderInfoBox({
         
         #This is an old data source now using summary stats file
@@ -217,6 +250,7 @@ shinyServer(function(input, output) {
             fill = FALSE)
     })
     
+    #Ireland deaths infobox in summary tab
     output$ireDeathsBox <- renderInfoBox({
         #This is an old data source now using summary stats file
         # ire_deaths <- ecdc %>% 
@@ -230,6 +264,7 @@ shinyServer(function(input, output) {
             fill = FALSE)
     })
     
+    #Ireland recovered infobox in summary tab
     output$ireRecoverBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Total Recovered",br()," in Ireland:")), 
@@ -238,6 +273,7 @@ shinyServer(function(input, output) {
             fill = FALSE)
     })
     
+    #Worldwide cases infobox in summary tab
     output$wCasesBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
@@ -246,6 +282,7 @@ shinyServer(function(input, output) {
             fill = FALSE)
     })
     
+    #Worldwide deaths infobox in summary tab
     output$wDeathsBox <- renderInfoBox({      
         infoBox(
             HTML(paste0("Total Deaths",br()," Worldwide:")), 
@@ -254,6 +291,7 @@ shinyServer(function(input, output) {
             fill = FALSE)
     })
     
+    #Worldwide recovered infobox in summary tab
     output$wRecoverBox <- renderInfoBox({
         infoBox(
             HTML(paste0("Total Recovered",br()," Worldwide:")), 

@@ -42,7 +42,10 @@ body <- dashboardBody(
                     fluidRow(infoBoxOutput('ireRecoverBox'))
                 ),
                 column(width=9,
-                    box(width = 12, plotlyOutput("summaryIrelandPlot") )
+                    tabBox(width=12,
+                        tabPanel('Cumulative', plotlyOutput("cumSumIrelandPlot") ),
+                        tabPanel('New Daily', plotlyOutput('newSumIrelandPlot'))
+                    )
                 )
             ),
             fluidRow(
@@ -52,7 +55,10 @@ body <- dashboardBody(
                     fluidRow(infoBoxOutput('wRecoverBox'))
                 ),
                 column(width=9,
-                    box(width = 12, plotlyOutput("summaryWorldPlot"))
+                    tabBox(width=12,
+                        tabPanel('Cumulative', plotlyOutput("cumSumWorldPlot") ),
+                        tabPanel('New Daily', plotlyOutput('newSumWorldPlot'))
+                    )
                 )
             )
         
@@ -108,7 +114,13 @@ body <- dashboardBody(
     tags$style("#wCasesBox {width:300px;}"),
     tags$style("#wDeathsBox {width:300px;}"),
     tags$style("#wRecoverBox {width:300px;}"),
-    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}")
+    
+    #The tags allow for nice vertical spacing
+    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
+    tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+    tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+    tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+    tags$style(type = "text/css", "#cumSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}")
 )
 
 # Put them together into a dashboardPage
