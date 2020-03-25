@@ -2,7 +2,7 @@
 library(xml2)
 library(rvest)
 library(stringr)
-
+library(tidyverse)
 
 
 # get ireland data
@@ -22,12 +22,19 @@ summary_stats_irl <- str_trim(summary_stats_irl)
 
 
 
+# summary hosp stats
+gov.data <- readRDS('data/scraped/all_tables.rds')
+hosp.count <- gov.data[[1]]$totals %>% filter(Totals == 'Total number hospitalised') %>% select('Number of Cases') %>% as.numeric()
+icu.count <- gov.data[[1]]$totals %>% filter(Totals == 'Total number admitted to ICU') %>% select('Number of Cases') %>% as.numeric()
+
 
 summary_stats_irl <- data.frame('ireland',as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[1])),
                             as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[2])),
-                            as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[3])))
+                            as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[3])),
+                            hosp.count,
+                            icu.count)
 
-names(summary_stats_irl) <- c('Region', 'Cases', 'Deaths', 'Recovered')
+names(summary_stats_irl) <- c('Region', 'Cases', 'Deaths', 'Recovered', 'Hospitalised', 'ICU')
 
 
 
@@ -45,11 +52,17 @@ summary_stats_world <- str_trim(summary_stats_world)
 
 summary_stats_world <- data.frame('world',as.numeric(gsub("[^0-9.]", "",  summary_stats_world[1])),
                             as.numeric(gsub("[^0-9.]", "",  summary_stats_world[2])),
-                            as.numeric(gsub("[^0-9.]", "",  summary_stats_world[3])))
+                            as.numeric(gsub("[^0-9.]", "",  summary_stats_world[3])),
+                            NaN, NaN)
 
-names(summary_stats_world) <- c('Region', 'Cases', 'Deaths', 'Recovered')
+names(summary_stats_world) <- c('Region', 'Cases', 'Deaths', 'Recovered', 'Hospitalised', 'ICU')
 
 all.data <- rbind(summary_stats_world, summary_stats_irl)
+
+
+
+
+
 
 
 # write data
