@@ -23,7 +23,7 @@ summary_stats_irl <- str_trim(summary_stats_irl)
 
 
 # summary hosp stats
-gov.data <- readRDS('shiny/covid19_hamilton/all_tables_current.rds')
+gov.data <- readRDS('all_tables_current.rds')
 hosp.count <- gov.data[[1]]$totals %>% filter(Totals == 'Total number hospitalised') %>% select('Number of Cases') %>% as.numeric()
 icu.count <- gov.data[[1]]$totals %>% filter(Totals == 'Total number admitted to ICU') %>% select('Number of Cases') %>% as.numeric()
 
