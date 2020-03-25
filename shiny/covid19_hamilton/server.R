@@ -210,7 +210,7 @@ shinyServer(function(input, output) {
     #################################COUNTIES TAB#################################
     #Counties table in Counties tab
     output$countyCasesTable <- DT::renderDataTable({
-        DT::datatable(
+        DT::datatable(caption = paste0("Updated: ",all_tables[[1]]$published),
             latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
             options = list(
                 pageLength = 20,
