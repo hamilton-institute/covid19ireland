@@ -6,4 +6,6 @@ Website here: https://hamilton-institute.github.io/covid19ireland/
 
 1 minute animation:
 
-<img src="https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/plots/covid_anim_cumulative.gif">
+<a href="https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/plots/covid_anim_cumulative.gif">
+         <img alt="Covid19 Gapminder animation" src="https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/plots/covid_anim_cumulative.gif">
+      </a>
