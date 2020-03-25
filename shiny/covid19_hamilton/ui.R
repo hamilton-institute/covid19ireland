@@ -26,8 +26,8 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("By County", tabName = "county", icon = icon("map")),
-    menuItem("Trends", icon = icon("chart-line"), tabName = "trends")#,
-    #menuItem("Animation", icon = icon("chart-bar"), tabName = "animation")
+    menuItem("International Trends", icon = icon("chart-line"), tabName = "trends"),
+    checkboxInput("logY", "Show Y-axis log scaled", FALSE)
   )
 )
 
@@ -42,7 +42,10 @@ body <- dashboardBody(
                     fluidRow(infoBoxOutput('ireRecoverBox'))
                 ),
                 column(width=9,
-                    box(width = 12, plotlyOutput("summaryIrelandPlot") )
+                    tabBox(width=12,
+                        tabPanel('Cumulative', plotlyOutput("cumSumIrelandPlot") ),
+                        tabPanel('New Daily', plotlyOutput('newSumIrelandPlot'))
+                    )
                 )
             ),
             fluidRow(
@@ -52,7 +55,10 @@ body <- dashboardBody(
                     fluidRow(infoBoxOutput('wRecoverBox'))
                 ),
                 column(width=9,
-                    box(width = 12, plotlyOutput("summaryWorldPlot"))
+                    tabBox(width=12,
+                        tabPanel('Cumulative', plotlyOutput("cumSumWorldPlot") ),
+                        tabPanel('New Daily', plotlyOutput('newSumWorldPlot'))
+                    )
                 )
             )
         
@@ -80,13 +86,14 @@ body <- dashboardBody(
 
         tabItem(tabName = "trends",
             fluidRow(
-                column(width=2, 
+                column(width=4, 
                     # Input inside of menuSubItem
                     menuSubItem(icon = NULL,
                         uiOutput("choose_country")
-                    )
+                    ),
+                    DT::dataTableOutput("compareTable")
                 ),
-                column(width=10,
+                column(width=8,
                     box(
                         width=12,
                         plotlyOutput("covidCumPlot")
@@ -97,13 +104,7 @@ body <- dashboardBody(
                     )
                 )
             )
-        )#,
-        
-        # tabItem(tabName = "animation",
-        #         fluidRow(
-        #           HTML('<iframe width="560" height="315" src="https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/plots/covid_anim_cumulative.gif" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>')
-        #         )
-        # )
+        )
     ),
     #These style tags are necessary to cope with the
     #buggy renderInfoBox function
@@ -113,8 +114,13 @@ body <- dashboardBody(
     tags$style("#wCasesBox {width:300px;}"),
     tags$style("#wDeathsBox {width:300px;}"),
     tags$style("#wRecoverBox {width:300px;}"),
-    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}")
-    #tags$style(type = "text/css", "#countyCasesTable {height: calc((100vh - 200px)/1.0) !important;}")
+    
+    #The tags allow for nice vertical spacing
+    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
+    tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+    tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+    tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+    tags$style(type = "text/css", "#cumSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}")
 )
 
 # Put them together into a dashboardPage
