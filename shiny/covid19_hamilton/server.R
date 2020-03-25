@@ -103,7 +103,8 @@ shinyServer(function(input, output) {
                 mode = 'lines+markers', color = ~CountryType) %>% 
                 layout(title = 'Number of cumulative cases/deaths for selected countries',
                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals'))        
+                   yaxis = list (title = 'Number of individuals',
+                                  type = if(input$logY) "log" else "linear"))        
     })
     
     #New plot in Trends tab
@@ -118,7 +119,8 @@ shinyServer(function(input, output) {
                 mode = 'lines+markers', color = ~CountryType) %>% 
                 layout(title = 'Number of new cases/deaths for selected countries',
                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals'))        
+                   yaxis = list (title = 'Number of individuals',
+                                 type = if(input$logY) "log" else "linear"))        
     })
     
     #Counties table in Counties tab
@@ -159,7 +161,8 @@ shinyServer(function(input, output) {
                 mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Worldwide number of cumulative cases/deaths',
                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals'))
+                   yaxis = list (title = 'Number of individuals',
+                                  type = if(input$logY) "log" else "linear"))
         
     })
     
@@ -172,11 +175,11 @@ shinyServer(function(input, output) {
         plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
                 mode = 'lines+markers', color = ~Type) %>% 
             layout(title = 'Number of cumulative cases/deaths for Ireland',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals'),
+                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
+                    yaxis = list (title = 'Number of individuals',
+                                  type = if(input$logY) "log" else "linear"),
                    dragmode='pan') %>%
             plotly::config(scrollZoom = TRUE)
-        
     })
     
     output$ireCasesBox <- renderInfoBox({
