@@ -133,7 +133,7 @@ p2 = ggplot(ecdc_plot2, aes(cum_sum_cases, cum_sum_death, colour = Country, size
   ease_aes('linear') + 
   theme_bw() + 
   theme(legend.position = 'None')
-animate(p2, 
+p2_anim = animate(p2, 
         nframes = 100, 
         fps = 10,
         duration = 60,
@@ -141,8 +141,8 @@ animate(p2,
         width = 800)
 # anim_save('plots/covid_anim_cumulative.gif',
 #           renderer = gifski_renderer(loop = FALSE))
-anim_save('covid_anim_cumulative.gif',
-          renderer = gifski_renderer(loop = FALSE))
+anim_save('covid_anim_cumulative.mp4',
+          renderer = av_renderer(loop = FALSE))
 
 #system("convert ~/GitHub/hamilton-monitor/plot/covid_anim_cumulative.gif -loop 1 ~/GitHub/hamilton-monitor/plot/covid_anim_cumulative2.gif")
 
