@@ -85,10 +85,31 @@ shinyServer(function(input, output) {
     #Input selection tool in Trends tab
     output$choose_country <- renderUI({
         selectInput("co", 
-            "Select a Country", 
+            "Select Countries", 
             unique(ecdc$`Countries and territories`),
             selected = 'Ireland',
             multiple=TRUE)
+    })
+    
+    output$compareTable <- DT::renderDataTable({
+        # Extract out the data
+        ecdc_table = ecdc_country_agg %>% 
+            filter(`Countries and territories` %in% input$co) %>%
+            pivot_wider(names_from = Type, values_from = Number) %>%
+            group_by(`Countries and territories`) %>%
+            summarise(`Total Cases` = sum(`New Cases`), `Total Deaths` = sum(`New Deaths`))
+            
+        DT::datatable(
+            ecdc_table,
+            caption='Comparison of selected countries',
+            options = list(
+                pageLength = 20,
+                scrollY='calc((100vh - 290px)/1.0)',
+                searching = FALSE,
+                paging=FALSE
+            ),
+            rownames=FALSE
+        )
     })
 
     #Cumulative plot in Trends tab

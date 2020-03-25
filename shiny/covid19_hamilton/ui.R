@@ -26,7 +26,7 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("By County", tabName = "county", icon = icon("map")),
-    menuItem("Trends", icon = icon("chart-line"), tabName = "trends"),
+    menuItem("International Trends", icon = icon("chart-line"), tabName = "trends"),
     checkboxInput("logY", "Show Y-axis log scaled", FALSE)
   )
 )
@@ -80,13 +80,14 @@ body <- dashboardBody(
 
         tabItem(tabName = "trends",
             fluidRow(
-                column(width=2, 
+                column(width=4, 
                     # Input inside of menuSubItem
                     menuSubItem(icon = NULL,
                         uiOutput("choose_country")
-                    )
+                    ),
+                    DT::dataTableOutput("compareTable")
                 ),
-                column(width=10,
+                column(width=8,
                     box(
                         width=12,
                         plotlyOutput("covidCumPlot")
