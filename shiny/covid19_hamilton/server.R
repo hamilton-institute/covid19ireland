@@ -184,7 +184,7 @@ shinyServer(function(input, output) {
   output$wCasesBox <- renderInfoBox({
     infoBox(
       HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
-      format(sum_stats$Cases[sum_stats$Region == 'world'], , big.mark=','), 
+      format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 
       color='black', 
       fill = FALSE)
   })
@@ -193,7 +193,7 @@ shinyServer(function(input, output) {
   output$wDeathsBox <- renderInfoBox({      
     infoBox(
       HTML(paste0("Total Deaths",br()," Worldwide:")), 
-      format(sum_stats$Deaths[sum_stats$Region == 'world'], , big.mark=','), 
+      format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 
       color='red', 
       fill = FALSE)
   })
@@ -342,9 +342,9 @@ shinyServer(function(input, output) {
       g<-ggplot(data = all.data, aes(Age, Count, fill=Classification))+
         geom_bar(stat = 'identity', position=position_dodge(0)) +
         theme_minimal() +
-        ggtitle('Cases by Age Ireland')
+        ggtitle('Cases by Age: Ireland')
         
-      ggplotly(g)
+      ggplotly(g, tooltip=c("Classification", "Count"))
       
 
     })
@@ -366,11 +366,11 @@ shinyServer(function(input, output) {
       data$x <- factor(data$x, levels = x)
       
       data$col <- ' '
-      names(data) <- c('Gender', 'Precentage', 'holder')
+      names(data) <- c('Gender', 'Percentage', 'holder')
       
       
       
-      g<-ggplot(data = data, aes(Gender, Precentage, fill=Gender))+
+      g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
         geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
         theme_minimal() +
         labs(y="%", x = "") +
@@ -379,7 +379,7 @@ shinyServer(function(input, output) {
         scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4"))
         
       
-      ggplotly(g)
+      ggplotly(g, tooltip = 'Percentage')
   
  
     
@@ -440,25 +440,32 @@ shinyServer(function(input, output) {
       y<-(total.cases/100)*y
 
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
-      x <- c('Community transmission','Contact w. known case',
-             'Travel Abroad','Under investigation') 
+      x <- c('Community\ntransmission','Contact with\nknown case',
+             'Travel\nAbroad','Under\ninvestigation') 
 
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
 
-      names(data) <- c("Class",    "y",    "text")
-      g <- ggplot(data = data, aes(Class, y, fill=Class, text = text))+
+      names(data) <- c("Class",    "Count",    "text")
+      g <- ggplot(data = data, aes(Class, Count, fill=Class, text = text))+
         geom_bar(stat = 'identity') +
         theme_minimal() +
         coord_flip()+
-        geom_text(aes(label=Class),nudge_y = -85) +
-        labs(y="Count", x = "Class of Transmission") +
+        #geom_text(aes(label=Class),nudge_y = -85) +
+        # annotate(geom = "text",
+        #          x = 1:4,
+        #          y = 0,
+        #          label = data$Class,
+        #          hjust = 0) +
+        #geom_text(aes(y = 0, label = Class, hjust = 0)) +
+        labs(y="Count", x = "") +
         ggtitle('How is COVID-19 Being Transmitted?') + theme(
-          axis.text.y= element_blank(),
+          #axis.text.y= element_blank(),
           axis.ticks = element_blank(),
-          legend.position = "none") 
+          legend.position = "none")
       
-      ggplotly(g) 
+      
+      ggplotly(g, tooltip=c("Count")) 
       
       
       

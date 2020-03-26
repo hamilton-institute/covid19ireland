@@ -111,7 +111,7 @@ body <- dashboardBody(
         tabItem(tabName = "patientprofile",
                 fluidRow(
                   fluidRow(
-                    box(h4('Presented here are graphics representative of the population of The Republic of Ireland', align = "center"), width ='100%')
+                    box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
                   ),
                   fluidRow(
                     box(plotlyOutput('ageCases'), width = '40%',)
