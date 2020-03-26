@@ -27,7 +27,7 @@ sidebar <- dashboardSidebar(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("By County", tabName = "county", icon = icon("map")),
     menuItem("International Trends", icon = icon("chart-line"), tabName = "trends"),
-    menuItem("Patient Profile", tabName = "patientprofile
+    menuItem("Hospitalisation Stats", tabName = "patientprofile
              ", icon = icon("users")),
     checkboxInput("logY", "Show Y-axis log scaled", FALSE)
   )
@@ -110,7 +110,9 @@ body <- dashboardBody(
         
         tabItem(tabName = "patientprofile",
                 fluidRow(
-                
+                  fluidRow(
+                    box(h4('Presented here are graphics representative of the population of The Republic of Ireland', align = "center"), width ='100%')
+                  ),
                   fluidRow(
                     box(plotlyOutput('ageCases'), width = '40%',)
                   ),

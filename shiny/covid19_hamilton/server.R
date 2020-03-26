@@ -303,27 +303,7 @@ shinyServer(function(input, output) {
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"))        
   })
-    
-    #age in hospital plot
-    output$ageHospitalised <- renderPlotly({
-      age.hosp <- (all_tables[[1]]$age_hospitalised)
-      x<-as.character(age.hosp$`Hospitalised Age`)
-      y<-as.numeric(age.hosp$`Number of Cases`)
-      text<- paste0(age.hosp$`Number of Cases`, ' patients')
-      data <- data.frame(x, y, text)
-      data$x <- factor(data$x, levels = as.character(age.hosp$`Hospitalised Age`))
-      
-      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
-                     marker = list(color = 'rgb(158,202,225)',
-                                   line = list(color = 'rgb(8,48,107)',
-                                               width = 1.5)))
-      fig <- fig %>% layout(title = "Number of Patients Hospitalised by Age (Ireland)",
-                            xaxis = list(title = "Age Range"),
-                            yaxis = list(title = "Count"))
-      fig
-      
-    })
-    
+
     
     #age in hospital plot
     output$ageCases <- renderPlotly({
@@ -334,9 +314,9 @@ shinyServer(function(input, output) {
       x<-as.character(age.hosp$`Hospitalised Age`)
       y<-as.numeric(age.hosp$`Number of Cases`)
       text<- paste0(age.hosp$`Number of Cases`, ' patients')
-      data1 <- data.frame(x, y, text, 'Hospitalised')
+      data1 <- data.frame(x, y, 'Hospitalised')
       data1$x <- factor(data1$x, levels = as.character(age.hosp$`Hospitalised Age`))
-      names(data1) <- c('age','count','text','Classification')
+      names(data1) <- c('Age','Count','Classification')
       
 
       age <- (all_tables[[1]]$age)
@@ -352,24 +332,23 @@ shinyServer(function(input, output) {
       text<- paste0(y, ' patients')
       
       
-      data2 <- data.frame(x, y, text, 'Cases')
+      data2 <- data.frame(x, y, 'Cases')
       data2$x <- factor(data2$x, levels = as.character(age.hosp$`Hospitalised Age`))
-      names(data2) <- c('age','count','text','Classification')
+      names(data2) <- c('Age','Count','Classification')
       
       
       all.data <- rbind(data2,data1)
       
-      g<-ggplot(data = all.data, aes(age, count, fill=Classification))+
+      g<-ggplot(data = all.data, aes(Age, Count, fill=Classification))+
         geom_bar(stat = 'identity', position=position_dodge(0)) +
         theme_minimal() +
         ggtitle('Cases by Age Ireland')
         
       ggplotly(g)
-
+      
 
     })
     
-    #gender of cases plot
     output$genderCases <- renderPlotly({
       
       gender <- all_tables[[1]]$gender
@@ -388,23 +367,27 @@ shinyServer(function(input, output) {
       
       data$col <- ' '
       names(data) <- c('Gender', 'Precentage', 'holder')
-      g<-ggplot(data = data, aes(holder, Precentage, fill=Gender))+
-        geom_bar(stat = 'identity') +
+      
+      
+      
+      g<-ggplot(data = data, aes(Gender, Precentage, fill=Gender))+
+        geom_bar(stat = 'identity',width = 0.6, position = position_dodge()) +
         theme_minimal() +
-        coord_flip()+
         labs(y="%", x = "") +
-        ggtitle('Gender Breakdown')
+        ggtitle('Gender Breakdown') + 
+        theme(legend.position = 'none')+
+        scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4"))
         
       
       ggplotly(g)
   
  
-    })
+    
+      })
     
     
     
     
-    #gender of cases plot
     output$helthcarePatients <- renderPlotly({
       helthcare.workers <- all_tables[[1]]$totals %>% 
         filter(Totals == 'Total number of healthcare workers') %>%
@@ -415,7 +398,8 @@ shinyServer(function(input, output) {
         filter(Totals == 'Total number of cases') %>%
         select('Number of Cases') %>%
         as.numeric()
-            x<- c('Helthcare Workers', 'Total Cases')
+        x<- c( "Healthcare Workers", 'Total Cases')
+            
 
       y<-c(helthcare.workers, total.cases)
       text<- paste0(y, ' patients')
@@ -424,17 +408,20 @@ shinyServer(function(input, output) {
       data$x <- factor(data$x, levels = x)
       
       
-  
+      g <- ggplot(data = data, aes(x, y))+
+        geom_bar(stat = 'identity', fill = 'deepskyblue2', alpha = 0.7) +
+        theme_minimal() +
+        labs(y="Count", x = " ") +
+        ggtitle('Number of Healthcare Workers Tested Positive') +
+        geom_text(aes(label=x),nudge_y = -100) +
+        theme(
+          axis.text.x = element_blank(),
+          axis.ticks = element_blank()) 
       
       
-      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
-                     marker = list(color = 'rgb(158,202,225)',
-                                   line = list(color = 'rgb(8,48,107)',
-                                               width = 1.5)))
-      fig <- fig %>% layout(title = "Proportion of Health Care Workers Tested Positive",
-                            xaxis = list(title = "Category"),
-                            yaxis = list(title = "Count"))
-      fig
+      ggplotly(g) 
+      
+      
       
     })  
     
@@ -453,21 +440,23 @@ shinyServer(function(input, output) {
       y<-(total.cases/100)*y
 
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
+      x <- c('Community transmission','Contact w. confirmed case',
+             'Travel Abroad','Under investigation') 
+
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
-      
-      
+
       names(data) <- c("Class",    "y",    "text")
       g <- ggplot(data = data, aes(Class, y, fill=Class, text = text))+
         geom_bar(stat = 'identity') +
         theme_minimal() +
         coord_flip()+
+        geom_text(aes(label=Class),nudge_y = -85) +
         labs(y="Count", x = "Class of Transmission") +
-        ggtitle('How is COVID-19 Being Transmitted') + theme(
-          axis.text.y = element_blank(),
+        ggtitle('How is COVID-19 Being Transmitted?') + theme(
+          axis.text.y= element_blank(),
           axis.ticks = element_blank(),
-          legend.position = 'bottom') 
-      
+          legend.position = "none") 
       
       ggplotly(g) 
       
