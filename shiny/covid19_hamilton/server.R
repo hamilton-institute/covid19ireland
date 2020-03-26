@@ -7,7 +7,7 @@ library(shinydashboard)
 library(rgdal)
 library(DT)
 library(lubridate)
-library(leafpop)
+#library(leafpop)
 
 
 
@@ -328,28 +328,44 @@ shinyServer(function(input, output) {
     #age in hospital plot
     output$ageCases <- renderPlotly({
       
-      age <- (all_tables[[1]]$age)
-      x<-as.character(age$Age)
-      x <- x[-length(x)]
-      x <- x[-length(x)]
       
+      
+      age.hosp <- (all_tables[[1]]$age_hospitalised)
+      x<-as.character(age.hosp$`Hospitalised Age`)
+      y<-as.numeric(age.hosp$`Number of Cases`)
+      text<- paste0(age.hosp$`Number of Cases`, ' patients')
+      data1 <- data.frame(x, y, text, 'Hospitalised')
+      data1$x <- factor(data1$x, levels = as.character(age.hosp$`Hospitalised Age`))
+      names(data1) <- c('age','count','text','Classification')
+      
+
+      age <- (all_tables[[1]]$age)
       y<-as.numeric(age$`Number of Cases`)
       y <- y[-length(y)]
       y <- y[-length(y)]
       
-      text<- paste0(y, ' patients')
-
-      data <- data.frame(x, y, text)
-      data$x <- factor(data$x, levels = as.character(x))
+      # combine first two bins
+      y[1] = y[1] + y[2]
+      y = y[-2]
       
-      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
-                     marker = list(color = 'rgb(158,202,225)',
-                                   line = list(color = 'rgb(8,48,107)',
-                                               width = 1.5)))
-      fig <- fig %>% layout(title = "Number of Positive Cases by Age (Ireland)",
-                            xaxis = list(title = "Age Range"),
-                            yaxis = list(title = "Count"))
-      fig
+      
+      text<- paste0(y, ' patients')
+      
+      
+      data2 <- data.frame(x, y, text, 'Cases')
+      data2$x <- factor(data2$x, levels = as.character(age.hosp$`Hospitalised Age`))
+      names(data2) <- c('age','count','text','Classification')
+      
+      
+      all.data <- rbind(data2,data1)
+      
+      g<-ggplot(data = all.data, aes(age, count, fill=Classification))+
+        geom_bar(stat = 'identity', position=position_dodge(0)) +
+        theme_minimal() +
+        ggtitle('Cases by Age Ireland')
+        
+      ggplotly(g)
+
 
     })
     
@@ -362,24 +378,27 @@ shinyServer(function(input, output) {
       
       y<-as.numeric(gender$`Number of Cases`)
       y <- y[-length(y)]
-      
-      
+      sum <- sum(y)
+      y <- (y/sum)*100
       text<- paste0(y, ' patients')
       
       
-      data <- data.frame(x, y, text)
+      data <- data.frame(x, y)
       data$x <- factor(data$x, levels = x)
       
+      data$col <- ' '
+      names(data) <- c('Gender', 'Precentage', 'holder')
+      g<-ggplot(data = data, aes(holder, Precentage, fill=Gender))+
+        geom_bar(stat = 'identity') +
+        theme_minimal() +
+        coord_flip()+
+        labs(y="%", x = "") +
+        ggtitle('Gender Breakdown')
+        
       
-      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
-                     marker = list(color = 'rgb(158,202,225)',
-                                   line = list(color = 'rgb(8,48,107)',
-                                               width = 1.5)))
-      fig <- fig %>% layout(title = "Gender of Patients (Ireland)",
-                            xaxis = list(title = "Gender"),
-                            yaxis = list(title = "Count"))
-      fig
-      
+      ggplotly(g)
+  
+ 
     })
     
     
@@ -403,6 +422,10 @@ shinyServer(function(input, output) {
 
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
+      
+      
+  
+      
       
       fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
                      marker = list(color = 'rgb(158,202,225)',
@@ -432,14 +455,23 @@ shinyServer(function(input, output) {
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
-      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
-                     marker = list(color = 'rgb(158,202,225)',
-                                   line = list(color = 'rgb(8,48,107)',
-                                               width = 1.5)))
-      fig <- fig %>% layout(title = "How COVID-19 Contracted (Ireland)",
-                            xaxis = list(title = "Age Range"),
-                            yaxis = list(title = "Transmission Type"))
-      fig
+      
+      
+      names(data) <- c("Class",    "y",    "text")
+      g <- ggplot(data = data, aes(Class, y, fill=Class, text = text))+
+        geom_bar(stat = 'identity') +
+        theme_minimal() +
+        coord_flip()+
+        labs(y="Count", x = "Class of Transmission") +
+        ggtitle('How is COVID-19 Being Transmitted') + theme(
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          legend.position = 'bottom') 
+      
+      
+      ggplotly(g) 
+      
+      
       
     }) 
    

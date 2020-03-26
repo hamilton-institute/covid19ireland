@@ -112,8 +112,7 @@ body <- dashboardBody(
                 fluidRow(
                 
                   fluidRow(
-                    box(plotlyOutput('ageHospitalised')),
-                    box(plotlyOutput('ageCases'))
+                    box(plotlyOutput('ageCases'), width = '40%',)
                   ),
                   fluidRow(
                     box(plotlyOutput('howContracted')),
