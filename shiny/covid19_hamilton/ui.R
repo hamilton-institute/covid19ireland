@@ -27,6 +27,8 @@ sidebar <- dashboardSidebar(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("By County", tabName = "county", icon = icon("map")),
     menuItem("International Trends", icon = icon("chart-line"), tabName = "trends"),
+    menuItem("Hospitalisation Stats", tabName = "patientprofile
+             ", icon = icon("hospital")),
     checkboxInput("logY", "Show Y-axis log scaled", FALSE)
   )
 )
@@ -104,6 +106,27 @@ body <- dashboardBody(
                     )
                 )
             )
+        ),
+        
+        tabItem(tabName = "patientprofile",
+                fluidRow(
+                  fluidRow(
+                    box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
+                  ),
+                  fluidRow(
+                    box(plotlyOutput('ageCases'), width = '40%',)
+                  ),
+                  fluidRow(
+                    box(plotlyOutput('howContracted')),
+                    box(plotlyOutput('icuProportion'))
+                    
+                  ),
+                  fluidRow(
+                    box(plotlyOutput('genderCases')),
+                    box(plotlyOutput('helthcarePatients'))
+                  )
+                  
+                )
         )
     ),
     #These style tags are necessary to cope with the
