@@ -6,6 +6,7 @@ library(jsonlite)
 library(shinydashboard)
 library(rgdal)
 library(DT)
+library(lubridate)
 library(leafpop)
 
 
@@ -29,11 +30,10 @@ ecdc_country_agg <- ecdc %>%
   gather('Type', 'Number', -c(DateRep, `Countries and territories`)) %>%
   #filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
   arrange(DateRep)
-  
+
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
 all_tables <- readRDS('all_tables_current.rds')
-
 #Get the latest table containing info on all counties
 latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int
@@ -61,9 +61,9 @@ county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.
 
 #Create the plots for county cumulatie
 county_cumulative_cases<-map(cs2$NAME_TAG,
-                            ~ggplot(county_total_date 
-                                    %>% filter(County==as.character(.x)),
-                                    aes(x=date,y=`Number of Cases`,group=County))+
+                             ~ggplot(county_total_date 
+                                     %>% filter(County==as.character(.x)),
+                                     aes(x=date,y=`Number of Cases`,group=County))+
                                geom_point()+geom_line()+
                                ggtitle(label = paste0("Total cases in ",.x, " at ",county_total_date$date[[1]],": ",
                                                       county_total_date$`Number of Cases`[county_total_date$date==county_total_date$date[[1]] & county_total_date$County==.x]))+
@@ -80,227 +80,403 @@ trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awes
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-    
-    #################################SUMMARY TAB#################################
-    #Worldwide cumulative plot in Summary tab
-    output$cumSumWorldPlot <- renderPlotly({
-        ecdc_world_plot <- ecdc_world_agg %>%
-            filter(Type == 'Total Cases' | Type == 'Total Deaths')
-            
-        plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~Type) %>% 
-            layout(title = 'Worldwide number of cumulative cases/deaths',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals',
-                                  type = if(input$logY) "log" else "linear"))
-        
-    })
-    
-    #Worldwide new daily plot in Summary tab
-    output$newSumWorldPlot <- renderPlotly({
-        ecdc_world_plot <- ecdc_world_agg %>%
-            filter(Type == 'New_Cases' | Type == 'New_Deaths')
-            
-        plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~Type) %>% 
-            layout(title = 'Worldwide number of new daily cases/deaths',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals',
-                                  type = if(input$logY) "log" else "linear"))
-        
-    })
-    
-    #Ireland cumulative plot in Summary tab
-    output$cumSumIrelandPlot <- renderPlotly({
-        ecdc_ire_agg = ecdc_country_agg %>%
-            filter(`Countries and territories` == 'Ireland') %>%
-            filter(Type == 'Total Cases' | Type == 'Total Deaths')
-            
-        plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~Type) %>% 
-            layout(title = 'Number of cumulative cases/deaths for Ireland',
-                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
-                    yaxis = list (title = 'Number of individuals',
-                                  type = if(input$logY) "log" else "linear"),
-                   dragmode='pan') %>%
-            plotly::config(scrollZoom = TRUE)
-    })
-    
-     #Ireland new daily plot in Summary tab
-    output$newSumIrelandPlot <- renderPlotly({
-        ecdc_ire_agg = ecdc_country_agg %>%
-            filter(`Countries and territories` == 'Ireland') %>%
-            filter(Type == 'New Cases' | Type == 'New Deaths')
-            
-        plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~Type) %>% 
-            layout(title = 'Number of new daily cases/deaths for Ireland',
-                    xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
-                    yaxis = list (title = 'Number of individuals',
-                                  type = if(input$logY) "log" else "linear"),
-                   dragmode='pan') %>%
-            plotly::config(scrollZoom = TRUE)
-    })
-    
-    #Ireland cases infobox in summary tab
-    output$ireCasesBox <- renderInfoBox({
-        
-        #This is an old data source now using summary stats file
-        # ire_cases <- ecdc %>% 
-              # filter(`Countries and territories` == 'Ireland') %>%
-              # summarize(Cases = sum(Cases))
   
-        infoBox(
-            HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
-            format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
-            color='black', 
-            fill = FALSE)
+  #################################SUMMARY TAB#################################
+  #Worldwide cumulative plot in Summary tab
+  output$cumSumWorldPlot <- renderPlotly({
+    ecdc_world_plot <- ecdc_world_agg %>%
+      filter(Type == 'Total Cases' | Type == 'Total Deaths')
+    
+    plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+            mode = 'lines+markers', color = ~Type) %>% 
+      layout(title = 'Worldwide number of cumulative cases/deaths',
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
+             yaxis = list (title = 'Number of individuals',
+                           type = if(input$logY) "log" else "linear"))
+    
+  })
+  
+  #Worldwide new daily plot in Summary tab
+  output$newSumWorldPlot <- renderPlotly({
+    ecdc_world_plot <- ecdc_world_agg %>%
+      filter(Type == 'New_Cases' | Type == 'New_Deaths')
+    
+    plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+            mode = 'lines+markers', color = ~Type) %>% 
+      layout(title = 'Worldwide number of new daily cases/deaths',
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
+             yaxis = list (title = 'Number of individuals',
+                           type = if(input$logY) "log" else "linear"))
+    
+  })
+  
+  #Ireland cumulative plot in Summary tab
+  output$cumSumIrelandPlot <- renderPlotly({
+    ecdc_ire_agg = ecdc_country_agg %>%
+      filter(`Countries and territories` == 'Ireland') %>%
+      filter(Type == 'Total Cases' | Type == 'Total Deaths')
+    
+    plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+            mode = 'lines+markers', color = ~Type) %>% 
+      layout(title = 'Number of cumulative cases/deaths for Ireland',
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
+             yaxis = list (title = 'Number of individuals',
+                           type = if(input$logY) "log" else "linear"),
+             dragmode='pan') %>%
+      plotly::config(scrollZoom = TRUE)
+  })
+  
+  #Ireland new daily plot in Summary tab
+  output$newSumIrelandPlot <- renderPlotly({
+    ecdc_ire_agg = ecdc_country_agg %>%
+      filter(`Countries and territories` == 'Ireland') %>%
+      filter(Type == 'New Cases' | Type == 'New Deaths')
+    
+    plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+            mode = 'lines+markers', color = ~Type) %>% 
+      layout(title = 'Number of new daily cases/deaths for Ireland',
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
+             yaxis = list (title = 'Number of individuals',
+                           type = if(input$logY) "log" else "linear"),
+             dragmode='pan') %>%
+      plotly::config(scrollZoom = TRUE)
+  })
+  
+  #Ireland cases infobox in summary tab
+  output$ireCasesBox <- renderInfoBox({
+    
+    #This is an old data source now using summary stats file
+    # ire_cases <- ecdc %>% 
+    # filter(`Countries and territories` == 'Ireland') %>%
+    # summarize(Cases = sum(Cases))
+    
+    infoBox(
+      HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
+      format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
+      color='black', 
+      fill = FALSE)
+  })
+  
+  #Ireland deaths infobox in summary tab
+  output$ireDeathsBox <- renderInfoBox({
+    #This is an old data source now using summary stats file
+    # ire_deaths <- ecdc %>% 
+    # filter(`Countries and territories` == 'Ireland') %>%
+    # summarize(Deaths = sum(Deaths))
+    
+    infoBox(
+      HTML(paste0("Total Deaths",br()," in Ireland:")), 
+      format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 
+      color='red', 
+      fill = FALSE)
+  })
+  
+  #Ireland recovered infobox in summary tab
+  output$ireRecoverBox <- renderInfoBox({
+    infoBox(
+      HTML(paste0("Total Recovered",br()," in Ireland:")), 
+      format(sum_stats$Recovered[sum_stats$Region == 'ireland'], big.mark=','), 
+      color='green', 
+      fill = FALSE)
+  })
+  
+  #Worldwide cases infobox in summary tab
+  output$wCasesBox <- renderInfoBox({
+    infoBox(
+      HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
+      format(sum_stats$Cases[sum_stats$Region == 'world'], , big.mark=','), 
+      color='black', 
+      fill = FALSE)
+  })
+  
+  #Worldwide deaths infobox in summary tab
+  output$wDeathsBox <- renderInfoBox({      
+    infoBox(
+      HTML(paste0("Total Deaths",br()," Worldwide:")), 
+      format(sum_stats$Deaths[sum_stats$Region == 'world'], , big.mark=','), 
+      color='red', 
+      fill = FALSE)
+  })
+  
+  #Worldwide recovered infobox in summary tab
+  output$wRecoverBox <- renderInfoBox({
+    infoBox(
+      HTML(paste0("Total Recovered",br()," Worldwide:")), 
+      format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 
+      color='green', 
+      fill = FALSE)
+  }) 
+  
+  #################################COUNTIES TAB#################################
+  #Counties table in Counties tab
+  output$countyCasesTable <- DT::renderDataTable({
+    DT::datatable(caption = paste0("Updated: ",all_tables[[1]]$published),
+                  latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
+                  options = list(
+                    pageLength = 20,
+                    scrollY='calc((100vh - 290px)/1.0)',
+                    searching = FALSE,
+                    paging=FALSE
+                  ),
+                  rownames=FALSE
+    )
+  })  
+  
+  #Map in Counties tab
+  output$covidMap <- renderLeaflet({
+    leaflet(cs2) %>% 
+      addProviderTiles(providers$Stamen.TonerLite,
+                       options = providerTileOptions(noWrap = TRUE)
+      ) %>%
+      setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
+      addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
+                 icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
+      addPolygons(stroke = FALSE, 
+                  smoothFactor = 0.3, 
+                  fillOpacity = 0.7,
+                  fillColor = ~pal2(log2(Cases)),
+                  label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
+      addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
+                labFormat = labelFormat(transform = function(x) round(2^x)))
+  })
+  
+  #################################INTERNATIONAL TRENDS TAB#################################
+  #Input selection tool in Trends tab
+  output$choose_country <- renderUI({
+    selectInput("co", 
+                "Select Countries", 
+                unique(ecdc$`Countries and territories`),
+                selected = 'Ireland',
+                multiple=TRUE)
+  })
+  
+  #Country comparison table in trends tab
+  output$compareTable <- DT::renderDataTable({
+    # Extract out the data
+    ecdc_table = ecdc_country_agg %>% 
+      filter(`Countries and territories` %in% input$co) %>%
+      pivot_wider(names_from = Type, values_from = Number) %>%
+      group_by(`Countries and territories`) %>%
+      summarise(`Total Cases` = sum(`New Cases`), `Total Deaths` = sum(`New Deaths`))
+    
+    DT::datatable(
+      ecdc_table,
+      caption='Comparison of selected countries',
+      options = list(
+        pageLength = 20,
+        scrollY='calc((100vh - 290px)/1.0)',
+        searching = FALSE,
+        paging=FALSE
+      ),
+      rownames=FALSE
+    )
+  })
+  
+  #Cumulative plot in Trends tab
+  output$covidCumPlot <- renderPlotly({
+    # Extract out the data
+    ecdc_plot = ecdc_country_agg %>% 
+      filter(`Countries and territories` %in% input$co) %>%
+      filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
+      unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+    
+    plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+            mode = 'lines+markers', color = ~CountryType) %>% 
+      layout(title = 'Number of cumulative cases/deaths for selected countries',
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
+             yaxis = list (title = 'Number of individuals',
+                           type = if(input$logY) "log" else "linear"))        
+  })
+  
+  #New plot in Trends tab
+  output$covidNewPlot <- renderPlotly({
+    # Extract out the data
+    ecdc_plot = ecdc_country_agg %>% 
+      filter(`Countries and territories` %in% input$co) %>%
+      filter(Type == 'New Cases' | Type == 'New Deaths') %>%
+      unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+    
+    plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+            mode = 'lines+markers', color = ~CountryType) %>% 
+      layout(title = 'Number of new cases/deaths for selected countries',
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
+             yaxis = list (title = 'Number of individuals',
+                           type = if(input$logY) "log" else "linear"))        
+  })
+    
+    #age in hospital plot
+    output$ageHospitalised <- renderPlotly({
+      age.hosp <- (all_tables[[1]]$age_hospitalised)
+      x<-as.character(age.hosp$`Hospitalised Age`)
+      y<-as.numeric(age.hosp$`Number of Cases`)
+      text<- paste0(age.hosp$`Number of Cases`, ' patients')
+      data <- data.frame(x, y, text)
+      data$x <- factor(data$x, levels = as.character(age.hosp$`Hospitalised Age`))
+      
+      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
+                     marker = list(color = 'rgb(158,202,225)',
+                                   line = list(color = 'rgb(8,48,107)',
+                                               width = 1.5)))
+      fig <- fig %>% layout(title = "Number of Patients Hospitalised by Age (Ireland)",
+                            xaxis = list(title = "Age Range"),
+                            yaxis = list(title = "Count"))
+      fig
+      
     })
     
-    #Ireland deaths infobox in summary tab
-    output$ireDeathsBox <- renderInfoBox({
-        #This is an old data source now using summary stats file
-        # ire_deaths <- ecdc %>% 
-              # filter(`Countries and territories` == 'Ireland') %>%
-              # summarize(Deaths = sum(Deaths))
-              
-        infoBox(
-            HTML(paste0("Total Deaths",br()," in Ireland:")), 
-            format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 
-            color='red', 
-            fill = FALSE)
+    
+    #age in hospital plot
+    output$ageCases <- renderPlotly({
+      
+      age <- (all_tables[[1]]$age)
+      x<-as.character(age$Age)
+      x <- x[-length(x)]
+      x <- x[-length(x)]
+      
+      y<-as.numeric(age$`Number of Cases`)
+      y <- y[-length(y)]
+      y <- y[-length(y)]
+      
+      text<- paste0(y, ' patients')
+
+      data <- data.frame(x, y, text)
+      data$x <- factor(data$x, levels = as.character(x))
+      
+      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
+                     marker = list(color = 'rgb(158,202,225)',
+                                   line = list(color = 'rgb(8,48,107)',
+                                               width = 1.5)))
+      fig <- fig %>% layout(title = "Number of Positive Cases by Age (Ireland)",
+                            xaxis = list(title = "Age Range"),
+                            yaxis = list(title = "Count"))
+      fig
+
     })
     
-    #Ireland recovered infobox in summary tab
-    output$ireRecoverBox <- renderInfoBox({
-        infoBox(
-            HTML(paste0("Total Recovered",br()," in Ireland:")), 
-            format(sum_stats$Recovered[sum_stats$Region == 'ireland'], big.mark=','), 
-            color='green', 
-            fill = FALSE)
+    #gender of cases plot
+    output$genderCases <- renderPlotly({
+      
+      gender <- all_tables[[1]]$gender
+      x<-as.character(gender$Gender)
+      x <- x[-length(x)]
+      
+      y<-as.numeric(gender$`Number of Cases`)
+      y <- y[-length(y)]
+      
+      
+      text<- paste0(y, ' patients')
+      
+      
+      data <- data.frame(x, y, text)
+      data$x <- factor(data$x, levels = x)
+      
+      
+      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
+                     marker = list(color = 'rgb(158,202,225)',
+                                   line = list(color = 'rgb(8,48,107)',
+                                               width = 1.5)))
+      fig <- fig %>% layout(title = "Gender of Patients (Ireland)",
+                            xaxis = list(title = "Gender"),
+                            yaxis = list(title = "Count"))
+      fig
+      
     })
     
-    #Worldwide cases infobox in summary tab
-    output$wCasesBox <- renderInfoBox({
-        infoBox(
-            HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
-            format(sum_stats$Cases[sum_stats$Region == 'world'], , big.mark=','), 
-            color='black', 
-            fill = FALSE)
-    })
     
-    #Worldwide deaths infobox in summary tab
-    output$wDeathsBox <- renderInfoBox({      
-        infoBox(
-            HTML(paste0("Total Deaths",br()," Worldwide:")), 
-            format(sum_stats$Deaths[sum_stats$Region == 'world'], , big.mark=','), 
-            color='red', 
-            fill = FALSE)
-    })
     
-    #Worldwide recovered infobox in summary tab
-    output$wRecoverBox <- renderInfoBox({
-        infoBox(
-            HTML(paste0("Total Recovered",br()," Worldwide:")), 
-            format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 
-            color='green', 
-            fill = FALSE)
-    }) 
     
-    #################################COUNTIES TAB#################################
-    #Counties table in Counties tab
-    output$countyCasesTable <- DT::renderDataTable({
-        DT::datatable(caption = paste0("Updated: ",all_tables[[1]]$published),
-            latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
-            options = list(
-                pageLength = 20,
-                scrollY='calc((100vh - 290px)/1.0)',
-                searching = FALSE,
-                paging=FALSE
-            ),
-            rownames=FALSE
-        )
+    #gender of cases plot
+    output$helthcarePatients <- renderPlotly({
+      helthcare.workers <- all_tables[[1]]$totals %>% 
+        filter(Totals == 'Total number of healthcare workers') %>%
+        select('Number of Cases') %>%
+        as.numeric()
+      
+      total.cases <- all_tables[[1]]$totals %>% 
+        filter(Totals == 'Total number of cases') %>%
+        select('Number of Cases') %>%
+        as.numeric()
+            x<- c('Helthcare Workers', 'Total Cases')
+
+      y<-c(helthcare.workers, total.cases)
+      text<- paste0(y, ' patients')
+
+      data <- data.frame(x, y, text)
+      data$x <- factor(data$x, levels = x)
+      
+      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
+                     marker = list(color = 'rgb(158,202,225)',
+                                   line = list(color = 'rgb(8,48,107)',
+                                               width = 1.5)))
+      fig <- fig %>% layout(title = "Proportion of Health Care Workers Tested Positive",
+                            xaxis = list(title = "Category"),
+                            yaxis = list(title = "Count"))
+      fig
+      
     })  
     
-    #Map in Counties tab
-    output$covidMap <- renderLeaflet({
-        leaflet(cs2) %>% 
-            addProviderTiles(providers$Stamen.TonerLite,
-                    options = providerTileOptions(noWrap = TRUE)
-                ) %>%
-            setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
-            addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
-                       icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
-            addPolygons(stroke = FALSE, 
-                smoothFactor = 0.3, 
-                fillOpacity = 0.7,
-                fillColor = ~pal2(log2(Cases)),
-                label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
-            addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
-            labFormat = labelFormat(transform = function(x) round(2^x)))
-    })
     
-    #################################INTERNATIONAL TRENDS TAB#################################
-    #Input selection tool in Trends tab
-    output$choose_country <- renderUI({
-        selectInput("co", 
-            "Select Countries", 
-            unique(ecdc$`Countries and territories`),
-            selected = 'Ireland',
-            multiple=TRUE)
-    })
     
-    #Country comparison table in trends tab
-    output$compareTable <- DT::renderDataTable({
-        # Extract out the data
-        ecdc_table = ecdc_country_agg %>% 
-            filter(`Countries and territories` %in% input$co) %>%
-            pivot_wider(names_from = Type, values_from = Number) %>%
-            group_by(`Countries and territories`) %>%
-            summarise(`Total Cases` = sum(`New Cases`), `Total Deaths` = sum(`New Deaths`))
-            
-        DT::datatable(
-            ecdc_table,
-            caption='Comparison of selected countries',
-            options = list(
-                pageLength = 20,
-                scrollY='calc((100vh - 290px)/1.0)',
-                searching = FALSE,
-                paging=FALSE
-            ),
-            rownames=FALSE
-        )
-    })
+    output$howContracted <- renderPlotly({
+      how.transmitted <- all_tables[[1]]$transmission
+      
+      x<-as.character(how.transmitted$Transmission)
+      y<-as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases))))
+      
+      total.cases <- all_tables[[1]]$totals %>% 
+        filter(Totals == 'Total number of cases') %>%
+        select('Number of Cases') %>%
+        as.numeric()
+      y<-(total.cases/100)*y
 
-    #Cumulative plot in Trends tab
-    output$covidCumPlot <- renderPlotly({
-        # Extract out the data
-        ecdc_plot = ecdc_country_agg %>% 
-            filter(`Countries and territories` %in% input$co) %>%
-            filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
-            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
-            
-        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~CountryType) %>% 
-                layout(title = 'Number of cumulative cases/deaths for selected countries',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals',
-                                  type = if(input$logY) "log" else "linear"))        
-    })
+      text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
+      data <- data.frame(x, y, text)
+      data$x <- factor(data$x, levels = x)
+      fig <- plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
+                     marker = list(color = 'rgb(158,202,225)',
+                                   line = list(color = 'rgb(8,48,107)',
+                                               width = 1.5)))
+      fig <- fig %>% layout(title = "How COVID-19 Contracted (Ireland)",
+                            xaxis = list(title = "Age Range"),
+                            yaxis = list(title = "Transmission Type"))
+      fig
+      
+    }) 
+   
     
-    #New plot in Trends tab
-    output$covidNewPlot <- renderPlotly({
-        # Extract out the data
-        ecdc_plot = ecdc_country_agg %>% 
-            filter(`Countries and territories` %in% input$co) %>%
-            filter(Type == 'New Cases' | Type == 'New Deaths') %>%
-            unite(`Countries and territories`, Type, col='CountryType', sep=' ')
-            
-        plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
-                mode = 'lines+markers', color = ~CountryType) %>% 
-                layout(title = 'Number of new cases/deaths for selected countries',
-                   xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
-                   yaxis = list (title = 'Number of individuals',
-                                 type = if(input$logY) "log" else "linear"))        
-    })
+    
+    
+    output$icuProportion <- renderPlotly({
+      dates <- all_tables %>% map('published') %>% lubridate::dmy()
+      hosp.data <- all_tables %>% map('totals')
+      
+      icu.pats <- c()
+      for (df in hosp.data){
+        icu.pats <- c(icu.pats, (df %>% 
+                                   filter(Totals == 'Total number admitted to ICU') %>% 
+                                   select('Number of Cases') %>% 
+                                   unlist() %>% 
+                                   as.numeric()) )
+      }
+      
+      hosp.pats <- c()
+      for (df in hosp.data){
+        hosp.pats <- c(hosp.pats, (df %>% 
+                                     filter(Totals == 'Total number hospitalised') %>% 
+                                     select('Number of Cases') %>% 
+                                     unlist() %>% 
+                                     as.numeric()) )
+      }
+
+      data <- tibble(dates, icu.pats, hosp.pats)
+      fig <- plot_ly(x = ~ data$dates) %>% 
+        add_lines(y = ~ data$hosp.pats, text = paste(data$hosp.pats, " patients in hospital"), name = "Hospitalised Patients") %>%
+        add_lines(y = ~ data$icu.pats, text = paste(data$icu.pats, " patients in ICU"), name = "ICU Patients") 
+      
+      fig <- fig %>% layout(title = 'Hospitalised Patients', yaxis = list(title = "Count"), xaxis = list(title = "Date"))
+      fig
+    }) 
+    
+    
+    
 })
