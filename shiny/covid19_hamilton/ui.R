@@ -114,7 +114,7 @@ body <- dashboardBody(
                     box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
                   ),
                   fluidRow(
-                    box(plotlyOutput('ageCases'), width = '40%',)
+                    box(plotlyOutput('ageCases'), width = '40%')
                   ),
                   fluidRow(
                     box(plotlyOutput('howContracted')),

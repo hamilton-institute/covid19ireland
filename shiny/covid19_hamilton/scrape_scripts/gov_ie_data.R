@@ -1,3 +1,4 @@
+
 library(tidyverse)
 library(xml2)
 library(rvest)
@@ -55,13 +56,13 @@ all_tables <- corona_urls %>%
     # Travel'table
     travel <- 
       tryCatch(
-      all_tables[[
-      max(which(str_detect(all_tables_names, "Travel|travel") | 
-                  all_tables_rows == 4))
-      ]] %>% 
-    setNames(c("Travel", "Number of Cases", "% Total")), 
-    error = function(e) e)
-  
+        all_tables[[
+          max(which(str_detect(all_tables_names, "Travel|travel") | 
+                      all_tables_rows == 4))
+          ]] %>% 
+          setNames(c("Travel", "Number of Cases", "% Total")), 
+        error = function(e) e)
+    
     if("travel" %in% class(travel)){
       totals <-  NULL
     }
@@ -82,92 +83,97 @@ all_tables <- corona_urls %>%
           ]] %>% 
           select(1:3) %>% 
           setNames(c("Hospitalised Age",
-                     "Number of Cases", "% Total"))  %>% 
-          slice(-1), 
+                     "Number of Cases", "% Total")),  
         error = function(e) e )
+    
+    if(str_detect(age_hospitalised$`Hospitalised Age`[1], "Age")){
+      age_hospitalised <- age_hospitalised %>% slice(-1)
+    }
     
     if("error" %in% class(age_hospitalised)){
       age_hospitalised <-  NULL
     }
     
-        # Age table
-  age <- all_tables[[
-    min(which(str_detect(all_tables_names, "Age|age") | 
-                all_tables_rows %in% c(10, 11, 12))) 
-    ]] %>% 
-    select(1:3) %>% 
-    setNames(c("Age", "Number of Cases", "% Total"))  %>% 
-    slice(-1)
-  
-  eqs <- all.equal(age, age_hospitalised)
-  if(length(eqs) == 1){
-    age_hospitalised <- NULL
-  }
-  
-  totals <- 
-    tryCatch(
-    all_tables[[
-    which(str_detect(all_tables_names, "Total|total"))
-    ]] %>% 
-    select(1:3) %>% 
-    setNames(c("Totals", "Number of Cases", "% Total")), 
-    error = function(e) e )
-  
-  if("error" %in% class(totals)){
-    totals <-  NULL
-  }
+    # Age table
+    age <- all_tables[[
+      min(which(str_detect(all_tables_names, "Age|age") | 
+                  all_tables_rows %in% c(10, 11, 12))) 
+      ]] %>% 
+      select(1:3) %>% 
+      setNames(c("Age", "Number of Cases", "% Total"))  %>% 
+      slice(-1)
     
-  
-  transmission <- 
-    tryCatch(
-      all_tables[[
-    which(str_detect(all_tables_names, "Community|community"))
-    ]] %>% 
-    setNames(c("Transmission", "Cases")), 
-    error = function(e) e )
-  
-  if("error" %in% class(transmission)){
-    transmission <-  NULL
-  }
-  
-  
-  gender <- 
-    tryCatch(
-      all_tables[[
-        which(str_detect(all_tables_names, "Gender|gender"))
-        ]] %>% 
-        select(1:3) %>% 
-        setNames(c("Gender", "Number of Cases", "% Total"))  %>% 
-        slice(-1), 
-      error = function(e) e )
-  
-  if("error" %in% class(gender)){
-    gender <-  NULL
-  }
-  
-  
-  text <- paste0(
-    "https://www.gov.ie", .x) %>% 
-    xml2::read_html() %>% 
-    html_nodes("h1") %>% 
-    html_text() 
-  
-  published <- str_extract(
-    text,
-    pattern = "[0-9]{2}[ ][:alpha:]{5,9}[ ]2020")
-  
-  list(counties = counties, 
-       travel = travel, 
-       age = age, 
-       age_hospitalised = age_hospitalised, 
-       gender = gender, 
-       transmission = transmission, 
-       published = published, 
-       totals = totals
-  )
+    eqs <- all.equal(age, age_hospitalised)
+    if(length(eqs) == 1){
+      age_hospitalised <- NULL
+    }
+    
+    totals <- 
+      tryCatch(
+        all_tables[[
+          which(str_detect(all_tables_names, "Total|total|Source"))
+          ]] %>% 
+          select(1:3) %>% 
+          setNames(c("Totals", "Number of Cases", "% Total")), 
+        error = function(e) e )
+    
+    
+    if(str_detect(totals$Totals[1], "Source")){
+      totals <- totals %>% slice(-1)
+    }
+    
+    if("error" %in% class(totals)){
+      totals <-  NULL
+    }
+    
+    
+    transmission <- 
+      tryCatch(
+        all_tables[[
+          which(str_detect(all_tables_names, "Community|community"))
+          ]] %>% 
+          setNames(c("Transmission", "Cases")), 
+        error = function(e) e )
+    
+    if("error" %in% class(transmission)){
+      transmission <-  NULL
+    }
+    
+    
+    gender <- 
+      tryCatch(
+        all_tables[[
+          which(str_detect(all_tables_names, "Gender|gender"))
+          ]] %>% 
+          select(1:3) %>% 
+          setNames(c("Gender", "Number of Cases", "% Total"))  %>% 
+          slice(-1), 
+        error = function(e) e )
+    
+    if("error" %in% class(gender)){
+      gender <-  NULL
+    }
+    
+    
+    text <- paste0(
+      "https://www.gov.ie", .x) %>% 
+      xml2::read_html() %>% 
+      html_nodes("h1") %>% 
+      html_text() 
+    
+    published <- str_extract(
+      text,
+      pattern = "[0-9]{2}[ ][:alpha:]{5,9}[ ]2020")
+    
+    list(counties = counties, 
+         travel = travel, 
+         age = age, 
+         age_hospitalised = age_hospitalised, 
+         gender = gender, 
+         transmission = transmission, 
+         published = published, 
+         totals = totals
+    )
   })
 
-#saveRDS(all_tables, "data/scraped/all_tables.rds")
 saveRDS(all_tables, "all_tables_current.rds")
-
-
