@@ -82,9 +82,12 @@ all_tables <- corona_urls %>%
           ]] %>% 
           select(1:3) %>% 
           setNames(c("Hospitalised Age",
-                     "Number of Cases", "% Total"))  %>% 
-          slice(-1), 
+                     "Number of Cases", "% Total")),  
         error = function(e) e )
+    
+    if(str_detect(age_hospitalised$`Hospitalised Age`[1], "Age")){
+      age_hospitalised <- age_hospitalised %>% slice(-1)
+    }
     
     if("error" %in% class(age_hospitalised)){
       age_hospitalised <-  NULL
@@ -107,11 +110,16 @@ all_tables <- corona_urls %>%
   totals <- 
     tryCatch(
     all_tables[[
-    which(str_detect(all_tables_names, "Total|total"))
+    which(str_detect(all_tables_names, "Total|total|Source"))
     ]] %>% 
     select(1:3) %>% 
     setNames(c("Totals", "Number of Cases", "% Total")), 
     error = function(e) e )
+  
+  
+  if(str_detect(totals$Totals[1], "Source")){
+    totals <- totals %>% slice(-1)
+  }
   
   if("error" %in% class(totals)){
     totals <-  NULL
@@ -167,12 +175,14 @@ all_tables <- corona_urls %>%
   )
   })
 
+all_tables
+
 saveRDS(all_tables, "data/scraped/all_tables.rds")
 saveRDS(all_tables, "shiny/covid19_hamilton/all_tables_current.rds")
 
 all_tables <- read_rds("data/scraped/all_tables.rds")
 
-```
+
 nrows <- all_tables %>% map("travel") %>% map_dbl(nrow)
 all_tables %>% 
   map("travel") %>% 
@@ -182,7 +192,9 @@ all_tables %>%
       rep(all_tables %>% map("published") %>% unlist(), 
           nrows)) %>% 
   write.table(file = "data/scraped/travel.txt", sep = "\t")
-```
 
 
+
+
+list %>% map("name_of_element")
 
