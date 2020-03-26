@@ -7,7 +7,7 @@ library(shinydashboard)
 library(rgdal)
 library(DT)
 library(lubridate)
-library(leafpop)
+#library(leafpop)
 
 
 
@@ -440,7 +440,7 @@ shinyServer(function(input, output) {
       y<-(total.cases/100)*y
 
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
-      x <- c('Community transmission','Contact w. confirmed case',
+      x <- c('Community transmission','Contact w. known case',
              'Travel Abroad','Under investigation') 
 
       data <- data.frame(x, y, text)
