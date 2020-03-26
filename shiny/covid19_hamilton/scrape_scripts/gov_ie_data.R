@@ -153,6 +153,7 @@ all_tables <- corona_urls %>%
       gender <-  NULL
     }
     
+
     text <- paste0(
       "https://www.gov.ie", .x) %>%
       xml2::read_html() %>% 
@@ -162,6 +163,7 @@ all_tables <- corona_urls %>%
     
     published <- str_extract(text[1], pattern = "Published: [0-9]{2}[ ][:alpha:]{5,9}[ ]2020")
     published <- str_remove(published, "Published: ")  
+
     
     list(counties = counties, 
          travel = travel, 
@@ -173,5 +175,6 @@ all_tables <- corona_urls %>%
          totals = totals
     )
   })
+
 
 saveRDS(all_tables, "all_tables_current.rds")
