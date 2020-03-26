@@ -170,4 +170,19 @@ all_tables <- corona_urls %>%
 saveRDS(all_tables, "data/scraped/all_tables.rds")
 saveRDS(all_tables, "shiny/covid19_hamilton/all_tables_current.rds")
 
+all_tables <- read_rds("data/scraped/all_tables.rds")
+
+```
+nrows <- all_tables %>% map("travel") %>% map_dbl(nrow)
+all_tables %>% 
+  map("travel") %>% 
+  bind_rows() %>% 
+  mutate(
+    published =
+      rep(all_tables %>% map("published") %>% unlist(), 
+          nrows)) %>% 
+  write.table(file = "data/scraped/travel.txt", sep = "\t")
+```
+
+
 
