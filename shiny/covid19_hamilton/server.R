@@ -371,7 +371,7 @@ shinyServer(function(input, output) {
       
       
       g<-ggplot(data = data, aes(Gender, Precentage, fill=Gender))+
-        geom_bar(stat = 'identity',width = 0.6, position = position_dodge()) +
+        geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
         theme_minimal() +
         labs(y="%", x = "") +
         ggtitle('Gender Breakdown') + 
@@ -409,7 +409,7 @@ shinyServer(function(input, output) {
       
       
       g <- ggplot(data = data, aes(x, y))+
-        geom_bar(stat = 'identity', fill = 'deepskyblue2', alpha = 0.7) +
+        geom_bar(stat = 'identity', fill = 'deepskyblue2', alpha = 0.7,width = 0.7) +
         theme_minimal() +
         labs(y="Count", x = " ") +
         ggtitle('Number of Healthcare Workers Tested Positive') +
