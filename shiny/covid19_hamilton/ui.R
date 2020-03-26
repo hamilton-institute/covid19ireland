@@ -28,7 +28,7 @@ sidebar <- dashboardSidebar(
     menuItem("By County", tabName = "county", icon = icon("map")),
     menuItem("International Trends", icon = icon("chart-line"), tabName = "trends"),
     menuItem("Hospitalisation Stats", tabName = "patientprofile
-             ", icon = icon("users")),
+             ", icon = icon("hospital")),
     checkboxInput("logY", "Show Y-axis log scaled", FALSE)
   )
 )
