@@ -118,7 +118,7 @@ ecdc_plot2 = ecdc_plot %>%
 
 p2 = ggplot(ecdc_plot2, aes(cum_sum_cases, cum_sum_death, colour = Country, size = cum_sum_death)) +
   geom_text(aes(x = 20000, y = 1000, label = day_month),  size = 50, col = 'grey') +
-  #geom_point(alpha = 0.7) +
+  geom_point(alpha = 0.7) +
   geom_label(aes(label = Country)) +
   #scale_colour_manual(aes(values = Colours)) +
   scale_size(range = c(2, 12)) +
