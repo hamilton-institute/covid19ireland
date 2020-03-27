@@ -146,11 +146,6 @@ shinyServer(function(input, output) {
   #Ireland cases infobox in summary tab
   output$ireCasesBox <- renderInfoBox({
     
-    #This is an old data source now using summary stats file
-    # ire_cases <- ecdc %>% 
-    # filter(`Countries and territories` == 'Ireland') %>%
-    # summarize(Cases = sum(Cases))
-    
     infoBox(
       HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
       format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
@@ -160,11 +155,7 @@ shinyServer(function(input, output) {
   
   #Ireland deaths infobox in summary tab
   output$ireDeathsBox <- renderInfoBox({
-    #This is an old data source now using summary stats file
-    # ire_deaths <- ecdc %>% 
-    # filter(`Countries and territories` == 'Ireland') %>%
-    # summarize(Deaths = sum(Deaths))
-    
+
     infoBox(
       HTML(paste0("Total Deaths",br()," in Ireland:")), 
       format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 
@@ -246,7 +237,7 @@ shinyServer(function(input, output) {
   output$choose_country <- renderUI({
     selectInput("co", 
                 "Select Countries", 
-                unique(ecdc$`Countries and territories`),
+                unique(ecdc$countriesAndTerritories),
                 selected = 'Ireland',
                 multiple=TRUE)
   })
@@ -255,9 +246,9 @@ shinyServer(function(input, output) {
   output$compareTable <- DT::renderDataTable({
     # Extract out the data
     ecdc_table = ecdc_country_agg %>% 
-      filter(`Countries and territories` %in% input$co) %>%
+      filter(countriesAndTerritories %in% input$co) %>%
       pivot_wider(names_from = Type, values_from = Number) %>%
-      group_by(`Countries and territories`) %>%
+      group_by(countriesAndTerritories) %>%
       summarise(`Total Cases` = sum(`New Cases`), `Total Deaths` = sum(`New Deaths`))
     
     DT::datatable(
@@ -279,7 +270,7 @@ shinyServer(function(input, output) {
     ecdc_plot = ecdc_country_agg %>% 
       filter(countriesAndTerritories %in% input$co) %>%
       filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
-      unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+      unite(countriesAndTerritories, Type, col='CountryType', sep=' ')
     
     plot_ly(ecdc_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~CountryType) %>% 
@@ -293,7 +284,7 @@ shinyServer(function(input, output) {
   output$covidNewPlot <- renderPlotly({
     # Extract out the data
     ecdc_plot = ecdc_country_agg %>% 
-      filter(`Countries and territories` %in% input$co) %>%
+      filter(countriesAndTerritories %in% input$co) %>%
       filter(Type == 'New Cases' | Type == 'New Deaths') %>%
       unite(countriesAndTerritories, Type, col='CountryType', sep=' ')
     
