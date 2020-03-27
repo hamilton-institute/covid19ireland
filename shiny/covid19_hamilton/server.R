@@ -15,22 +15,22 @@ library(leafpop)
 ecdc <- readRDS('ECDC_data_current.rds')
 #For summary of world plot
 ecdc_world_agg <- ecdc %>%
-  select(-c(Day, Month, Year, `Countries and territories`, GeoId)) %>%
-  group_by(DateRep) %>% 
-  summarise(New_Cases = sum(Cases), New_Deaths = sum(Deaths)) %>% 
+  select(-c(day, month, year, countriesAndTerritories, geoId)) %>%
+  group_by(dateRep) %>% 
+  summarise(New_Cases = sum(cases), New_Deaths = sum(deaths)) %>% 
   mutate(`Total Cases` = cumsum(New_Cases), `Total Deaths` = cumsum(New_Deaths)) %>%
-  gather('Type', 'Number', -DateRep) %>%
-  arrange(DateRep)
+  gather('Type', 'Number', -dateRep) %>%
+  arrange(dateRep)
 
 #For Trends tab plots
 ecdc_country_agg <- ecdc %>%
-  select(-c(Day, Month, Year, GeoId)) %>%
-  group_by(`Countries and territories`, DateRep) %>% 
-  summarise(`New Cases` = sum(Cases), `New Deaths` = sum(Deaths)) %>% 
+  select(-c(day, month, year, geoId)) %>%
+  group_by(countriesAndTerritories, dateRep) %>% 
+  summarise(`New Cases` = sum(cases), `New Deaths` = sum(deaths)) %>% 
   mutate(`Total Cases` = cumsum(`New Cases`), `Total Deaths` = cumsum(`New Deaths`)) %>%
-  gather('Type', 'Number', -c(DateRep, `Countries and territories`)) %>%
+  gather('Type', 'Number', -c(dateRep, countriesAndTerritories)) %>%
   #filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
-  arrange(DateRep)
+  arrange(dateRep)
 
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
@@ -88,10 +88,10 @@ shinyServer(function(input, output) {
     ecdc_world_plot <- ecdc_world_agg %>%
       filter(Type == 'Total Cases' | Type == 'Total Deaths')
     
-    plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+    plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~Type) %>% 
       layout(title = 'Worldwide number of cumulative cases/deaths',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(dateRep))),
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"))
     
@@ -102,10 +102,10 @@ shinyServer(function(input, output) {
     ecdc_world_plot <- ecdc_world_agg %>%
       filter(Type == 'New_Cases' | Type == 'New_Deaths')
     
-    plot_ly(ecdc_world_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+    plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~Type) %>% 
       layout(title = 'Worldwide number of new daily cases/deaths',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(DateRep))),
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(dateRep))),
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"))
     
@@ -114,13 +114,13 @@ shinyServer(function(input, output) {
   #Ireland cumulative plot in Summary tab
   output$cumSumIrelandPlot <- renderPlotly({
     ecdc_ire_agg = ecdc_country_agg %>%
-      filter(`Countries and territories` == 'Ireland') %>%
+      filter(countriesAndTerritories == 'Ireland') %>%
       filter(Type == 'Total Cases' | Type == 'Total Deaths')
     
-    plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+    plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~Type) %>% 
       layout(title = 'Number of cumulative cases/deaths for Ireland',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"),
              dragmode='pan') %>%
@@ -130,13 +130,13 @@ shinyServer(function(input, output) {
   #Ireland new daily plot in Summary tab
   output$newSumIrelandPlot <- renderPlotly({
     ecdc_ire_agg = ecdc_country_agg %>%
-      filter(`Countries and territories` == 'Ireland') %>%
+      filter(countriesAndTerritories == 'Ireland') %>%
       filter(Type == 'New Cases' | Type == 'New Deaths')
     
-    plot_ly(ecdc_ire_agg, x = ~DateRep, y = ~Number, type = 'scatter', 
+    plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~Type) %>% 
       layout(title = 'Number of new daily cases/deaths for Ireland',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(DateRep))),
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"),
              dragmode='pan') %>%
@@ -277,14 +277,14 @@ shinyServer(function(input, output) {
   output$covidCumPlot <- renderPlotly({
     # Extract out the data
     ecdc_plot = ecdc_country_agg %>% 
-      filter(`Countries and territories` %in% input$co) %>%
+      filter(countriesAndTerritories %in% input$co) %>%
       filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
       unite(`Countries and territories`, Type, col='CountryType', sep=' ')
     
-    plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+    plot_ly(ecdc_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~CountryType) %>% 
       layout(title = 'Number of cumulative cases/deaths for selected countries',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(dateRep))),
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"))        
   })
@@ -295,12 +295,12 @@ shinyServer(function(input, output) {
     ecdc_plot = ecdc_country_agg %>% 
       filter(`Countries and territories` %in% input$co) %>%
       filter(Type == 'New Cases' | Type == 'New Deaths') %>%
-      unite(`Countries and territories`, Type, col='CountryType', sep=' ')
+      unite(countriesAndTerritories, Type, col='CountryType', sep=' ')
     
-    plot_ly(ecdc_plot, x = ~DateRep, y = ~Number, type = 'scatter', 
+    plot_ly(ecdc_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
             mode = 'lines+markers', color = ~CountryType) %>% 
       layout(title = 'Number of new cases/deaths for selected countries',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(DateRep))),
+             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-01'), max(dateRep))),
              yaxis = list (title = 'Number of individuals',
                            type = if(input$logY) "log" else "linear"))        
   })
