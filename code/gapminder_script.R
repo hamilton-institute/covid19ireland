@@ -147,5 +147,5 @@ anim_save(filename = 'plots/covid_anim_cumulative.gif',
 #           renderer = av_renderer(loop = FALSE))
 
 #system("pwd")
-#system("convert covid_anim_cumulative.gif -loop 1 covid_anim_cumulative.gif")
+#system("cd plots; convert covid_anim_cumulative.gif -loop 1 covid_anim_cumulative.gif")
 
