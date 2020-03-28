@@ -7,8 +7,30 @@ library(shinydashboard)
 library(rgdal)
 library(DT)
 library(lubridate)
-#
+library(ggdark)
 library(leafpop)
+library(viridis)
+library(scales)
+library(ggdark)
+
+# Create a ggplot theme to match the background
+theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
+  theme_dark(base_size = base_size, base_family = base_family) %+replace% 
+    theme(
+      axis.text = element_text(colour = rgb(205/255,205/255,205/255)), # 205 205 205
+      axis.title = element_text(colour = rgb(205/255,205/255,205/255)),
+      axis.title.x = element_text(colour = rgb(205/255,205/255,205/255)),
+      axis.title.y = element_text(colour = rgb(205/255,205/255,205/255)),
+      plot.title = element_text(colour = rgb(205/255,205/255,205/255)),
+      legend.title = element_text(colour = rgb(205/255,205/255,205/255)),
+      legend.text = element_text(colour = rgb(205/255,205/255,205/255)),
+      legend.background = element_rect(fill=rgb(70/255,80/255,90/255)),
+      panel.background = element_rect(fill=rgb(70/255,80/255,90/255)), # 70 80 89
+      #panel.grid.minor.y = element_line(size=3),
+      #panel.grid.major = element_line(colour = "orange"),
+      plot.background = element_rect(fill=rgb(52/255,62/255,72/255)) # 52 62 72
+    )   
+}
 
 
 
@@ -78,7 +100,6 @@ county_cumulative_cases<-map(cs2$NAME_TAG,
 trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awesome/1792/line-chart-512.png",
                      iconWidth = 15,iconHeight = 15)
 
-
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   
@@ -88,12 +109,26 @@ shinyServer(function(input, output) {
     ecdc_world_plot <- ecdc_world_agg %>%
       filter(Type == 'Total Cases' | Type == 'Total Deaths')
     
-    plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
-            mode = 'lines+markers', color = ~Type) %>% 
-      layout(title = 'Worldwide number of cumulative cases/deaths',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(dateRep))),
-             yaxis = list (title = 'Number of individuals',
-                           type = if(input$logY) "log" else "linear"))
+    p = ggplot(ecdc_world_plot, aes(x = dateRep, y = Number, colour = Type)) + 
+      geom_line() + 
+      geom_point() +
+      labs(title = 'Global cumulative values',
+           x = '',
+           y = 'Number of individuals') + 
+      scale_color_manual(values=c("orange", "red")) +
+      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+                       limits = c(as.POSIXct('2020-03-1'), max(ecdc_world_plot$dateRep))) +
+      theme_shiny_dashboard() +
+      theme(legend.title = element_blank()) +
+      {if (input$logY) scale_y_continuous(trans = log_trans())}
+    ggplotly(p)
+    
+    # plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
+    #         mode = 'lines+markers', color = ~Type) %>% 
+    #   layout(title = 'Worldwide number of cumulative cases/deaths',
+    #          xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(dateRep))),
+    #          yaxis = list (title = 'Number of individuals',
+    #                        type = if(input$logY) "log" else "linear"))
     
   })
   
@@ -102,12 +137,26 @@ shinyServer(function(input, output) {
     ecdc_world_plot <- ecdc_world_agg %>%
       filter(Type == 'New_Cases' | Type == 'New_Deaths')
     
-    plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
-            mode = 'lines+markers', color = ~Type) %>% 
-      layout(title = 'Worldwide number of new daily cases/deaths',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(dateRep))),
-             yaxis = list (title = 'Number of individuals',
-                           type = if(input$logY) "log" else "linear"))
+    p = ggplot(ecdc_world_plot, aes(x = dateRep, y = Number, colour = Type)) + 
+      geom_line() + 
+      geom_point() +
+      labs(title = 'Global daily values',
+           x = '',
+           y = 'Number of individuals') + 
+      scale_color_manual(values=c("orange", "red")) +
+      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+                       limits = c(as.POSIXct('2020-03-1'), max(ecdc_world_plot$dateRep))) +
+      theme_shiny_dashboard() +
+      theme(legend.title = element_blank()) +
+      {if (input$logY) scale_y_continuous(trans = log_trans())}
+    ggplotly(p)
+    
+    # plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
+    #         mode = 'lines+markers', color = ~Type) %>% 
+    #   layout(title = 'Worldwide number of new daily cases/deaths',
+    #          xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-02-02'), max(dateRep))),
+    #          yaxis = list (title = 'Number of individuals',
+    #                        type = if(input$logY) "log" else "linear"))
     
   })
   
@@ -117,14 +166,28 @@ shinyServer(function(input, output) {
       filter(countriesAndTerritories == 'Ireland') %>%
       filter(Type == 'Total Cases' | Type == 'Total Deaths')
     
-    plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
-            mode = 'lines+markers', color = ~Type) %>% 
-      layout(title = 'Number of cumulative cases/deaths for Ireland',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
-             yaxis = list (title = 'Number of individuals',
-                           type = if(input$logY) "log" else "linear"),
-             dragmode='pan') %>%
-      plotly::config(scrollZoom = TRUE)
+    p = ggplot(ecdc_ire_agg, aes(x = dateRep, y = Number, colour = Type)) + 
+      geom_line() + 
+      geom_point() +
+      labs(title = 'Ireland: cumulative values',
+           x = '',
+           y = 'Number of individuals') + 
+      scale_color_manual(values=c("orange", "red")) +
+      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+                       limits = c(as.POSIXct('2020-03-1'), max(ecdc_ire_agg$dateRep))) +
+      theme_shiny_dashboard() +
+      theme(legend.title = element_blank()) +
+      {if (input$logY) scale_y_continuous(trans = log_trans())}
+    ggplotly(p)
+    
+    # plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
+    #         mode = 'lines+markers', color = ~Type) %>% 
+    #   layout(title = 'Number of cumulative cases/deaths for Ireland',
+    #          xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
+    #          yaxis = list (title = 'Number of individuals',
+    #                        type = if(input$logY) "log" else "linear"),
+    #          dragmode='pan') %>%
+    #   plotly::config(scrollZoom = TRUE)
   })
   
   #Ireland new daily plot in Summary tab
@@ -133,14 +196,28 @@ shinyServer(function(input, output) {
       filter(countriesAndTerritories == 'Ireland') %>%
       filter(Type == 'New Cases' | Type == 'New Deaths')
     
-    plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
-            mode = 'lines+markers', color = ~Type) %>% 
-      layout(title = 'Number of new daily cases/deaths for Ireland',
-             xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
-             yaxis = list (title = 'Number of individuals',
-                           type = if(input$logY) "log" else "linear"),
-             dragmode='pan') %>%
-      plotly::config(scrollZoom = TRUE)
+    p = ggplot(ecdc_ire_agg, aes(x = dateRep, y = Number, colour = Type)) + 
+      geom_line() + 
+      geom_point() +
+      labs(title = 'Ireland: daily values',
+           x = '',
+           y = 'Number of individuals') + 
+      scale_color_manual(values=c("orange", "red")) +
+      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+                       limits = c(as.POSIXct('2020-03-1'), max(ecdc_ire_agg$dateRep))) +
+      theme_shiny_dashboard() +
+      theme(legend.title = element_blank()) +
+      {if (input$logY) scale_y_continuous(trans = log_trans())}
+    ggplotly(p)
+    
+    # plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
+    #         mode = 'lines+markers', color = ~Type) %>% 
+    #   layout(title = 'Number of new daily cases/deaths for Ireland',
+    #          xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
+    #          yaxis = list (title = 'Number of individuals',
+    #                        type = if(input$logY) "log" else "linear"),
+    #          dragmode='pan') %>%
+    #   plotly::config(scrollZoom = TRUE)
   })
   
   #Ireland cases infobox in summary tab
@@ -149,8 +226,9 @@ shinyServer(function(input, output) {
     infoBox(
       HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
       format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
-      color='black', 
-      fill = FALSE)
+      color="yellow",
+      icon = icon("thermometer-three-quarters"),
+      fill = TRUE)
   })
   
   #Ireland deaths infobox in summary tab
@@ -159,8 +237,9 @@ shinyServer(function(input, output) {
     infoBox(
       HTML(paste0("Total Deaths",br()," in Ireland:")), 
       format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 
-      color='red', 
-      fill = FALSE)
+      icon = icon("exclamation-triangle"),
+      color = "red",
+      fill = TRUE)
   })
   
   #Ireland recovered infobox in summary tab
@@ -168,8 +247,9 @@ shinyServer(function(input, output) {
     infoBox(
       HTML(paste0("Total Recovered",br()," in Ireland:")), 
       format(sum_stats$Recovered[sum_stats$Region == 'ireland'], big.mark=','), 
-      color='green', 
-      fill = FALSE)
+      color="green", 
+      icon = icon("heart"),
+      fill = TRUE)
   })
   
   #Worldwide cases infobox in summary tab
@@ -177,8 +257,9 @@ shinyServer(function(input, output) {
     infoBox(
       HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
       format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 
-      color='black', 
-      fill = FALSE)
+      color='yellow', 
+      icon = icon("globe"),
+      fill = TRUE)
   })
   
   #Worldwide deaths infobox in summary tab
@@ -186,8 +267,9 @@ shinyServer(function(input, output) {
     infoBox(
       HTML(paste0("Total Deaths",br()," Worldwide:")), 
       format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 
+      icon = icon("exclamation-triangle"),
       color='red', 
-      fill = FALSE)
+      fill = TRUE)
   })
   
   #Worldwide recovered infobox in summary tab
@@ -196,7 +278,8 @@ shinyServer(function(input, output) {
       HTML(paste0("Total Recovered",br()," Worldwide:")), 
       format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 
       color='green', 
-      fill = FALSE)
+      icon = icon("heart"),
+      fill = TRUE)
   }) 
   
   #################################COUNTIES TAB#################################

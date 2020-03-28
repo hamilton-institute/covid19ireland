@@ -13,6 +13,8 @@ library(plotly)
 library(leaflet)
 library(shinydashboard)
 library(DT)
+library(dashboardthemes)
+library(fontawesome)
 
 last_update = format(file.info('summary_stats_current.csv')$mtime,
                      "%d-%b-%Y, %H:%M")
@@ -34,39 +36,28 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
-    tabItems(
-        tabItem(tabName = 'summary',
-            
-            fluidRow(
-                column( width = 3,
-                    fluidRow(infoBoxOutput("ireCasesBox")),
-                    fluidRow(infoBoxOutput("ireDeathsBox")),
-                    fluidRow(infoBoxOutput('ireRecoverBox'))
-                ),
-                column(width=9,
-                    tabBox(width=12,
-                        tabPanel('Cumulative', plotlyOutput("cumSumIrelandPlot") ),
-                        tabPanel('New Daily', plotlyOutput('newSumIrelandPlot'))
-                    )
-                )
+  shinyDashboardThemes(
+    theme = "grey_dark"
+  ),
+  tabItems(
+    tabItem(tabName = 'summary',
+            fluidRow(infoBoxOutput("ireCasesBox"),
+                     infoBoxOutput("ireDeathsBox"),
+                     infoBoxOutput('ireRecoverBox'),
+                     infoBoxOutput("wCasesBox"),
+                     infoBoxOutput("wDeathsBox"),
+                     infoBoxOutput('wRecoverBox')
             ),
             fluidRow(
-                column( width = 3,
-                    fluidRow(infoBoxOutput("wCasesBox")),
-                    fluidRow(infoBoxOutput("wDeathsBox")),
-                    fluidRow(infoBoxOutput('wRecoverBox'))
-                ),
-                column(width=9,
-                    tabBox(width=12,
-                        tabPanel('Cumulative', plotlyOutput("cumSumWorldPlot") ),
-                        tabPanel('New Daily', plotlyOutput('newSumWorldPlot'))
-                    )
-                )
+              tabBox(width=12,
+                     tabPanel('Cumulative Ireland', plotlyOutput("cumSumIrelandPlot")),
+                     tabPanel('New Daily Ireland', plotlyOutput('newSumIrelandPlot')),
+                     tabPanel('Cumulative Global', plotlyOutput("cumSumWorldPlot")),
+                     tabPanel('New Daily Global', plotlyOutput('newSumWorldPlot'))
+              )
             )
-        
-        ),
-        
-        tabItem(tabName = "county",
+    ),
+    tabItem(tabName = "county",
             fluidRow(
                 column(width=3,
                     box(
@@ -114,7 +105,7 @@ body <- dashboardBody(
                     box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
                   ),
                   fluidRow(
-                    box(plotlyOutput('ageCases'), width = '40%',)
+                    box(plotlyOutput('ageCases'), width = '40%')
                   ),
                   fluidRow(
                     box(plotlyOutput('howContracted')),
@@ -150,6 +141,5 @@ body <- dashboardBody(
 dashboardPage(
   header,
   sidebar,
-  body,
-  skin='red'
+  body
 )
