@@ -15,6 +15,7 @@ library(shinydashboard)
 library(DT)
 library(dashboardthemes)
 library(fontawesome)
+library(shinyWidgets)
 
 last_update = format(file.info('summary_stats_current.csv')$mtime,
                      "%d-%b-%Y, %H:%M")
@@ -49,11 +50,37 @@ body <- dashboardBody(
                      infoBoxOutput('wRecoverBox')
             ),
             fluidRow(
+              column(width = 4,
+                     selectInput("sel_ctry", 
+                                 "Select Countries", 
+                                 unique(ecdc$countriesAndTerritories),
+                                 selected = c('Ireland'),
+                                 multiple = TRUE)
+              ),
+              column(width = 4,
+                     selectInput("sel_var", 
+                                 "Select variables", 
+                                 c('Cumulative cases', 'Cumulative deaths', 
+                                   'Daily cases', 'Daily deaths', 
+                                   'Log cumulative cases', 'Log cumulative deaths', 
+                                   'Cases per million population',
+                                   'Deaths per million population'),
+                                 selected = c('Cumulative cases', 'Cumulative deaths'),
+                                 multiple = TRUE)
+              ),
+              column(width = 4,
+                     selectInput("sel_axis", 
+                                 "Choose axis", 
+                                 c('Date', 'Days since 1st case', 'Days since 10th case',
+                                   'Days since 1st death'),
+                                 selected = c('Days since 1st death'),
+                                 multiple = FALSE)
+              ),
               tabBox(width=12,
-                     tabPanel('Cumulative Ireland', plotlyOutput("cumSumIrelandPlot")),
-                     tabPanel('New Daily Ireland', plotlyOutput('newSumIrelandPlot')),
+                     tabPanel('Interactive plot', plotlyOutput("CountryPlot")),
+                     tabPanel('Daily', plotlyOutput('newSumIrelandPlot')),
                      tabPanel('Cumulative Global', plotlyOutput("cumSumWorldPlot")),
-                     tabPanel('New Daily Global', plotlyOutput('newSumWorldPlot'))
+                     tabPanel('Daily Global', plotlyOutput('newSumWorldPlot'))
               )
             )
     ),
@@ -139,7 +166,8 @@ body <- dashboardBody(
 
 # Put them together into a dashboardPage
 dashboardPage(
-  header,
-  sidebar,
-  body
+  header = header,
+  sidebar = sidebar,
+  body = body,
+  title = 'Hamilton Insitute Covid-19 Visualisation'
 )

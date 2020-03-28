@@ -101,7 +101,7 @@ trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awes
                      iconWidth = 15,iconHeight = 15)
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   #################################SUMMARY TAB#################################
   #Worldwide cumulative plot in Summary tab
@@ -116,11 +116,15 @@ shinyServer(function(input, output) {
            x = '',
            y = 'Number of individuals') + 
       scale_color_manual(values=c("orange", "red")) +
-      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+      scale_x_datetime(breaks = pretty_breaks(n = 5), labels = scales::label_date("%d%b"),
                        limits = c(as.POSIXct('2020-03-1'), max(ecdc_world_plot$dateRep))) +
       theme_shiny_dashboard() +
       theme(legend.title = element_blank()) +
-      {if (input$logY) scale_y_continuous(trans = log_trans())}
+      {if (input$logY)  {
+        scale_y_continuous(trans = log_trans(), breaks = scales::pretty_breaks(n = 10))
+      } else {
+        scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+      }}
     ggplotly(p)
     
     # plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
@@ -136,7 +140,6 @@ shinyServer(function(input, output) {
   output$newSumWorldPlot <- renderPlotly({
     ecdc_world_plot <- ecdc_world_agg %>%
       filter(Type == 'New_Cases' | Type == 'New_Deaths')
-    
     p = ggplot(ecdc_world_plot, aes(x = dateRep, y = Number, colour = Type)) + 
       geom_line() + 
       geom_point() +
@@ -144,12 +147,18 @@ shinyServer(function(input, output) {
            x = '',
            y = 'Number of individuals') + 
       scale_color_manual(values=c("orange", "red")) +
-      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+      scale_x_datetime(breaks = pretty_breaks(n = 5), labels = scales::label_date("%d%b"),
                        limits = c(as.POSIXct('2020-03-1'), max(ecdc_world_plot$dateRep))) +
+    
       theme_shiny_dashboard() +
       theme(legend.title = element_blank()) +
-      {if (input$logY) scale_y_continuous(trans = log_trans())}
-    ggplotly(p)
+    {if (input$logY) { 
+      scale_y_continuous(trans = log_trans(),
+                         breaks = scales::pretty_breaks((n = 10))) 
+    } else {
+        scale_y_continuous(breaks = scales::pretty_breaks((n = 10)))
+    }}
+    ggplotly(p) #%>% layout(type = if(input$logY) "log" else "linear")
     
     # plot_ly(ecdc_world_plot, x = ~dateRep, y = ~Number, type = 'scatter', 
     #         mode = 'lines+markers', color = ~Type) %>% 
@@ -161,23 +170,73 @@ shinyServer(function(input, output) {
   })
   
   #Ireland cumulative plot in Summary tab
-  output$cumSumIrelandPlot <- renderPlotly({
-    ecdc_ire_agg = ecdc_country_agg %>%
-      filter(countriesAndTerritories == 'Ireland') %>%
-      filter(Type == 'Total Cases' | Type == 'Total Deaths')
+  output$CountryPlot <- renderPlotly({
+    ecdc_agg = ecdc %>%
+      filter(countriesAndTerritories %in% input$sel_ctry) %>%
+      select(dateRep, cases, deaths, countriesAndTerritories, popData2018) %>% 
+      group_by(countriesAndTerritories) %>% 
+      arrange(dateRep) %>% 
+      mutate(cum_cases = cumsum(cases),
+             cum_deaths = cumsum(deaths),
+             log_cases = log(cum_cases),
+             log_deaths = log(cum_deaths),
+             cases_per_million = 1e6*cumsum(cases)/popData2018,
+             deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
+      ungroup()
+      
+    x_pick = switch(input$sel_axis,
+                    'Date' = 'dateRep',
+                    'days_since')
     
-    p = ggplot(ecdc_ire_agg, aes(x = dateRep, y = Number, colour = Type)) + 
-      geom_line() + 
-      geom_point() +
-      labs(title = 'Ireland: cumulative values',
-           x = '',
-           y = 'Number of individuals') + 
-      scale_color_manual(values=c("orange", "red")) +
-      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
-                       limits = c(as.POSIXct('2020-03-1'), max(ecdc_ire_agg$dateRep))) +
+    if(input$sel_axis == 'Days since 1st case') {
+      ecdc_agg = ecdc_agg %>% filter(cum_cases > 0) 
+    } else if(input$sel_axis == 'Days since 1st death') {
+      ecdc_agg = ecdc_agg %>% filter(cum_deaths > 0) 
+    } else if(input$sel_axis == 'Days since 10th case') {
+      ecdc_agg = ecdc_agg %>% filter(cum_cases >= 10) 
+    } 
+    
+    ecdc_agg = ecdc_agg %>% 
+      group_by(countriesAndTerritories) %>% 
+      mutate(days_since = 1:n()) %>% 
+      ungroup() %>% 
+      pivot_longer(names_to = 'Type', values_to = 'Number', 
+                   -c(dateRep, countriesAndTerritories, popData2018, days_since))
+    
+    y_pick <- sapply(seq_along(input$sel_var), 
+                     function(x) switch(input$sel_var[x],
+                                        'Cumulative cases' = 'cum_cases',
+                                        'Cumulative deaths' = 'cum_deaths',
+                                        'Daily cases' = 'cases',
+                                        'Daily deaths' = 'deaths',
+                                        'Log cumulative cases' = 'cum_cases',
+                                        'Log cumulative deaths' = 'cum_deaths',
+                                        'Cases per million population' = 'cases_per_million',
+                                        'Deaths per million population' = 'deaths_per_million'))
+    ecdc_agg = ecdc_agg %>% 
+      filter(Type %in% y_pick)
+    
+    p = ggplot(ecdc_agg, aes_string(x = x_pick, y = 'Number', colour = 'countriesAndTerritories')) + 
+      geom_line(aes(linetype = Type)) + 
+      #geom_point(show.legend = FALSE) +
+      labs(x = input$sel_axis,
+           y = paste(input$sel_var, collapse = ',')) + 
+      #scale_color_manual(values=c("orange", "red")) +
+      scale_colour_brewer(palette = "Set1") + 
+      {if(x_pick == 'dateRep') {
+        scale_x_datetime(breaks = pretty_breaks(n = 5), labels = scales::label_date("%d%b"))
+      } else {
+        scale_x_continuous(breaks = pretty_breaks(n = 5))
+      }} + 
       theme_shiny_dashboard() +
       theme(legend.title = element_blank()) +
-      {if (input$logY) scale_y_continuous(trans = log_trans())}
+      {if ('Log cumulative cases' %in% input$sel_var | 
+           'Log cumulative deaths' %in% input$sel_var)  {
+        scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 5))
+      } else {
+        scale_y_continuous(breaks = scales::pretty_breaks(n = 5))
+      }}
+    
     ggplotly(p)
     
     # plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
@@ -203,7 +262,7 @@ shinyServer(function(input, output) {
            x = '',
            y = 'Number of individuals') + 
       scale_color_manual(values=c("orange", "red")) +
-      scale_x_datetime(breaks = pretty_breaks(n = 10), labels = scales::label_date("%d%b"),
+      scale_x_datetime(breaks = pretty_breaks(n = 5), labels = scales::label_date("%d%b"),
                        limits = c(as.POSIXct('2020-03-1'), max(ecdc_ire_agg$dateRep))) +
       theme_shiny_dashboard() +
       theme(legend.title = element_blank()) +
@@ -227,6 +286,7 @@ shinyServer(function(input, output) {
       HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
       format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
       color="yellow",
+      width = 10,
       icon = icon("thermometer-three-quarters"),
       fill = TRUE)
   })
@@ -322,7 +382,7 @@ shinyServer(function(input, output) {
                 "Select Countries", 
                 unique(ecdc$countriesAndTerritories),
                 selected = 'Ireland',
-                multiple=TRUE)
+                multiple = TRUE)
   })
   
   #Country comparison table in trends tab
