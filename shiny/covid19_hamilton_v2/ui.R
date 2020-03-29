@@ -29,7 +29,7 @@ ecdc_world = ecdc_raw %>%
             popData2018 = sum(popData2018)) %>% 
   mutate(countriesAndTerritories = 'Global')
 
-ecdc = bind_rows(ecdc_raw, ecdc_world)
+ecdc = bind_rows(ecdc_world, ecdc_raw)
 
 header <- dashboardHeader(
   title = paste("Hamilton Covid-19 Dashboard: Updated", last_update),
