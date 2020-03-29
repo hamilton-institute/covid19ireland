@@ -418,50 +418,57 @@ shinyServer(function(input, output, session) {
     ani_graph()
   })
     
-    #age in hospital plot
-    output$ageCases <- renderPlotly({
-      
-      
-      
-      age.hosp <- (all_tables[[1]]$age_hospitalised)
-      x<-as.character(age.hosp$`Hospitalised Age`)
-      y<-as.numeric(age.hosp$`Number of Cases`)
-      text<- paste0(age.hosp$`Number of Cases`, ' patients')
-      data1 <- data.frame(x, y, 'Hospitalised')
-      data1$x <- factor(data1$x, levels = as.character(age.hosp$`Hospitalised Age`))
-      names(data1) <- c('Age','Count','Classification')
-      
-
-      age <- (all_tables[[1]]$age)
-      y<-as.numeric(age$`Number of Cases`)
-      y <- y[-length(y)]
-      y <- y[-length(y)]
-      
-      # combine first two bins
-      y[1] = y[1] + y[2]
-      y = y[-2]
-      
-      
-      text<- paste0(y, ' patients')
-      
-      
-      data2 <- data.frame(x, y, 'Cases')
-      data2$x <- factor(data2$x, levels = as.character(age.hosp$`Hospitalised Age`))
-      names(data2) <- c('Age','Count','Classification')
-      
-      
-      all.data <- rbind(data2,data1)
-      
-      g<-ggplot(data = all.data, aes(Age, Count, fill=Classification))+
-        geom_bar(stat = 'identity', position=position_dodge(0)) +
-        ggtitle('Cases by Age: Ireland') + 
-        theme_shiny_dashboard()
-        
-      ggplotly(g, tooltip=c("Classification", "Count"))
-      
-
-    })
+  
+  #############################################
+  #             age in hospital plot
+  #############################################
+  output$ageCases <- renderPlotly({
     
+    
+    
+    age.hosp <- (all_tables[[1]]$age_hospitalised)
+    x<-as.character(age.hosp$`Hospitalised Age`)
+    y<-as.numeric(age.hosp$`Number of Cases`)
+    text<- paste0(age.hosp$`Number of Cases`, ' patients')
+    data1 <- data.frame(x, y, 'Hospitalised')
+    data1$x <- factor(data1$x, levels = as.character(age.hosp$`Hospitalised Age`))
+    names(data1) <- c('Age','Count','Classification')
+    
+    
+    age <- (all_tables[[1]]$age)
+    y<-as.numeric(age$`Number of Cases`)
+    y <- y[-length(y)]
+    
+    
+    # combine first two bins
+    y[1] = y[1] + y[2]
+    y = y[-2]
+    
+    
+    text<- paste0(y, ' patients')
+    
+    
+    data2 <- data.frame(x, y, 'Cases')
+    data2$x <- factor(data2$x, levels = as.character(age.hosp$`Hospitalised Age`))
+    names(data2) <- c('Age','Count','Classification')
+    
+    
+    all.data <- rbind(data2,data1)
+    
+    g<-ggplot(data = all.data, aes(Age, Count, fill=Classification))+
+      geom_bar(stat = 'identity', position=position_dodge(0)) +
+      theme_minimal() +
+      ggtitle('Cases by Age: Ireland')
+    
+    ggplotly(g, tooltip=c("Classification", "Count"))
+    
+    
+  })
+  
+    
+    #############################################
+    #             Gender Breakdown
+    #############################################
     output$genderCases <- renderPlotly({
       
       gender <- all_tables[[1]]$gender
@@ -482,18 +489,33 @@ shinyServer(function(input, output, session) {
       names(data) <- c('Gender', 'Percentage', 'holder')
       
       
+      if(length(data$Gender) == 3){
+        g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
+          geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
+          theme_minimal() +
+          labs(y="%", x = "") +
+          ggtitle('Gender Breakdown') + 
+          theme(legend.position = 'none')+
+          scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4", 'Unknown' = 'grey'))
+        
+      }else{
+        g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
+          geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
+          theme_minimal() +
+          labs(y="%", x = "") +
+          ggtitle('Gender Breakdown') + 
+          theme(legend.position = 'none')+
+          scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4"))
+        
+      }
       
-      g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
-        geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
-        labs(y="%", x = "") +
-        ggtitle('Gender Breakdown') + 
-        theme_shiny_dashboard() +
-        scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4")) + 
-        theme(legend.position = "none")
       
-      ggplotly(g, tooltip = 'Percentage') %>% layout(margin = list(l = 75))
+      ggplotly(g, tooltip = 'Percentage')
+      
+      
+      
+    })
     
-      })
     
     output$helthcarePatients <- renderPlotly({
       helthcare.workers <- all_tables[[1]]$totals %>% 
@@ -532,7 +554,6 @@ shinyServer(function(input, output, session) {
     })  
     
     
-    
     output$howContracted <- renderPlotly({
       how.transmitted <- all_tables[[1]]$transmission
       
@@ -544,18 +565,18 @@ shinyServer(function(input, output, session) {
         select('Number of Cases') %>%
         as.numeric()
       y<-(total.cases/100)*y
-
+      
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
-      x <- c('Community\ntransmission','Contact with\nknown case',
-             'Travel\nAbroad','Under\ninvestigation') 
-
+      #x <- c('Community\ntransmission','Contact with\nknown case',
+      #'Travel\nAbroad','Under\ninvestigation') 
+      
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
-
+      
       names(data) <- c("Class",    "Count",    "text")
       g <- ggplot(data = data, aes(Class, Count, fill=Class, text = text))+
         geom_bar(stat = 'identity') +
-        theme_shiny_dashboard() +
+        theme_minimal() +
         coord_flip()+
         #geom_text(aes(label=Class),nudge_y = -85) +
         # annotate(geom = "text",
@@ -571,12 +592,13 @@ shinyServer(function(input, output, session) {
           legend.position = "none")
       
       
-      ggplotly(g, tooltip=c("Count"))  %>% layout(margin = list(l = 75))
+      ggplotly(g, tooltip=c("Count")) 
       
       
       
     }) 
-   
+    
+    
     
     
     

@@ -7,7 +7,6 @@ library(shinydashboard)
 library(rgdal)
 library(DT)
 library(lubridate)
-#
 library(leafpop)
 
 
@@ -297,7 +296,12 @@ shinyServer(function(input, output) {
   })
 
     
-    #age in hospital plot
+  
+  
+  
+  #############################################
+  #             age in hospital plot
+  #############################################
     output$ageCases <- renderPlotly({
       
       
@@ -314,7 +318,7 @@ shinyServer(function(input, output) {
       age <- (all_tables[[1]]$age)
       y<-as.numeric(age$`Number of Cases`)
       y <- y[-length(y)]
-      y <- y[-length(y)]
+
       
       # combine first two bins
       y[1] = y[1] + y[2]
@@ -341,6 +345,13 @@ shinyServer(function(input, output) {
 
     })
     
+    
+    
+    
+    
+    #############################################
+    #             Gender Breakdown
+    #############################################
     output$genderCases <- renderPlotly({
       
       gender <- all_tables[[1]]$gender
@@ -361,15 +372,26 @@ shinyServer(function(input, output) {
       names(data) <- c('Gender', 'Percentage', 'holder')
       
       
-      
-      g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
-        geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
-        theme_minimal() +
-        labs(y="%", x = "") +
-        ggtitle('Gender Breakdown') + 
-        theme(legend.position = 'none')+
-        scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4"))
+      if(length(data$Gender) == 3){
+        g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
+          geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
+          theme_minimal() +
+          labs(y="%", x = "") +
+          ggtitle('Gender Breakdown') + 
+          theme(legend.position = 'none')+
+          scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4", 'Unknown' = 'grey'))
         
+      }else{
+        g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
+          geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
+          theme_minimal() +
+          labs(y="%", x = "") +
+          ggtitle('Gender Breakdown') + 
+          theme(legend.position = 'none')+
+          scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4"))
+        
+      }
+      
       
       ggplotly(g, tooltip = 'Percentage')
   
@@ -432,8 +454,8 @@ shinyServer(function(input, output) {
       y<-(total.cases/100)*y
 
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
-      x <- c('Community\ntransmission','Contact with\nknown case',
-             'Travel\nAbroad','Under\ninvestigation') 
+      #x <- c('Community\ntransmission','Contact with\nknown case',
+             #'Travel\nAbroad','Under\ninvestigation') 
 
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
