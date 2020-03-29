@@ -317,6 +317,11 @@ shinyServer(function(input, output, session) {
       ungroup() %>% 
       filter(cum_cases >0)
     
+    if(str_detect(input$sel_horiz,'death') | str_detect(input$sel_vert,'death')) {
+      ecdc_use = ecdc_use %>% 
+        filter(cum_deaths > 1)
+    }
+    
     shiny::validate(
       shiny::need(nrow(ecdc_use) > 0, "Please select some countries. Use Global (at the end of the list) for worldwide values.")
     )
@@ -366,15 +371,11 @@ shinyServer(function(input, output, session) {
     ecdc_agg = ecdc_agg %>%
       mutate(day_month = paste0(day,'/', month)) %>% 
       select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'day_month') %>% 
-      filter(cum_cases > 1)
+      filter(cum_cases > 1) 
     
-    fun0 = function(x) {
-      x[x==0] = 1
-      return(x)
-    }
-    if(str_detect(input$sel_horiz,'Log') | str_detect(input$sel_horiz,'Log')) {
+    if(str_detect(input$sel_horiz,'death') | str_detect(input$sel_vert,'death')) {
       ecdc_agg = ecdc_agg %>% 
-        mutate_at(c(x_pick, y_pick), fun0)
+        filter(cum_deaths > 1)
     }
     
     # Find the median values of the biggest country
