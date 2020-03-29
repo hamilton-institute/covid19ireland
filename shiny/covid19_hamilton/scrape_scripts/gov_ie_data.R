@@ -53,25 +53,26 @@ all_tables <- corona_urls %>%
     
     
     # Travel'table
-    travel <- 
-      tryCatch(
-        all_tables[[
-          max(which(str_detect(all_tables_names, "Travel|travel") | 
-                      all_tables_rows == 4))
-          ]] %>% 
-          setNames(c("Travel", "Number of Cases", "% Total")), 
-        error = function(e) e)
+    #travel <- 
+    #  tryCatch(
+    #    all_tables[[
+    #      max(which(str_detect(all_tables_names, "Travel|travel|Travel") & 
+    #                  all_tables_rows == 4))
+    #      ]] %>% 
+    #      setNames(c("Travel", "Number of Cases", "% Total")), 
+    #    error = function(e) e)
+    #
+    #if("travel" %in% class(travel)){
+    #  totals <-  NULL
+    #}
     
-    if("travel" %in% class(travel)){
-      totals <-  NULL
-    }
+    #print(travel)
     
-    if(travel$Travel[1] == "Travel") {
-      
-      travel <- travel %>% slice(-1)
-      
-    }
+    #if(travel$Travel[1] == "Travel" & length(travel$Travel[1])) {
     
+    #  travel <- travel %>% slice(-1)
+    
+    #}
     
     age_hospitalised <- 
       tryCatch(
@@ -166,7 +167,7 @@ all_tables <- corona_urls %>%
 
     
     list(counties = counties, 
-         travel = travel, 
+         #travel = travel, 
          age = age, 
          age_hospitalised = age_hospitalised, 
          gender = gender, 
