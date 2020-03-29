@@ -13,6 +13,7 @@ library(leafpop)
 library(scales)
 library(ggdark)
 library(stringr)
+library(grid)
 
 # Create a ggplot theme to match the background
 theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
