@@ -20,6 +20,17 @@ library(shinyWidgets)
 last_update = format(file.info('summary_stats_current.csv')$mtime,
                      "%d-%b-%Y, %H:%M")
 
+ecdc_raw <- readRDS('ECDC_data_current.rds')
+
+ecdc_world = ecdc_raw %>% 
+  group_by(dateRep) %>% 
+  summarise(deaths = sum(deaths),
+            cases = sum(cases),
+            popData2018 = sum(popData2018)) %>% 
+  mutate(countriesAndTerritories = 'Global')
+
+ecdc = bind_rows(ecdc_raw, ecdc_world)
+
 header <- dashboardHeader(
   title = paste("Hamilton Covid-19 Dashboard: Updated", last_update),
   titleWidth = 600
