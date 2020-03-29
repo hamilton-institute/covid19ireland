@@ -64,7 +64,7 @@ body <- dashboardBody(
                      selectInput("sel_ctry", 
                                  "Select Countries", 
                                  unique(ecdc$countriesAndTerritories),
-                                 selected = c('Ireland', 'Global'),
+                                 selected = c('Ireland', 'Global', 'United_Kingdom'),
                                  multiple = TRUE)
               ),
               column(width = 4,
