@@ -14,7 +14,7 @@ library(leaflet)
 library(shinydashboard)
 library(DT)
 library(dashboardthemes)
-library(fontawesome)
+#library(fontawesome)
 library(shinyWidgets)
 
 last_update = format(file.info('summary_stats_current.csv')$mtime,
