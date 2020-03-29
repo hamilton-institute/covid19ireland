@@ -158,7 +158,7 @@ body <- dashboardBody(
                          )
                   ),
                   column(width = 12,
-                         plotOutput("AnimPlot", height = "700px")
+                         plotOutput("AnimPlot", height = "500px")
                   )
                 )
         ),
