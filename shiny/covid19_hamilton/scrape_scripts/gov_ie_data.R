@@ -3,7 +3,7 @@ library(xml2)
 library(rvest)
 
 
-main_url <- "https://www.gov.ie/en/news/7e0924-latest-updates-on-covid-19-coronavirus/" %>% 
+main_url <- "https://www.gov.ie/en/collection/ef2560-analysis-of-confirmed-cases-of-covid-19-coronavirus-in-ireland/" %>% 
   xml2::read_html()
 urls <- html_attr(html_nodes(main_url, "a"), "href")  
 
