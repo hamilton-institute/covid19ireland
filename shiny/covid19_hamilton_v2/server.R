@@ -40,9 +40,9 @@ ecdc_raw <- readRDS('ECDC_data_current.rds')
 
 ecdc_world = ecdc_raw %>% 
   group_by(dateRep) %>% 
-  summarise(deaths = sum(deaths),
-            cases = sum(cases),
-            popData2018 = sum(popData2018)) %>% 
+  summarise(deaths = sum(deaths, na.rm = TRUE),
+            cases = sum(cases, na.rm = TRUE),
+            popData2018 = sum(popData2018, na.rm = TRUE)) %>% 
   mutate(countriesAndTerritories = 'Global')
 
 ecdc = bind_rows(ecdc_raw, ecdc_world)

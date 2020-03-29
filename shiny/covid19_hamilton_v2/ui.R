@@ -64,7 +64,7 @@ body <- dashboardBody(
                      selectInput("sel_ctry", 
                                  "Select Countries", 
                                  unique(ecdc$countriesAndTerritories),
-                                 selected = c('Ireland'),
+                                 selected = c('Ireland', 'Global'),
                                  multiple = TRUE)
               ),
               column(width = 4,
@@ -75,7 +75,7 @@ body <- dashboardBody(
                                    'Log cumulative cases', 'Log cumulative deaths', 
                                    'Cases per million population',
                                    'Deaths per million population'),
-                                 selected = c('Cumulative cases', 'Cumulative deaths'),
+                                 selected = c('Cases per million population'),
                                  multiple = TRUE)
               ),
               column(width = 4,
