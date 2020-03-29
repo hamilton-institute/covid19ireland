@@ -61,41 +61,36 @@ body <- dashboardBody(
             ),
             fluidRow(
               column(width = 4,
-                     selectInput("sel_ctry", 
-                                 "Select Countries", 
-                                 unique(ecdc$countriesAndTerritories),
+                     pickerInput("sel_ctry",
+                                 "Select countries", 
+                                 choices= unique(ecdc$countriesAndTerritories),
                                  selected = c('Ireland', 'Global', 'United_Kingdom'),
+                                 options = list(`actions-box` = TRUE,
+                                                `live-search` = TRUE),
                                  multiple = TRUE)
               ),
               column(width = 4,
-                     selectInput("sel_var", 
+                     pickerInput("sel_var",
                                  "Select variables", 
-                                 c('Cumulative cases', 'Cumulative deaths', 
-                                   'Daily cases', 'Daily deaths', 
-                                   'Log cumulative cases', 'Log cumulative deaths', 
-                                   'Cases per million population',
-                                   'Deaths per million population'),
-                                 selected = c('Cases per million population'),
+                                 choices=c('Cumulative cases', 'Cumulative deaths', 
+                                           'Daily cases', 'Daily deaths', 
+                                           'Log cumulative cases', 'Log cumulative deaths', 
+                                           'Cases per million population',
+                                           'Deaths per million population'),
+                                 selected = c('Deaths per million population'),
                                  multiple = TRUE)
               ),
               column(width = 4,
-                     selectInput("sel_axis", 
+                     pickerInput("sel_axis",
                                  "Select horizontal axis", 
-                                 c('Date', 'Days since 1st case', 'Days since 10th case',
-                                   'Days since 1st death'),
+                                 choices=c('Date', 'Days since 1st case', 'Days since 10th case',
+                                           'Days since 1st death'),
                                  selected = c('Date'),
                                  multiple = FALSE)
               ),
               column(width = 12,
                      plotlyOutput("CountryPlot", height = "500px")
               )
-              
-              # tabBox(width=12,
-              #        tabPanel('Interactive plot', plotlyOutput("CountryPlot")),
-              #        tabPanel('Daily', plotlyOutput('newSumIrelandPlot')),
-              #        tabPanel('Cumulative Global', plotlyOutput("cumSumWorldPlot")),
-              #        tabPanel('Daily Global', plotlyOutput('newSumWorldPlot'))
-              # )
             )
     ),
     tabItem(tabName = "county",
@@ -125,8 +120,9 @@ body <- dashboardBody(
                          pickerInput("sel_ctry2",
                                      "Select Countries", 
                                      choices=unique(ecdc$countriesAndTerritories),
-                                     selected = c('Ireland', 'Italy', 'Spain', 'United_Kingdom'),
-                                     options = list(`actions-box` = TRUE),
+                                     selected = c('Global'),
+                                     options = list(`actions-box` = TRUE,
+                                                    `live-search` = TRUE),
                                      multiple = TRUE)
                   ),
                   column(width = 4,
@@ -137,7 +133,7 @@ body <- dashboardBody(
                                                'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
                                                'Cumulative cases per million population',
                                                'Cumulative deaths per million population'),
-                                     selected = c('Sqrt cumulative cases'),
+                                     selected = c('Log cumulative cases'),
                                      multiple = FALSE)
                   ),
                   column(width = 4,
@@ -148,7 +144,7 @@ body <- dashboardBody(
                                                'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
                                                'Cumulative cases per million population',
                                                'Cumulative deaths per million population'),
-                                     selected = c('Sqrt cumulative deaths'),
+                                     selected = c('Log cumulative deaths'),
                                      multiple = FALSE)
                   )
                 ),

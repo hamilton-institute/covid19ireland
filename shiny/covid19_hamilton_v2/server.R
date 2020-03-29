@@ -42,7 +42,9 @@ ecdc_world = ecdc_raw %>%
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE),
             cases = sum(cases, na.rm = TRUE),
-            popData2018 = sum(popData2018, na.rm = TRUE)) %>% 
+            popData2018 = sum(popData2018, na.rm = TRUE),
+            day = min(day),
+            month = min(month)) %>% 
   mutate(countriesAndTerritories = 'Global')
 
 ecdc = bind_rows(ecdc_raw, ecdc_world)
@@ -129,7 +131,11 @@ shinyServer(function(input, output, session) {
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
-      
+    
+    shiny::validate(
+      shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global (at the end of the list) for worldwide values.")
+    )
+
     x_pick = switch(input$sel_axis,
                     'Date' = 'dateRep',
                     'days_since')
@@ -311,6 +317,10 @@ shinyServer(function(input, output, session) {
       ungroup() %>% 
       filter(cum_cases >0)
     
+    shiny::validate(
+      shiny::need(nrow(ecdc_use) > 0, "Please select some countries. Use Global (at the end of the list) for worldwide values.")
+    )
+    
     # Control the value, min, max, and step.
     # Step size is 2 when input value is even; 1 when value is odd.
     updateSliderInput(session, "theDate", 
@@ -329,6 +339,10 @@ shinyServer(function(input, output, session) {
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
+    
+    shiny::validate(
+      shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
+    )
     
     x_pick = switch(input$sel_horiz,
                     'Cumulative cases' = 'cum_cases', 
@@ -354,17 +368,19 @@ shinyServer(function(input, output, session) {
       select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'day_month') %>% 
       filter(cum_cases > 1)
     
-    # Find the median values of the biggest country
-    x_max = which.max(ecdc_agg[[x_pick]])
-    y_max = which.max(ecdc_agg[[y_pick]])
-    which_country_x = ecdc_agg$countriesAndTerritories[x_max]
-    which_country_y = ecdc_agg$countriesAndTerritories[y_max]
-    x_mid = max(ecdc_agg[ecdc_agg$countriesAndTerritories == which_country_x, x_pick] %>% pull)/3
-    y_mid = max(ecdc_agg[ecdc_agg$countriesAndTerritories == which_country_y, y_pick] %>% pull)/3
+    fun0 = function(x) {
+      x[x==0] = 1
+      return(x)
+    }
+    if(str_detect(input$sel_horiz,'Log') | str_detect(input$sel_horiz,'Log')) {
+      ecdc_agg = ecdc_agg %>% 
+        mutate_at(c(x_pick, y_pick), fun0)
+    }
     
+    # Find the median values of the biggest country
     ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 
-                aes_string(x_pick, y_pick, colour = "countriesAndTerritories", 
-                                     size = y_pick)) +
+           aes_string(x_pick, y_pick, colour = "countriesAndTerritories", 
+                      size = y_pick)) +
       annotation_custom(grid::textGrob(ecdc_agg$day_month[match(input$theDate, ecdc_agg$dateRep)],
                                        gp=gpar(fontsize=200, col="grey")), 
                         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
@@ -378,7 +394,8 @@ shinyServer(function(input, output, session) {
         scale_x_sqrt(breaks = scales::breaks_pretty(n = 10),
                      limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
       } else if(input$sel_horiz == 'Log cumulative cases' | input$sel_horiz == 'Log cumulative deaths') {
-        scale_x_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10))
+        scale_x_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
+                           limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
       } else {
         scale_x_continuous(limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
       }} +
@@ -386,7 +403,8 @@ shinyServer(function(input, output, session) {
         scale_y_sqrt(breaks = scales::breaks_pretty(n = 10),
                      limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       } else if(input$sel_vert == 'Log cumulative cases' | input$sel_vert == 'Log cumulative deaths') {
-        scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10))
+        scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
+                           limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       } else {
         scale_y_continuous(limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       }} +
