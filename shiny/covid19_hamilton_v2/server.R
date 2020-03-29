@@ -632,14 +632,17 @@ shinyServer(function(input, output, session) {
                      ICU = icu.pats, 
                      Hospital = hosp.pats)
       data2 = data %>% 
-        pivot_longer(names_to = 'type', values_to = 'patients', -dates)
-        
-      p = ggplot(data2, aes(x = dates, y = patients, colour = type)) + 
+        pivot_longer(names_to = 'type', values_to = 'patients', -dates) %>% 
+        mutate(datetime = as.POSIXct(dates))
+      
+      p = ggplot(data2, aes(x = datetime, y = patients, colour = type)) + 
         geom_line() +
         theme_shiny_dashboard() +
+        scale_x_datetime(breaks = '2 days',
+                         date_labels = "%d%b") +
         labs(x="Date", y = "Number of patients") +
         ggtitle('Hospitalised Patients') + theme(
-          #axis.text.y= element_blank(),
+          legend.title = element_blank(),
           axis.ticks = element_blank())
 
       ggplotly(p) %>% layout(margin = list(l = 75))    
