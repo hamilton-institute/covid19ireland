@@ -461,7 +461,7 @@ shinyServer(function(input, output, session) {
     
     g<-ggplot(data = all.data, aes(Age, Count, fill=Classification))+
       geom_bar(stat = 'identity', position=position_dodge(0)) +
-      theme_minimal() +
+      theme_shiny_dashboard() +
       ggtitle('Cases by Age: Ireland')
     
     ggplotly(g, tooltip=c("Classification", "Count"))
@@ -496,7 +496,7 @@ shinyServer(function(input, output, session) {
       if(length(data$Gender) == 3){
         g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
           geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
-          theme_minimal() +
+          theme_shiny_dashboard() +
           labs(y="%", x = "") +
           ggtitle('Gender Breakdown') + 
           theme(legend.position = 'none')+
@@ -505,7 +505,7 @@ shinyServer(function(input, output, session) {
       }else{
         g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
           geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
-          theme_minimal() +
+          theme_shiny_dashboard() +
           labs(y="%", x = "") +
           ggtitle('Gender Breakdown') + 
           theme(legend.position = 'none')+
@@ -580,7 +580,7 @@ shinyServer(function(input, output, session) {
       names(data) <- c("Class",    "Count",    "text")
       g <- ggplot(data = data, aes(Class, Count, fill=Class, text = text))+
         geom_bar(stat = 'identity') +
-        theme_minimal() +
+        theme_shiny_dashboard() +
         coord_flip()+
         #geom_text(aes(label=Class),nudge_y = -85) +
         # annotate(geom = "text",
@@ -640,8 +640,7 @@ shinyServer(function(input, output, session) {
         labs(x="Date", y = "Number of patients") +
         ggtitle('Hospitalised Patients') + theme(
           #axis.text.y= element_blank(),
-          axis.ticks = element_blank(),
-          legend.position = "none")
+          axis.ticks = element_blank())
 
       ggplotly(p) %>% layout(margin = list(l = 75))    
       # fig <- plot_ly(x = ~ data$dates) %>% 
