@@ -87,7 +87,7 @@ body <- dashboardBody(
                                  multiple = FALSE)
               ),
               column(width = 12,
-                     plotlyOutput("CountryPlot", height = "700px")
+                     plotlyOutput("CountryPlot", height = "500px")
               )
               
               # tabBox(width=12,
@@ -162,7 +162,7 @@ body <- dashboardBody(
                          )
                   ),
                   column(width = 12,
-                         plotOutput("AnimPlot", height = "700px")
+                         plotOutput("AnimPlot", height = "500px")
                   )
                 )
         ),
