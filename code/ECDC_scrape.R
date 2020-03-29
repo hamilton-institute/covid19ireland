@@ -9,6 +9,10 @@ library(tidyverse)
 
 url <- paste("https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-",format(Sys.time(), "%Y-%m-%d"), ".xlsx", sep = "")
 
+# Just in case you need to run it before they've updated that day - put the correct date in below
+#url <- paste("https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-",format(Sys.time(), "2020-03-28"), ".xlsx", sep = "")
+
+
 #download the dataset from the website to a local temporary file
 GET(url, authenticate(":", ":", type="ntlm"), write_disk(tf <- tempfile(fileext = ".xlsx")))
 
@@ -18,3 +22,4 @@ data <- read_excel(tf)
 # Output to the scrape folder
 saveRDS(data, file = paste0('data/scraped/ECDC_data_',format(Sys.time(), "%Y%m%d"),'.rds'))
 saveRDS(data, file = paste0('shiny/covid19_hamilton/ECDC_data_current.rds'))
+saveRDS(data, file = paste0('shiny/covid19_hamilton_v2/ECDC_data_current.rds'))
