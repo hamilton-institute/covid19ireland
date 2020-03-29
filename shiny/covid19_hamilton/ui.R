@@ -13,9 +13,6 @@ library(plotly)
 library(leaflet)
 library(shinydashboard)
 library(DT)
-library(dashboardthemes)
-library(fontawesome)
-library(shinyWidgets)
 
 last_update = format(file.info('summary_stats_current.csv')$mtime,
                      "%d-%b-%Y, %H:%M")
@@ -37,54 +34,39 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
-  shinyDashboardThemes(
-    theme = "grey_dark"
-  ),
-  tabItems(
-    tabItem(tabName = 'summary',
-            fluidRow(infoBoxOutput("ireCasesBox"),
-                     infoBoxOutput("ireDeathsBox"),
-                     infoBoxOutput('ireRecoverBox'),
-                     infoBoxOutput("wCasesBox"),
-                     infoBoxOutput("wDeathsBox"),
-                     infoBoxOutput('wRecoverBox')
+    tabItems(
+        tabItem(tabName = 'summary',
+            
+            fluidRow(
+                column( width = 3,
+                    fluidRow(infoBoxOutput("ireCasesBox")),
+                    fluidRow(infoBoxOutput("ireDeathsBox")),
+                    fluidRow(infoBoxOutput('ireRecoverBox'))
+                ),
+                column(width=9,
+                    tabBox(width=12,
+                        tabPanel('Cumulative', plotlyOutput("cumSumIrelandPlot") ),
+                        tabPanel('New Daily', plotlyOutput('newSumIrelandPlot'))
+                    )
+                )
             ),
             fluidRow(
-              column(width = 4,
-                     selectInput("sel_ctry", 
-                                 "Select Countries", 
-                                 unique(ecdc$countriesAndTerritories),
-                                 selected = c('Ireland'),
-                                 multiple = TRUE)
-              ),
-              column(width = 4,
-                     selectInput("sel_var", 
-                                 "Select variables", 
-                                 c('Cumulative cases', 'Cumulative deaths', 
-                                   'Daily cases', 'Daily deaths', 
-                                   'Log cumulative cases', 'Log cumulative deaths', 
-                                   'Cases per million population',
-                                   'Deaths per million population'),
-                                 selected = c('Cumulative cases', 'Cumulative deaths'),
-                                 multiple = TRUE)
-              ),
-              column(width = 4,
-                     selectInput("sel_axis", 
-                                 "Choose axis", 
-                                 c('Date', 'Days since 1st case', 'Days since 10th case',
-                                   'Days since 1st death'),
-                                 selected = c('Days since 1st death'),
-                                 multiple = FALSE)
-              ),
-              tabBox(width=12,
-                     tabPanel('Interactive plot', plotlyOutput("CountryPlot")),
-                     tabPanel('Daily', plotlyOutput('newSumIrelandPlot')),
-                     tabPanel('Cumulative Global', plotlyOutput("cumSumWorldPlot")),
-                     tabPanel('Daily Global', plotlyOutput('newSumWorldPlot'))
-              )
+                column( width = 3,
+                    fluidRow(infoBoxOutput("wCasesBox")),
+                    fluidRow(infoBoxOutput("wDeathsBox")),
+                    fluidRow(infoBoxOutput('wRecoverBox'))
+                ),
+                column(width=9,
+                    tabBox(width=12,
+                        tabPanel('Cumulative', plotlyOutput("cumSumWorldPlot") ),
+                        tabPanel('New Daily', plotlyOutput('newSumWorldPlot'))
+                    )
+                )
             )
-    ),
-    tabItem(tabName = "county",
+        
+        ),
+        
+        tabItem(tabName = "county",
             fluidRow(
                 column(width=3,
                     box(
@@ -132,7 +114,7 @@ body <- dashboardBody(
                     box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
                   ),
                   fluidRow(
-                    box(plotlyOutput('ageCases'), width = '40%')
+                    box(plotlyOutput('ageCases'), width = '40%',)
                   ),
                   fluidRow(
                     box(plotlyOutput('howContracted')),
@@ -166,8 +148,8 @@ body <- dashboardBody(
 
 # Put them together into a dashboardPage
 dashboardPage(
-  header = header,
-  sidebar = sidebar,
-  body = body,
-  title = 'Hamilton Insitute Covid-19 Visualisation'
+  header,
+  sidebar,
+  body,
+  skin='red'
 )
