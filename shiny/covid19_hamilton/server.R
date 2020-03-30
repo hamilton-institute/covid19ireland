@@ -391,7 +391,7 @@ shinyServer(function(input, output, session) {
       ecdc_agg = ecdc_agg %>% 
         filter(y_pick > 1)
       }
-
+    
     
     # Find the median values of the biggest country
     ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 

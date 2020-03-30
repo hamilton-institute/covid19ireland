@@ -133,7 +133,7 @@ body <- dashboardBody(
                                                'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
                                                'Cumulative cases per million population',
                                                'Cumulative deaths per million population'),
-                                     selected = c('Cumulative cases per million population'),
+                                     selected = c('Sqrt cumulative cases'),
                                      multiple = FALSE)
                   ),
                   column(width = 4,
@@ -144,7 +144,7 @@ body <- dashboardBody(
                                                'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
                                                'Cumulative cases per million population',
                                                'Cumulative deaths per million population'),
-                                     selected = c('Cumulative deaths per million population'),
+                                     selected = c('Sqrt cumulative deaths'),
                                      multiple = FALSE)
                   )
                 ),
