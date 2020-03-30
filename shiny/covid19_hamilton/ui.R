@@ -13,9 +13,23 @@ library(plotly)
 library(leaflet)
 library(shinydashboard)
 library(DT)
+library(dashboardthemes)
+#library(fontawesome)
+library(shinyWidgets)
 
 last_update = format(file.info('summary_stats_current.csv')$mtime,
                      "%d-%b-%Y, %H:%M")
+
+ecdc_raw <- readRDS('ECDC_data_current.rds')
+
+ecdc_world = ecdc_raw %>% 
+  group_by(dateRep) %>% 
+  summarise(deaths = sum(deaths),
+            cases = sum(cases),
+            popData2018 = sum(popData2018)) %>% 
+  mutate(countriesAndTerritories = 'Global')
+
+ecdc = bind_rows(ecdc_world, ecdc_raw)
 
 header <- dashboardHeader(
   title = paste("Hamilton Covid-19 Dashboard: Updated", last_update),
@@ -25,48 +39,61 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
+    menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
     menuItem("By County", tabName = "county", icon = icon("map")),
-    menuItem("International Trends", icon = icon("chart-line"), tabName = "trends"),
     menuItem("Hospitalisation Stats", tabName = "patientprofile
-             ", icon = icon("hospital")),
-    checkboxInput("logY", "Show Y-axis log scaled", FALSE)
+             ", icon = icon("hospital"))
   )
 )
 
 body <- dashboardBody(
-    tabItems(
-        tabItem(tabName = 'summary',
-            
-            fluidRow(
-                column( width = 3,
-                    fluidRow(infoBoxOutput("ireCasesBox")),
-                    fluidRow(infoBoxOutput("ireDeathsBox")),
-                    fluidRow(infoBoxOutput('ireRecoverBox'))
-                ),
-                column(width=9,
-                    tabBox(width=12,
-                        tabPanel('Cumulative', plotlyOutput("cumSumIrelandPlot") ),
-                        tabPanel('New Daily', plotlyOutput('newSumIrelandPlot'))
-                    )
-                )
+  shinyDashboardThemes(
+    theme = "grey_dark"
+  ),
+  tabItems(
+    tabItem(tabName = 'summary',
+            fluidRow(infoBoxOutput("ireCasesBox"),
+                     infoBoxOutput("ireDeathsBox"),
+                     infoBoxOutput('ireRecoverBox'),
+                     infoBoxOutput("wCasesBox"),
+                     infoBoxOutput("wDeathsBox"),
+                     infoBoxOutput('wRecoverBox')
             ),
             fluidRow(
-                column( width = 3,
-                    fluidRow(infoBoxOutput("wCasesBox")),
-                    fluidRow(infoBoxOutput("wDeathsBox")),
-                    fluidRow(infoBoxOutput('wRecoverBox'))
-                ),
-                column(width=9,
-                    tabBox(width=12,
-                        tabPanel('Cumulative', plotlyOutput("cumSumWorldPlot") ),
-                        tabPanel('New Daily', plotlyOutput('newSumWorldPlot'))
-                    )
-                )
+              column(width = 4,
+                     pickerInput("sel_ctry",
+                                 "Select countries", 
+                                 choices= unique(ecdc$countriesAndTerritories),
+                                 selected = c('Global', 'Ireland', 'United_Kingdom'),
+                                 options = list(`actions-box` = TRUE,
+                                                `live-search` = TRUE),
+                                 multiple = TRUE)
+              ),
+              column(width = 4,
+                     pickerInput("sel_var",
+                                 "Select variables", 
+                                 choices=c('Cumulative cases', 'Cumulative deaths', 
+                                           'Daily cases', 'Daily deaths', 
+                                           'Log cumulative cases', 'Log cumulative deaths', 
+                                           'Cases per million population',
+                                           'Deaths per million population'),
+                                 selected = c('Deaths per million population'),
+                                 multiple = TRUE)
+              ),
+              column(width = 4,
+                     pickerInput("sel_axis",
+                                 "Select horizontal axis", 
+                                 choices=c('Date', 'Days since 1st case', 'Days since 10th case',
+                                           'Days since 1st death'),
+                                 selected = c('Date'),
+                                 multiple = FALSE)
+              ),
+              column(width = 12,
+                     plotlyOutput("CountryPlot", height = "500px")
+              )
             )
-        
-        ),
-        
-        tabItem(tabName = "county",
+    ),
+    tabItem(tabName = "county",
             fluidRow(
                 column(width=3,
                     box(
@@ -85,27 +112,55 @@ body <- dashboardBody(
             )
             
         ),
-
-        tabItem(tabName = "trends",
-            fluidRow(
-                column(width=4, 
-                    # Input inside of menuSubItem
-                    menuSubItem(icon = NULL,
-                        uiOutput("choose_country")
-                    ),
-                    DT::dataTableOutput("compareTable")
+    
+        tabItem(tabName = "animation",
+                tags$style(type="text/css", ".recalculating {opacity: 1.0;}"),
+                fluidRow(
+                  column(width = 4,
+                         pickerInput("sel_ctry2",
+                                     "Select Countries", 
+                                     choices=unique(ecdc$countriesAndTerritories),
+                                     selected = c('Ireland', 'United_Kingdom'),
+                                     options = list(`actions-box` = TRUE,
+                                                    `live-search` = TRUE),
+                                     multiple = TRUE)
+                  ),
+                  column(width = 4,
+                         pickerInput("sel_horiz",
+                                     "Select horizontal axis", 
+                                     choices=c('Cumulative cases', 'Cumulative deaths', 
+                                               'Log cumulative cases', 'Log cumulative deaths', 
+                                               'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
+                                               'Cumulative cases per million population',
+                                               'Cumulative deaths per million population'),
+                                     selected = c('Log cumulative cases'),
+                                     multiple = FALSE)
+                  ),
+                  column(width = 4,
+                         pickerInput("sel_vert",
+                                     "Select vertical axis", 
+                                     choices=c('Cumulative cases', 'Cumulative deaths', 
+                                               'Log cumulative cases', 'Log cumulative deaths', 
+                                               'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
+                                               'Cumulative cases per million population',
+                                               'Cumulative deaths per million population'),
+                                     selected = c('Log cumulative deaths'),
+                                     multiple = FALSE)
+                  )
                 ),
-                column(width=8,
-                    box(
-                        width=12,
-                        plotlyOutput("covidCumPlot")
-                    ),
-                    box(
-                        width=12,
-                        plotlyOutput("covidNewPlot")
-                    )
+                fluidRow(
+                  column(width = 12,
+                         sliderInput("theDate", "Date (click play or move slider)", min = min(ecdc$dateRep), 
+                                     max = max(ecdc$dateRep), value = min(ecdc$dateRep),
+                                     width = "75%",
+                                     timeFormat = "%d/%b",
+                                     animate=animationOptions(interval=1000, loop = FALSE)
+                         )
+                  ),
+                  column(width = 12,
+                         plotOutput("AnimPlot", height = "500px")
+                  )
                 )
-            )
         ),
         
         tabItem(tabName = "patientprofile",
@@ -114,7 +169,7 @@ body <- dashboardBody(
                     box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
                   ),
                   fluidRow(
-                    box(plotlyOutput('ageCases'), width = '40%',)
+                    box(plotlyOutput('ageCases'), width = '40%')
                   ),
                   fluidRow(
                     box(plotlyOutput('howContracted')),
@@ -148,8 +203,8 @@ body <- dashboardBody(
 
 # Put them together into a dashboardPage
 dashboardPage(
-  header,
-  sidebar,
-  body,
-  skin='red'
+  header = header,
+  sidebar = sidebar,
+  body = body,
+  title = 'Hamilton Insitute Covid-19 Visualisation'
 )

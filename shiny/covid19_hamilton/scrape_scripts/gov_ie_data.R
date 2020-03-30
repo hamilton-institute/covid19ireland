@@ -74,6 +74,7 @@ all_tables <- corona_urls %>%
     
     #}
     
+    
     age_hospitalised <- 
       tryCatch(
         all_tables[[
