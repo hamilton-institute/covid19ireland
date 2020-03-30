@@ -33,16 +33,16 @@ country_colors2 = tibble(
 
 
 ecdc_plot = ecdc %>% 
-  mutate(day_month = paste0(Day,'/',Month)) %>% 
-  select(-c(Day,Month,Year,GeoId)) %>% 
-  rename(Country = `Countries and territories`) %>% 
+  mutate(day_month = paste0(day,'/',month)) %>% 
+  select(-c(day,month,year,geoId)) %>% 
+  rename(Country = countriesAndTerritories) %>% 
   mutate(Country = gsub('_', ' ', Country),
          Country = stri_trans_general(Country, id = "Title"),
-         Date = ymd(DateRep)) %>% 
+         Date = ymd(dateRep)) %>% 
   left_join(gap2, by = 'Country') %>% 
   left_join(country_colors2, by = 'Country') %>% 
   group_by(Country) %>% 
-  mutate(max_cases = max(Cases)) %>% 
+  mutate(max_cases = max(cases)) %>% 
   ungroup() %>% 
   filter(max_cases > 100) %>% 
   mutate(Country = recode(Country,
@@ -97,10 +97,10 @@ ecdc_plot = ecdc %>%
 # Cumulative plot
 
 ecdc_plot2 = ecdc_plot %>% 
-  arrange(Country, DateRep) %>% 
+  arrange(Country, dateRep) %>% 
   group_by(Country) %>% 
-  mutate(cum_sum_cases = cumsum(Cases),
-         cum_sum_death = cumsum(Deaths)) %>% 
+  mutate(cum_sum_cases = cumsum(cases),
+         cum_sum_death = cumsum(deaths)) %>% 
   ungroup()
 
 # p2_tmp = ggplot(ecdc_plot2 %>% top_n(200), aes(cum_sum_cases, cum_sum_death, colour = Country, size = cum_sum_cases)) +
