@@ -393,8 +393,9 @@ shinyServer(function(input, output, session) {
     ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 
            aes_string(x_pick, y_pick, colour = "countriesAndTerritories", 
                       size = y_pick)) +
-      scale_colour_discrete(drop=TRUE,
-                            limits = levels(ecdc_agg$countriesAndTerritories)) +
+      scale_color_manual(values = country_colours) +
+      # scale_colour_discrete(drop=TRUE,
+      #                       limits = levels(ecdc_agg$countriesAndTerritories)) +
       annotation_custom(grid::textGrob(ecdc_agg$day_month[match(input$theDate, ecdc_agg$dateRep)],
                                        gp=gpar(fontsize=200, col="grey")), 
                         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
