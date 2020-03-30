@@ -314,7 +314,6 @@ shinyServer(function(input, output, session) {
 # Animation tab -----------------------------------------------------------
 
   observe({
-    
     # Find the max and min dates for these countries
     ecdc_use = ecdc %>% 
       filter(countriesAndTerritories %in% input$sel_ctry2) %>% 
@@ -344,6 +343,7 @@ shinyServer(function(input, output, session) {
   })
   
   ani_graph = reactive({
+    
     ecdc_agg = ecdc %>%
       filter(countriesAndTerritories %in% input$sel_ctry2) %>%
       select(dateRep, cases, deaths, countriesAndTerritories, popData2018, day, month) %>% 
@@ -381,13 +381,17 @@ shinyServer(function(input, output, session) {
     ecdc_agg = ecdc_agg %>%
       mutate(countriesAndTerritories = parse_factor(countriesAndTerritories),
              day_month = paste0(day,'/', month)) %>% 
-      select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'day_month') %>% 
-      filter(cum_cases > 1) 
+      select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'day_month')
     
-    if(str_detect(input$sel_horiz,'death') | str_detect(input$sel_vert,'death')) {
+      if(str_detect(input$sel_horiz,'cases') | str_detect(input$sel_horiz,'death')) {
+        ecdc_agg = ecdc_agg %>% 
+          filter(x_pick > 1)
+      }
+      if(str_detect(input$sel_vert,'cases') | str_detect(input$sel_vert,'death') ) {
       ecdc_agg = ecdc_agg %>% 
-        filter(cum_deaths > 1)
-    }
+        filter(y_pick > 1)
+      }
+
     
     # Find the median values of the biggest country
     ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 
