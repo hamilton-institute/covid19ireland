@@ -14,6 +14,7 @@ library(scales)
 library(ggdark)
 library(stringr)
 library(grid)
+library(gapminder)
 
 # Create a ggplot theme to match the background
 theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
@@ -34,7 +35,16 @@ theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
     )   
 }
 
-
+# Get country colours
+country_colors2 = tibble(
+  Country = names(country_colors), 
+  Colours = country_colors) %>% 
+  mutate(Country = str_to_title(Country),
+         Country = recode(Country,
+                          'United States' = "United_States_of_America",
+                          'Korea, Rep.' = "South_Korea",
+         ),
+         Country = str_replace_all(Country,' ', '_'))
 
 ecdc_raw <- readRDS('ECDC_data_current.rds')
 
@@ -48,6 +58,17 @@ ecdc_world = ecdc_raw %>%
   mutate(countriesAndTerritories = 'Global')
 
 ecdc = bind_rows(ecdc_raw, ecdc_world)
+
+# Match up colors
+ecdc = left_join(ecdc, country_colors2, by = c('countriesAndTerritories'='Country')) 
+# ecdc$countriesAndTerritories[which(is.na(ecdc$Colours))] %>% unique
+
+# Fill in the remaining colors
+# First find the number of missing countries
+n_missing = length(unique(ecdc$countriesAndTerritories[which(is.na(ecdc$Colours))]))
+new_colours = colorRampPalette(brewer.pal(8, "Set1"))(n_missing)
+
+
 # 
 # #For summary of world plot
 # ecdc_world_agg <- ecdc %>%
