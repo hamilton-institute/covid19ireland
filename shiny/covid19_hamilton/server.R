@@ -520,6 +520,13 @@ shinyServer(function(input, output, session) {
       
     })
     
+  
+  
+  
+  
+  #############################################
+  #      Proporting on healthcare patients
+  ############################################# 
     
     output$helthcarePatients <- renderPlotly({
       helthcare.workers <- all_tables[[1]]$totals %>% 
@@ -558,6 +565,13 @@ shinyServer(function(input, output, session) {
     })  
     
     
+  
+  
+  
+  
+  #############################################
+  #            How virus spreads
+  ############################################# 
     output$howContracted <- renderPlotly({
       how.transmitted <- all_tables[[1]]$transmission
       
@@ -571,8 +585,7 @@ shinyServer(function(input, output, session) {
       y<-(total.cases/100)*y
       
       text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
-      #x <- c('Community\ntransmission','Contact with\nknown case',
-      #'Travel\nAbroad','Under\ninvestigation') 
+      x <- c('Community\ntransmission','Contact with\nknown case', 'Travel\nAbroad')
       
       data <- data.frame(x, y, text)
       data$x <- factor(data$x, levels = x)
