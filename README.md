@@ -6,9 +6,17 @@ Visit the site here: https://hamilton-institute.github.io/covid19ireland/
 
 # Brief summary
 
-The app allows for highly customisable plots of the crisis:
+The app provides daily summaries for Ireland automatically obtained from the authorities:
 
+![](https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/docs/Screen1.png)
 
+It provides highly customisable plots of the crisis:
+
+![](https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/docs/Screen2.png)
+
+It also provides daily updates on hospital statistics and animations of the global progression:
+
+![](https://raw.githubusercontent.com/hamilton-institute/covid19ireland/master/docs/Screen3.png)
 
 
 
