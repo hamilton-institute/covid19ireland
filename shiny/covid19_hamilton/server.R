@@ -14,7 +14,6 @@ library(scales)
 library(ggdark)
 library(stringr)
 library(grid)
-library(gapminder)
 library(RColorBrewer)
 
 # Create a ggplot theme to match the background
@@ -36,17 +35,6 @@ theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
     )   
 }
 
-# Get country colours
-country_colors2 = tibble(
-  Country = names(country_colors), 
-  Colours = country_colors) %>% 
-  mutate(Country = str_to_title(Country),
-         Country = recode(Country,
-                          'United States' = "United_States_of_America",
-                          'Korea, Rep.' = "South_Korea",
-         ),
-         Country = str_replace_all(Country,' ', '_'))
-
 ecdc_raw <- readRDS('ECDC_data_current.rds')
 
 ecdc_world = ecdc_raw %>% 
@@ -58,17 +46,17 @@ ecdc_world = ecdc_raw %>%
             month = min(month)) %>% 
   mutate(countriesAndTerritories = 'Global')
 
-ecdc = bind_rows(ecdc_raw, ecdc_world)
+# Bind together and add colours - specify some that are required
+ecdc = bind_rows(ecdc_raw, ecdc_world) 
 
-# Match up colors
-ecdc = left_join(ecdc, country_colors2, by = c('countriesAndTerritories'='Country')) 
-# ecdc$countriesAndTerritories[which(is.na(ecdc$Colours))] %>% unique
-
-# Fill in the remaining colors
-# First find the number of missing countries
-n_missing = length(unique(ecdc$countriesAndTerritories[which(is.na(ecdc$Colours))]))
-new_colours = colorRampPalette(brewer.pal(8, "Set1"))(n_missing)
-
+# Need to create named vector of country colours
+country_colours = ecdc %>% arrange(desc(popData2018)) %>% 
+  select(countriesAndTerritories) %>% 
+  distinct() %>% 
+  mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>% 
+  mutate(Colours = replace(Colours, 
+                           countriesAndTerritories == "Ireland", "#40C575")) %>% 
+  deframe()
 
 # 
 # #For summary of world plot
@@ -126,7 +114,6 @@ county_cumulative_cases<-map(cs2$NAME_TAG,
                                geom_point()+geom_line()+
                                ggtitle(label = paste0("Total cases in ",.x, " at ",county_total_date$date[[1]],": ",
                                                       county_total_date$`Number of Cases`[county_total_date$date==county_total_date$date[[1]] & county_total_date$County==.x]))+
-                               
                                xlab('Date')+
                                ylab('Number of individuals')+
                                #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
@@ -155,7 +142,7 @@ shinyServer(function(input, output, session) {
       ungroup()
     
     shiny::validate(
-      shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global (at the end of the list) for worldwide values.")
+      shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
     )
 
     x_pick = switch(input$sel_axis,
@@ -175,7 +162,8 @@ shinyServer(function(input, output, session) {
       mutate(days_since = 1:n()) %>% 
       ungroup() %>% 
       pivot_longer(names_to = 'Type', values_to = 'Number', 
-                   -c(dateRep, countriesAndTerritories, popData2018, days_since))
+                   -c(dateRep, countriesAndTerritories, popData2018, 
+                      days_since))
     
     y_pick <- sapply(seq_along(input$sel_var), 
                      function(x) switch(input$sel_var[x],
@@ -195,8 +183,8 @@ shinyServer(function(input, output, session) {
       #geom_point(show.legend = FALSE) +
       labs(x = input$sel_axis,
            y = paste(input$sel_var, collapse = ',')) + 
-      #scale_color_manual(values=c("orange", "red")) +
-      scale_colour_brewer(palette = "Set1") + 
+      scale_color_manual(values = country_colours) +
+      #scale_colour_brewer(palette = "Set1") + 
       { if(x_pick == 'dateRep') {
         scale_x_datetime(breaks = '1 week', labels = scales::label_date("%d%b"))
       } else {
@@ -345,7 +333,7 @@ shinyServer(function(input, output, session) {
     }
     
     shiny::validate(
-      shiny::need(nrow(ecdc_use) > 0, "Please select some countries. Use Global (at the end of the list) for worldwide values.")
+      shiny::need(nrow(ecdc_use) > 0, "Please select some countries. Use Global for worldwide values.")
     )
     
     # Control the value, min, max, and step.
