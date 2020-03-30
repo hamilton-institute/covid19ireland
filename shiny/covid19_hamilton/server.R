@@ -625,7 +625,7 @@ shinyServer(function(input, output, session) {
           legend.position = "none")
       
       
-      ggplotly(g, tooltip=c("Count")) 
+      ggplotly(g, tooltip=c("Count")) %>% layout(margin = list(l = 75))
       
       
       
