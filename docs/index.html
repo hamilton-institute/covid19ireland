@@ -3,14 +3,32 @@
 <html>
 
   <head>
+    
+    <style>
+    .waterbg
+    {
+      position: relative;
+      top: 0;
+      left: 0;
+    }
+    .hamlogo
+    {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      bottom: 15px;
+    }
+  </style>
 
     <title>Hamilton Institute Covid-19 Monitor</title>
 
   </head>
 
   <body>
-    
-    <img href = "https://www.maynoothuniversity.ie/hamilton" src = "banner3.png" width = 100%>
+    <div style="position: relative; left: 0; top: 0; width = 100%">
+      <img src = "banner2.png" width = 100% class = "waterbg">
+      <a href = "https://www.maynoothuniversity.ie/hamilton"><img src="ham_logo.png" class="hamlogo" width="13%"/></a>
+    </div>
     
     <iframe src="https://rstudioserver.hamilton.ie:3838/users/aparnell/covid-19_v2" width="100%" height="1000px"></iframe>
 
