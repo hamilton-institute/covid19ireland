@@ -15,6 +15,7 @@ library(ggdark)
 library(stringr)
 library(grid)
 library(gapminder)
+library(RColorBrewer)
 
 # Create a ggplot theme to match the background
 theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
