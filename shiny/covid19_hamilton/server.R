@@ -380,8 +380,9 @@ shinyServer(function(input, output, session) {
   
     ecdc_agg = ecdc_agg %>%
       mutate(countriesAndTerritories = parse_factor(countriesAndTerritories),
-             day_month = paste0(day,'/', month)) %>% 
-      select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'day_month')
+             month_day = format(dateRep, format = "%b-%d")) %>% 
+             #day_month = paste0(day,'/', month)) %>% 
+      select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'month_day')
     
       if(str_detect(input$sel_horiz,'cases') | str_detect(input$sel_horiz,'death')) {
         ecdc_agg = ecdc_agg %>% 
@@ -400,7 +401,7 @@ shinyServer(function(input, output, session) {
       scale_color_manual(values = country_colours) +
       # scale_colour_discrete(drop=TRUE,
       #                       limits = levels(ecdc_agg$countriesAndTerritories)) +
-      annotation_custom(grid::textGrob(ecdc_agg$day_month[match(input$theDate, ecdc_agg$dateRep)],
+      annotation_custom(grid::textGrob(ecdc_agg$month_day[match(input$theDate, ecdc_agg$dateRep)],
                                        gp=gpar(fontsize=200, col="grey")), 
                         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
       geom_point(data = ecdc_agg %>% filter(dateRep < input$theDate)) + 
