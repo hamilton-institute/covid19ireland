@@ -37,7 +37,11 @@ theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
 
 ecdc_raw <- readRDS('ECDC_data_current.rds') %>% 
   mutate(countriesAndTerritories = 
-           recode(countriesAndTerritories, 'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship'))
+           recode(countriesAndTerritories, 
+                  'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
+                  'United_States_of_Americ' = 'USA',
+                  'United_Kingdom' = 'UK'
+                  ))
 
 ecdc_world = ecdc_raw %>% 
   group_by(dateRep) %>% 
@@ -307,7 +311,7 @@ shinyServer(function(input, output, session) {
              icon = icon("cross"))
   })
   
-  #Worldwide deaths infobox in summary tab
+  #Worldwide recovered infobox in summary tab
   output$wRecovBox <- renderValueBox({  
     pc_change = round(100*(sum_stats$Recovered[sum_stats$Region == 'world']/sum_stats_yesterday$Recovered[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
@@ -326,10 +330,11 @@ shinyServer(function(input, output, session) {
       summarise(totalDeaths = sum(deaths)) %>% 
       ungroup() %>% 
       arrange(desc(totalDeaths)) %>% 
-      top_n(10)
-    diff = worst_countries %>% top_n(2) %>% 
-      select(totalDeaths) %>% pull %>% diff %>% abs
-    valueBox(value = tags$p(worst_countries$countriesAndTerritories[1], style = "font-size: 120%;"),
+      top_n(1)
+    name = str_sub(str_replace(worst_countries$countriesAndTerritories[1], '_', ' '),
+                   1, 10)
+    valueBox(value = tags$p(name, 
+                            style = "font-size: 120%;"),
              subtitle = HTML(paste0("Most deaths: ",worst_countries$totalDeaths[1])),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -341,7 +346,11 @@ shinyServer(function(input, output, session) {
       filter(deaths != 0) %>% 
       arrange(desc(deaths))
     
-    valueBox(value = tags$p(biggest_increase$countriesAndTerritories[1], style = "font-size: 120%;"),
+    name = str_sub(str_replace(biggest_increase$countriesAndTerritories[1], '_', ' '),
+                   1, 10)
+    
+    valueBox(value = tags$p(name, 
+                            style = "font-size: 120%;"),
              subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", biggest_increase$deaths[1])),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -353,8 +362,13 @@ shinyServer(function(input, output, session) {
       filter(deaths != 0) %>% 
       arrange(deaths) %>% 
       slice(1)
-    valueBox(value = tags$p(biggest_decrease$countriesAndTerritories, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", abs(biggest_decrease$deaths))),
+    name = str_sub(str_replace(biggest_decrease$countriesAndTerritories, '_', ' '),
+                   1, 10)
+    
+    valueBox(value = tags$p(name, 
+                            style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
+                                    abs(biggest_decrease$deaths))),
              color = 'light-blue',
              icon = icon("arrow-down", class = "color: rgb(59, 91, 152)"))
   })
@@ -376,7 +390,7 @@ shinyServer(function(input, output, session) {
                   ))
   })  
   
-  # Highest total
+  # HighestH total
   output$highestTotal <- DT::renderDataTable({
     DT::datatable(ecdc_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`)),
                   options = list(

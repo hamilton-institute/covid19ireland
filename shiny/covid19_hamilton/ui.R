@@ -22,7 +22,11 @@ last_update = format(file.info('summary_stats_current.csv')$mtime,
 
 ecdc_raw <- readRDS('ECDC_data_current.rds') %>% 
   mutate(countriesAndTerritories = 
-            recode(countriesAndTerritories, 'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship'))
+            recode(countriesAndTerritories, 
+                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
+                   'United_States_of_Americ' = 'USA',
+                   'United_Kingdom' = 'UK'
+            ))
 
 ecdc_world = ecdc_raw %>% 
   group_by(dateRep) %>% 
