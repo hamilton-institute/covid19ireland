@@ -101,7 +101,7 @@ body <- dashboardBody(
                   ,
                   box(
                     width = 4,
-                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Biggest change from yesterday"),
+                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Biggest reduction from yesterday"),
                     DT::dataTableOutput("biggestChange")
                   )
                   
