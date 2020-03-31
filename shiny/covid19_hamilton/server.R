@@ -298,7 +298,38 @@ shinyServer(function(input, output, session) {
   })
   
   # Worst hit country
-  output$wCountryBox <- renderValueBox({  
+  output$worstHitCountryBox <- renderValueBox({  
+    browser()
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'maroon',
+             icon = icon("cross"))
+  })
+  
+  # Biggest Increase in Deaths Country
+  output$increaseDeathBox <- renderValueBox({  
+    browser()
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'maroon',
+             icon = icon("cross"))
+  })
+  
+  # Biggest decrease in deaths
+  output$bigDecreaseBox <- renderValueBox({  
+    browser()
+    pct <- function(x) {x/lag(x)}
+    
+    ecdc_pct_change = ecdc %>% group_by(countriesAndTerritories) %>% 
+      mutate_each(funs(pct), c(cases, deaths)) %>% 
+      filter_all(all_vars(!is.infinite(.)))
+    
     pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')

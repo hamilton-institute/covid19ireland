@@ -14,7 +14,7 @@ library(leaflet)
 library(shinydashboard)
 library(DT)
 library(dashboardthemes)
-#library(fontawesome)
+library(fontawesome) # remotes::install_github('rstudio/fontawesome')
 library(shinyWidgets)
 
 last_update = format(file.info('summary_stats_current.csv')$mtime,
@@ -67,9 +67,9 @@ body <- dashboardBody(
                    column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
                  ),
                 fluidRow(
-                  column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
-                  column(width = 4, valueBoxOutput("ireHospBox", width = NULL)),
-                  column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
+                  column(width = 4, valueBoxOutput("worstHitCountryBox", width = NULL)),
+                  column(width = 4, valueBoxOutput("increaseDeathBox", width = NULL)),
+                  column(width = 4, valueBoxOutput("bigDecreaseBox", width = NULL))
                 )
             )  
             
