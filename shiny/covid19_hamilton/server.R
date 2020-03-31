@@ -35,7 +35,9 @@ theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
     )   
 }
 
-ecdc_raw <- readRDS('ECDC_data_current.rds')
+ecdc_raw <- readRDS('ECDC_data_current.rds') %>% 
+  mutate(countriesAndTerritories = 
+           recode(countriesAndTerritories, 'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship'))
 
 ecdc_world = ecdc_raw %>% 
   group_by(dateRep) %>% 
@@ -48,15 +50,6 @@ ecdc_world = ecdc_raw %>%
 
 # Bind together and add colours - specify some that are required
 ecdc = bind_rows(ecdc_raw, ecdc_world) 
-
-# Need to create named vector of country colours
-country_colours = ecdc %>% arrange(desc(popData2018)) %>% 
-  select(countriesAndTerritories) %>% 
-  distinct() %>% 
-  mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>% 
-  mutate(Colours = replace(Colours, 
-                           countriesAndTerritories == "Ireland", "#40C575")) %>% 
-  deframe()
 
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
@@ -117,6 +110,38 @@ get_html_message = function(pc) {
   return(html_message)
 }
 
+# Calculate biggest change in deaths
+#pct <- function(x) {x/lag(x)}
+big_change = function(x) {x - lag(x)}
+is_bad <- function(x) is.na(x) | is.nan(x) | is.infinite((x))
+ecdc_change = ecdc %>% group_by(countriesAndTerritories) %>% 
+  mutate_each(big_change, c(cases, deaths)) %>% 
+  filter_all(all_vars(!is_bad(.))) %>% 
+  ungroup() %>% 
+  filter(dateRep == max(dateRep))
+
+ecdc_table1 = ecdc %>% 
+  group_by(countriesAndTerritories) %>% 
+  filter(dateRep == max(dateRep)) %>% 
+  ungroup() %>% 
+  arrange(desc(deaths)) %>% 
+  mutate(Date = as.Date(dateRep),
+         Country = countriesAndTerritories,
+         `Daily cases` = cases,
+         `Daily deaths` = deaths) %>% 
+  select(Date, Country, `Daily cases`, `Daily deaths`)
+ecdc_table2 = ecdc %>% 
+  group_by(countriesAndTerritories) %>% 
+  summarise(Date = as.Date(max(dateRep)),
+            `Total cases` = sum(cases),
+            `Total deaths` = sum(deaths)) %>% 
+  ungroup() %>% 
+  rename(Country = countriesAndTerritories) %>% 
+  select(Country, `Total cases`, `Total deaths`)
+ecdc_table3 = left_join(ecdc_table1, ecdc_table2, by = 'Country') %>% 
+  filter(Country != 'Global') %>% 
+  arrange(desc(`Total deaths`))
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   
@@ -134,6 +159,19 @@ shinyServer(function(input, output, session) {
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
+    
+    country_colours = ecdc_agg %>%
+      select(countriesAndTerritories) %>% 
+      distinct() %>%
+      #mutate(Colours = gradient_n_pal()(seq(0, 1, length.out = n()))) %>%
+      #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
+      mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
+      # mutate(Colours = sample(new_colors, n())) %>% 
+      # mutate(Colours = replace(Colours,
+      #                          countriesAndTerritories == "Ireland", "green")) %>%
+      mutate(Colours = replace(Colours,
+                               countriesAndTerritories == "Ireland", "#40C575")) %>%
+      deframe()
     
     shiny::validate(
       shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
@@ -197,15 +235,10 @@ shinyServer(function(input, output, session) {
     
     ggplotly(p) %>% layout(margin = list(l = 75))
     
-    # plot_ly(ecdc_ire_agg, x = ~dateRep, y = ~Number, type = 'scatter', 
-    #         mode = 'lines+markers', color = ~Type) %>% 
-    #   layout(title = 'Number of cumulative cases/deaths for Ireland',
-    #          xaxis = list(title = 'Date', range = ~c(as.POSIXct('2020-03-10'), max(dateRep))),
-    #          yaxis = list (title = 'Number of individuals',
-    #                        type = if(input$logY) "log" else "linear"),
-    #          dragmode='pan') %>%
-    #   plotly::config(scrollZoom = TRUE)
   })
+  
+
+# Info Boxes --------------------------------------------------------------
   
   #Ireland cases infobox in summary tab
   output$ireCasesBox <- renderValueBox({
@@ -214,7 +247,7 @@ shinyServer(function(input, output, session) {
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland Cases",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'yellow',
+             color = 'olive',
              icon = icon("thermometer-three-quarters"))
   })
   
@@ -225,7 +258,7 @@ shinyServer(function(input, output, session) {
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'red',
+             color = 'olive',
              icon = icon("exclamation-triangle"))
     
   })
@@ -237,7 +270,7 @@ shinyServer(function(input, output, session) {
     val = str_pad(format(sum_stats$Hospitalised[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Hospitalised Ireland",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'teal',
+             color = 'olive',
              icon = icon("hospital"))
   })
   
@@ -248,7 +281,7 @@ shinyServer(function(input, output, session) {
     val = str_pad(format(sum_stats$ICU[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland ICU",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'fuchsia',
+             color = 'olive',
              icon = icon("heart"))
   })
   
@@ -259,7 +292,7 @@ shinyServer(function(input, output, session) {
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Global cases",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'light-blue',
+             color = 'maroon',
              icon = icon("globe"))
   })
   
@@ -273,75 +306,108 @@ shinyServer(function(input, output, session) {
              color = 'maroon',
              icon = icon("cross"))
   })
-
-  # Highest rate of increase in deaths
-  output$dIncreaseBox <- renderValueBox({  
-    browser()
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
-    html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'maroon',
-             icon = icon("cross"))
-  })
   
-  # Lowest rate of increase in deaths
-  output$dDecreaseBox <- renderValueBox({  
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+  #Worldwide deaths infobox in summary tab
+  output$wRecovBox <- renderValueBox({  
+    pc_change = round(100*(sum_stats$Recovered[sum_stats$Region == 'world']/sum_stats_yesterday$Recovered[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    val = str_pad(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Global recovered",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
-             icon = icon("cross"))
+             icon = icon("heart"))
   })
   
   # Worst hit country
   output$worstHitCountryBox <- renderValueBox({  
-    browser()
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
-    html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'maroon',
-             icon = icon("cross"))
+    worst_countries = ecdc %>% 
+      filter(countriesAndTerritories != 'Global') %>% 
+      group_by(countriesAndTerritories) %>% 
+      summarise(totalDeaths = sum(deaths)) %>% 
+      ungroup() %>% 
+      arrange(desc(totalDeaths)) %>% 
+      top_n(10)
+    diff = worst_countries %>% top_n(2) %>% 
+      select(totalDeaths) %>% pull %>% diff %>% abs
+    valueBox(value = tags$p(worst_countries$countriesAndTerritories[1], style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Most deaths: ",worst_countries$totalDeaths[1])),
+             color = 'light-blue',
+             icon = icon("arrow-up"))
   })
   
   # Biggest Increase in Deaths Country
   output$increaseDeathBox <- renderValueBox({  
-    browser()
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
-    html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'maroon',
-             icon = icon("cross"))
+    biggest_increase = ecdc_change %>% 
+      filter(deaths != 0) %>% 
+      arrange(desc(deaths))
+    
+    valueBox(value = tags$p(biggest_increase$countriesAndTerritories[1], style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", biggest_increase$deaths[1])),
+             color = 'light-blue',
+             icon = icon("arrow-up"))
   })
   
   # Biggest decrease in deaths
   output$bigDecreaseBox <- renderValueBox({  
-    browser()
-    pct <- function(x) {x/lag(x)}
-    is_bad <- function(x) is.na(x) | is.nan(x) | is.infinite((x))
-    ecdc_pct_change = ecdc %>% group_by(countriesAndTerritories) %>% 
-      mutate_each(funs(pct), c(cases, deaths)) %>% 
-      filter_all(all_vars(!is_bad(.))) %>% 
-      ungroup() %>% 
-      filter(dateRep == max(dateRep))
-    
-    
-    
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
-    html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'maroon',
-             icon = icon("cross"))
+    biggest_decrease = ecdc_change %>% 
+      filter(deaths != 0) %>% 
+      arrange(deaths) %>% 
+      slice(1)
+    valueBox(value = tags$p(biggest_decrease$countriesAndTerritories, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", abs(biggest_decrease$deaths))),
+             color = 'light-blue',
+             icon = icon("arrow-down", class = "color: rgb(59, 91, 152)"))
   })
+  
+
+# Data tables -------------------------------------------------------------
+
+  
+  # Highest daily
+  output$highestDaily <- DT::renderDataTable({
+    DT::datatable(ecdc_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`)),
+                  options = list(
+                    pageLength = 10,
+                    scrollY='calc((100vh - 290px)/1.0)',
+                    searching = TRUE,
+                    paging=TRUE,
+                    autoWidth = TRUE,
+                    rownames=TRUE
+                  ))
+  })  
+  
+  # Highest total
+  output$highestTotal <- DT::renderDataTable({
+    DT::datatable(ecdc_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`)),
+                  options = list(
+                    pageLength = 10,
+                    scrollY='calc((100vh - 290px)/1.0)',
+                    searching = TRUE,
+                    paging=TRUE,
+                    autoWidth = TRUE,
+                    rownames=TRUE
+                  ))
+  })  
+  
+  # Biggest change
+  output$biggestChange <- DT::renderDataTable({
+    biggest_change = ecdc_change %>% 
+      filter(deaths != 0) %>% 
+      arrange(desc(deaths)) %>% 
+      rename(Country = countriesAndTerritories,
+             `Change in deaths` = deaths) %>% 
+      select(Country, `Change in deaths`) %>% 
+      arrange(desc(`Change in deaths`))
+    DT::datatable(biggest_change,
+                  options = list(
+                    pageLength = 10,
+                    scrollY='calc((100vh - 290px)/1.0)',
+                    searching = TRUE,
+                    paging=TRUE,
+                    autoWidth = TRUE,
+                    rownames=TRUE
+                  ))
+  })  
   
   #################################COUNTIES TAB#################################
   #Counties table in Counties tab
@@ -420,6 +486,18 @@ shinyServer(function(input, output, session) {
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
+    
+    country_colours = ecdc %>% arrange(desc(popData2018)) %>% 
+      select(countriesAndTerritories) %>% 
+      distinct() %>%
+      #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
+      mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
+      # mutate(Colours = sample(new_colors, n())) %>% 
+      # mutate(Colours = replace(Colours,
+      #                          countriesAndTerritories == "Ireland", "green")) %>%
+      mutate(Colours = replace(Colours,
+                               countriesAndTerritories == "Ireland", "#40C575")) %>%
+      deframe()
     
     shiny::validate(
       shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
