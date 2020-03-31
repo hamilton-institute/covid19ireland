@@ -39,7 +39,7 @@ ecdc_raw <- readRDS('ECDC_data_current.rds') %>%
   mutate(countriesAndTerritories = 
            recode(countriesAndTerritories, 
                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
-                  'United_States_of_Americ' = 'USA',
+                  'United_States_of_America' = 'USA',
                   'United_Kingdom' = 'UK'
                   ))
 
