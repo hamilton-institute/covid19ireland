@@ -367,7 +367,7 @@ shinyServer(function(input, output, session) {
     
     valueBox(value = tags$p(name, 
                             style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
+             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", 
                                     abs(biggest_decrease$deaths))),
              color = 'light-blue',
              icon = icon("arrow-down", class = "color: rgb(59, 91, 152)"))
