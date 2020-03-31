@@ -250,7 +250,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Ireland Cases",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Ireland: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("thermometer-three-quarters"))
   })
@@ -261,7 +261,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Ireland Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Ireland: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("exclamation-triangle"))
     
@@ -273,7 +273,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Hospitalised[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Hospitalised Ireland",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Ireland: Hospitalised ",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("hospital"))
   })
@@ -284,7 +284,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$ICU[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Ireland ICU",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Ireland: ICU",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("heart"))
   })
@@ -295,7 +295,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global cases",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Global: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("globe"))
   })
@@ -306,7 +306,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Global: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("cross"))
   })
@@ -317,7 +317,7 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Global recovered",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Global: Recovered",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("heart"))
   })
