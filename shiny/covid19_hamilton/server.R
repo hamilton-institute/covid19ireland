@@ -58,26 +58,6 @@ country_colours = ecdc %>% arrange(desc(popData2018)) %>%
                            countriesAndTerritories == "Ireland", "#40C575")) %>% 
   deframe()
 
-# 
-# #For summary of world plot
-# ecdc_world_agg <- ecdc %>%
-#   select(-c(day, month, year, countriesAndTerritories, geoId)) %>%
-#   group_by(dateRep) %>% 
-#   summarise(New_Cases = sum(cases), New_Deaths = sum(deaths)) %>% 
-#   mutate(`Total Cases` = cumsum(New_Cases), `Total Deaths` = cumsum(New_Deaths)) %>%
-#   gather('Type', 'Number', -dateRep) %>%
-#   arrange(dateRep)
-# 
-# #For Trends tab plots
-# ecdc_country_agg <- ecdc %>%
-#   select(-c(day, month, year, geoId)) %>%
-#   group_by(countriesAndTerritories, dateRep) %>% 
-#   summarise(`New Cases` = sum(cases), `New Deaths` = sum(deaths)) %>% 
-#   mutate(`Total Cases` = cumsum(`New Cases`), `Total Deaths` = cumsum(`New Deaths`)) %>%
-#   gather('Type', 'Number', -c(dateRep, countriesAndTerritories)) %>%
-#   #filter(Type == 'Total Cases' | Type == 'Total Deaths') %>%
-#   arrange(dateRep)
-
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
 all_tables <- readRDS('all_tables_current.rds')
@@ -99,6 +79,8 @@ cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
 
 #Read in summary stats for Ireland
 sum_stats <- read.csv('summary_stats_current.csv')
+yesterday = format(as.Date(Sys.time()) - 1, "%Y%m%d")
+sum_stats_yesterday = read_csv(paste0("old_data/summary_stats",yesterday,".csv"))
 
 #Create the datable with county and date information
 county_total_date<-map_df(all_tables,~add_column(.x$counties,date=lubridate::dmy(.x$published)))%>% arrange(desc(date))
@@ -122,6 +104,18 @@ county_cumulative_cases<-map(cs2$NAME_TAG,
 #Defining the trend icon to the county map
 trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awesome/1792/line-chart-512.png",
                      iconWidth = 15,iconHeight = 15)
+
+# Get the html message for the value boxes
+get_html_message = function(pc) {
+  if(pc == 0)  {
+    html_message = fa(name = "arrow-right", fill = "grey")
+  } else if(pc < 0) {
+    html_message = fa(name = "arrow-down", fill = "white")
+  } else if(pc > 0) {
+    html_message = fa(name = "arrow-up", fill = "black")
+  }
+  return(html_message)
+}
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
@@ -214,68 +208,105 @@ shinyServer(function(input, output, session) {
   })
   
   #Ireland cases infobox in summary tab
-  output$ireCasesBox <- renderInfoBox({
-    
-    infoBox(
-      HTML(paste0("Confirmed Cases",br()," in Ireland:")), 
-      #format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 
-      value = tags$p(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), style = "font-size: 120%;"),
-      color="yellow",
-      width = 10,
-      icon = icon("thermometer-three-quarters"),
-      fill = TRUE)
+  output$ireCasesBox <- renderValueBox({
+    pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'ireland']/sum_stats_yesterday$Cases[sum_stats$Region == 'ireland'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Ireland Cases",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'yellow',
+             icon = icon("thermometer-three-quarters"))
   })
   
   #Ireland deaths infobox in summary tab
-  output$ireDeathsBox <- renderInfoBox({
-
-    infoBox(
-      HTML(paste0("Total Deaths",br()," in Ireland:")), 
-      tags$p(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), style = "font-size: 120%;"),
-      icon = icon("exclamation-triangle"),
-      color = "red",
-      fill = TRUE)
+  output$ireDeathsBox <- renderValueBox({
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'ireland']/sum_stats_yesterday$Deaths[sum_stats$Region == 'ireland'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Ireland Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'red',
+             icon = icon("exclamation-triangle"))
+    
   })
   
-  #Ireland recovered infobox in summary tab
-  output$ireRecoverBox <- renderInfoBox({
-    infoBox(
-      HTML(paste0("Total Recovered",br()," in Ireland:")), 
-      tags$p(format(sum_stats$Recovered[sum_stats$Region == 'ireland'], big.mark=','), style = "font-size: 120%;"),
-      color="green", 
-      icon = icon("heart"),
-      fill = TRUE)
+  #Ireland hospitalised infobox in summary tab
+  output$ireHospBox <- renderValueBox({
+    pc_change = str_pad(round(100*(sum_stats$Hospitalised[sum_stats$Region == 'ireland']/sum_stats_yesterday$Hospitalised[sum_stats$Region == 'ireland'] - 1)),3, 'left')
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Hospitalised[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Hospitalised Ireland",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'teal',
+             icon = icon("hospital"))
+  })
+  
+  #Ireland ICU infobox in summary tab
+  output$ireICUBox <- renderValueBox({
+    pc_change = round(100*(sum_stats$ICU[sum_stats$Region == 'ireland']/sum_stats_yesterday$ICU[sum_stats$Region == 'ireland'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$ICU[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Ireland ICU",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'fuchsia',
+             icon = icon("heart"))
   })
   
   #Worldwide cases infobox in summary tab
-  output$wCasesBox <- renderInfoBox({
-    infoBox(
-      HTML(paste0("Confirmed Cases",br()," Worldwide:")), 
-      tags$p(format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), style = "font-size: 120%;"),
-      color='yellow', 
-      icon = icon("globe"),
-      fill = TRUE)
+  output$wCasesBox <- renderValueBox({
+    pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'world']/sum_stats_yesterday$Cases[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global cases",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'light-blue',
+             icon = icon("globe"))
   })
   
   #Worldwide deaths infobox in summary tab
-  output$wDeathsBox <- renderInfoBox({      
-    infoBox(
-      HTML(paste0("Total Deaths",br()," Worldwide:")), 
-      tags$p(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), style = "font-size: 120%;"),
-      icon = icon("exclamation-triangle"),
-      color='red', 
-      fill = TRUE)
+  output$wDeathsBox <- renderValueBox({  
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'maroon',
+             icon = icon("cross"))
+  })
+
+  # Highest rate of increase in deaths
+  output$dIncreaseBox <- renderValueBox({  
+    browser()
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'maroon',
+             icon = icon("cross"))
   })
   
-  #Worldwide recovered infobox in summary tab
-  output$wRecoverBox <- renderInfoBox({
-    infoBox(
-      HTML(paste0("Total Recovered",br()," Worldwide:")), 
-      tags$p(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), style = "font-size: 120%;"),
-      color='green', 
-      icon = icon("heart"),
-      fill = TRUE)
-  }) 
+  # Lowest rate of increase in deaths
+  output$dDecreaseBox <- renderValueBox({  
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'maroon',
+             icon = icon("cross"))
+  })
+  
+  # Worst hit country
+  output$wCountryBox <- renderValueBox({  
+    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+             subtitle = HTML(paste0("Global deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             color = 'maroon',
+             icon = icon("cross"))
+  })
   
   #################################COUNTIES TAB#################################
   #Counties table in Counties tab

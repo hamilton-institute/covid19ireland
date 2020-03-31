@@ -59,12 +59,8 @@ names(summary_stats_world) <- c('Region', 'Cases', 'Deaths', 'Recovered', 'Hospi
 
 all.data <- rbind(summary_stats_world, summary_stats_irl)
 
-
-
-
-
-
-
 # write data
+today = format(Sys.time(), "%Y%m%d")
+write_csv(all.data, paste0("old_data/summary_stats",today,".csv"))
 #write_csv(all.data, "data/scraped/summary_stats.csv")
 write_csv(all.data, "summary_stats_current.csv")

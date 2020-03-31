@@ -37,11 +37,13 @@ header <- dashboardHeader(
 )
 
 sidebar <- dashboardSidebar(
+  width = 150,
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
-    menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
+    menuItem("By Country", tabName = "country", icon = icon("flag")),
     menuItem("By County", tabName = "county", icon = icon("map")),
-    menuItem("Hospitalisation Stats", tabName = "patientprofile
+    menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
+    menuItem("Hospitalisation", tabName = "patientprofile
              ", icon = icon("hospital"))
   )
 )
@@ -52,13 +54,36 @@ body <- dashboardBody(
   ),
   tabItems(
     tabItem(tabName = 'summary',
-            fluidRow(infoBoxOutput("ireCasesBox"),
-                     infoBoxOutput("ireDeathsBox"),
-                     infoBoxOutput('ireRecoverBox'),
-                     infoBoxOutput("wCasesBox"),
-                     infoBoxOutput("wDeathsBox"),
-                     infoBoxOutput('wRecoverBox')
-            ),
+            box(width = 12,
+                tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px}"))),
+                 fluidRow(
+                   column(width = 4, valueBoxOutput("ireCasesBox", width = NULL)),
+                   column(width = 4, valueBoxOutput("ireDeathsBox", width = NULL)),
+                   column(width = 4, valueBoxOutput("wCasesBox", width = NULL))
+                 ),
+                 fluidRow(
+                   column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
+                   column(width = 4, valueBoxOutput("ireHospBox", width = NULL)),
+                   column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
+                 ),
+                fluidRow(
+                  column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
+                  column(width = 4, valueBoxOutput("ireHospBox", width = NULL)),
+                  column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
+                )
+            )  
+            
+            
+            # tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px}"))),
+            # fluidRow(valueBoxOutput("ireCasesBox"),
+            #          valueBoxOutput("ireDeathsBox"),
+            #          valueBoxOutput("wCasesBox"),
+            # ),
+            # fluidRow(valueBoxOutput("ireHospBox"),
+            #          valueBoxOutput("ireICUBox"),
+            #          valueBoxOutput("wDeathsBox"))
+    ),
+    tabItem(tabName = 'country',
             fluidRow(
               column(width = 4,
                      pickerInput("sel_ctry",
@@ -91,7 +116,7 @@ body <- dashboardBody(
               column(width = 12,
                      plotlyOutput("CountryPlot", height = "500px")
               )
-            )
+            )        
     ),
     tabItem(tabName = "county",
             fluidRow(
