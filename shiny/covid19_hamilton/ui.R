@@ -85,7 +85,7 @@ body <- dashboardBody(
                     # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
                     width = 4,
                     title=HTML(fa(name = "calendar-day", fill = "#3d9970"), 
-                               paste0("Highest daily deaths from ECDC:", format(max(ecdc$dateRep), '%d-%b-%Y'))),
+                               paste0("Highest daily deaths from ECDC: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
                     DT::dataTableOutput("highestDaily")
                   ),
                   box(
