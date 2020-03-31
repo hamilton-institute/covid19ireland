@@ -325,10 +325,14 @@ shinyServer(function(input, output, session) {
   output$bigDecreaseBox <- renderValueBox({  
     browser()
     pct <- function(x) {x/lag(x)}
-    
+    is_bad <- function(x) is.na(x) | is.nan(x) | is.infinite((x))
     ecdc_pct_change = ecdc %>% group_by(countriesAndTerritories) %>% 
       mutate_each(funs(pct), c(cases, deaths)) %>% 
-      filter_all(all_vars(!is.infinite(.)))
+      filter_all(all_vars(!is_bad(.))) %>% 
+      ungroup() %>% 
+      filter(dateRep == max(dateRep))
+    
+    
     
     pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
