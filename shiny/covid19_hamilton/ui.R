@@ -57,6 +57,7 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
+  tags$head(tags$style(type='text/css', ".slider-animate-button { font-size: 20pt !important; }")),
   shinyDashboardThemes(
     theme = "grey_dark"
   ),
@@ -203,7 +204,8 @@ body <- dashboardBody(
                                      max = max(ecdc$dateRep), value = min(ecdc$dateRep),
                                      width = "75%",
                                      timeFormat = "%d/%b",
-                                     animate=animationOptions(interval=1000, loop = FALSE)
+                                     animate=animationOptions(interval=1000, 
+                                                              loop = FALSE)
                          )
                   ),
                   column(width = 12,
