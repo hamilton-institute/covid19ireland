@@ -596,50 +596,45 @@ shinyServer(function(input, output, session) {
     ani_graph()
   })
     
+
+# Hospital tab ------------------------------------------------------------
+
+  
   
   #############################################
   #             age in hospital plot
   #############################################
   output$ageCases <- renderPlotly({
+
+    # Main data on hospitalisation
+    age.hosp <- (all_tables[[1]]$age_hospitalised) %>% 
+      rename('Age' = "Hospitalised Age",
+             `Hospitalised cases` = `Number of Cases`) %>% 
+      select(Age, `Hospitalised cases`)
     
+    # Data on all cases  
+    age.all = (all_tables[[1]]$age) %>% 
+      rename(`All cases` = `Number of Cases`) %>% 
+      mutate(`All cases` = as.numeric(`All cases`)) %>% 
+      select(Age, `All cases`)
     
+    age_bind = left_join(age.all, age.hosp, 
+                          by = c("Age")) %>% 
+      replace_na(list(`Hospitalised cases` = 0)) %>% 
+      mutate('Non-hospitalised cases' = `All cases` - `Hospitalised cases`,
+             Age = factor(Age, 
+                          levels = Age,
+                          ordered = TRUE)) %>% 
+      select(-`All cases`) %>% 
+      filter(Age != 'Unknown') %>% 
+      pivot_longer(names_to = 'Type', values_to = 'Cases', -Age)
     
-    age.hosp <- (all_tables[[1]]$age_hospitalised)
-    x<-as.character(age.hosp$`Hospitalised Age`)
-    y<-as.numeric(age.hosp$`Number of Cases`)
-    text<- paste0(age.hosp$`Number of Cases`, ' patients')
-    data1 <- data.frame(x, y, 'Hospitalised')
-    data1$x <- factor(data1$x, levels = as.character(age.hosp$`Hospitalised Age`))
-    names(data1) <- c('Age','Count','Classification')
-    
-    
-    age <- (all_tables[[1]]$age)
-    y<-as.numeric(age$`Number of Cases`)
-    y <- y[-length(y)]
-    
-    
-    # combine first two bins
-    y[1] = y[1] + y[2]
-    y = y[-2]
-    
-    
-    text<- paste0(y, ' patients')
-    
-    
-    data2 <- data.frame(x, y, 'Cases')
-    data2$x <- factor(data2$x, levels = as.character(age.hosp$`Hospitalised Age`))
-    names(data2) <- c('Age','Count','Classification')
-    
-    
-    all.data <- rbind(data2,data1)
-    
-    g<-ggplot(data = all.data, aes(Age, Count, fill=Classification))+
-      geom_bar(stat = 'identity', position=position_dodge(0)) +
+    g<-ggplot(data = age_bind, aes(Age, Cases, fill=Type))+
+      geom_bar(stat = 'identity') +
       theme_shiny_dashboard() +
       ggtitle('Cases by Age: Ireland')
     
-    ggplotly(g, tooltip=c("Classification", "Count"))
-    
+    ggplotly(g, tooltip=c("Type", "Cases"))
     
   })
   
