@@ -114,7 +114,7 @@ body <- dashboardBody(
                      pickerInput("sel_ctry",
                                  "Select countries", 
                                  choices= unique(ecdc$countriesAndTerritories),
-                                 selected = c('Global', 'Ireland', 'United_Kingdom'),
+                                 selected = c('Global', 'Ireland', 'UK', 'USA'),
                                  options = list(`actions-box` = TRUE,
                                                 `live-search` = TRUE),
                                  multiple = TRUE)
@@ -170,7 +170,8 @@ body <- dashboardBody(
                          pickerInput("sel_ctry2",
                                      "Select Countries", 
                                      choices=unique(ecdc$countriesAndTerritories),
-                                     selected = c('Ireland', 'United_Kingdom'),
+                                     selected = c('Ireland', 'UK', 'Italy', 'USA',
+                                                  'Spain', 'China'),
                                      options = list(`actions-box` = TRUE,
                                                     `live-search` = TRUE),
                                      multiple = TRUE)
