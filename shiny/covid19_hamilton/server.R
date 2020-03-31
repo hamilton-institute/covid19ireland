@@ -76,7 +76,7 @@ cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
 
 #Read in summary stats for Ireland
 sum_stats <- read.csv('summary_stats_current.csv')
-yesterday = format(as.Date(Sys.time()) - 1, "%Y%m%d")
+yesterday = format(as.Date(Sys.time(), tz = "Europe/Dublin") - 1, "%Y%m%d")
 sum_stats_yesterday = read_csv(paste0("old_data/summary_stats",yesterday,".csv"))
 
 #Create the datable with county and date information
