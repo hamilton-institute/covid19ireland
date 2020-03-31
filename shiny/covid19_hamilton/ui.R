@@ -85,18 +85,18 @@ body <- dashboardBody(
                     # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
                     width = 4,
                     title=HTML(fa(name = "calendar-day", fill = "#3d9970"), 
-                               paste0("Highest daily deaths from ECDC: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
+                               paste0("Daily deaths from ECDC: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
                     DT::dataTableOutput("highestDaily")
                   ),
                   box(
                     width = 4,
-                    title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Highest total deaths"),
+                    title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Highest total"),
                     DT::dataTableOutput("highestTotal")
                   )
                   ,
                   box(
                     width = 4,
-                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Biggest change in deaths from yesterday"),
+                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Biggest change from yesterday"),
                     DT::dataTableOutput("biggestChange")
                   )
                   
