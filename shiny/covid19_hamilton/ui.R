@@ -75,10 +75,12 @@ body <- dashboardBody(
               column(width = 4, valueBoxOutput("wDeathsBox", width = 12)),
               column(width = 4, valueBoxOutput("wRecovBox", width = 12)),
             ),
+            tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
             fluidRow(
-              column(width = 4, valueBoxOutput("worstHitCountryBox", width = 12)),
-              column(width = 4, valueBoxOutput("increaseDeathBox", width = 12)),
-              column(width = 4, valueBoxOutput("bigDecreaseBox", width = 12))
+              column(width = 3, valueBoxOutput("bigDailyBox", width = 12)),
+              column(width = 3, valueBoxOutput("worstHitCountryBox", width = 12)),
+              column(width = 3, valueBoxOutput("increaseDeathBox", width = 12)),
+              column(width = 3, valueBoxOutput("bigDecreaseBox", width = 12))
             )),
             column(width = 3, 
                    leafletOutput('covidMap2')

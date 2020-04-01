@@ -348,8 +348,8 @@ shinyServer(function(input, output, session) {
     name = str_sub(str_replace(worst_countries$countriesAndTerritories[1], '_', ' '),
                    1, 10)
     valueBox(value = tags$p(name, 
-                            style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Most deaths: ",worst_countries$totalDeaths[1])),
+                            style = "font-size: 110%;"),
+             subtitle = HTML(paste0("Most deaths overall: ",worst_countries$totalDeaths[1])),
              color = 'light-blue',
              icon = icon("arrow-up"))
   })
@@ -363,7 +363,7 @@ shinyServer(function(input, output, session) {
                    1, 10)
     
     valueBox(value = tags$p(name, 
-                            style = "font-size: 120%;"),
+                            style = "font-size: 110%;"),
              subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", -biggest_increase$deaths[1])),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -379,13 +379,29 @@ shinyServer(function(input, output, session) {
                    1, 10)
     
     valueBox(value = tags$p(name, 
-                            style = "font-size: 120%;"),
+                            style = "font-size: 110%;"),
              subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
                                     abs(biggest_decrease$deaths))),
              color = 'light-blue',
              icon = icon("arrow-down", class = "color: rgb(59, 91, 152)"))
   })
   
+  output$bigDailyBox <- renderValueBox({  
+    daily_death = ecdc %>% 
+      filter(countriesAndTerritories != 'Global') %>% 
+      group_by(countriesAndTerritories) %>% 
+      filter(dateRep == max(dateRep)) %>% 
+      ungroup() %>% 
+      arrange(desc(deaths)) %>% 
+      slice(1)
+    name = str_sub(str_replace(daily_death$countriesAndTerritories[1], '_', ' '),
+                   1, 10)
+    valueBox(value = tags$p(name, 
+                            style = "font-size: 110%;"),
+             subtitle = HTML(paste0("Most deaths today: ",daily_death$deaths[1])),
+             color = 'light-blue',
+             icon = icon("arrow-up"))
+  })
 
 # Data tables -------------------------------------------------------------
 
