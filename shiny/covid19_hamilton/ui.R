@@ -64,23 +64,23 @@ body <- dashboardBody(
   tabItems(
     tabItem(tabName = 'summary',
             box(width = 12,
-                tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
-                column(width = 9,
+                column(width = 12,
+                       tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
                        fluidRow(
-                         column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
-                         column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
+                         column(width = 4, valueBoxOutput("ireCasesBox", width = NULL)),
+                         column(width = 4, valueBoxOutput("ireDeathsBox", width = NULL)),
                          #column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
-                         column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
+                         column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
                        ),
                        fluidRow(
-                         column(width = 3, valueBoxOutput("wCasesBox", width = NULL)),
-                         column(width = 3, valueBoxOutput("wDeathsBox", width = NULL)),
-                         column(width = 3, valueBoxOutput("wRecovBox", width = NULL))
+                         column(width = 4, valueBoxOutput("wCasesBox", width = NULL)),
+                         column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
+                         column(width = 4, valueBoxOutput("wRecovBox", width = NULL))
                        ),
                        fluidRow(
-                         column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
-                         column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
-                         column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
+                         column(width = 4, valueBoxOutput("worstHitCountryBox", width = NULL)),
+                         column(width = 4, valueBoxOutput("increaseDeathBox", width = NULL)),
+                         column(width = 4, valueBoxOutput("bigDecreaseBox", width = NULL))
                        )
                 )
                 # column(width=6, 
@@ -91,7 +91,7 @@ body <- dashboardBody(
                 #        )
                 # )
             ),
-            box(width = 9,
+            box(width = 12,
                 fluidRow(
                   box(
                     # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),

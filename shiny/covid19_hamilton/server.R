@@ -394,11 +394,12 @@ shinyServer(function(input, output, session) {
     DT::datatable(ecdc_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`)),
                   options = list(
                     pageLength = 10,
-                    scrollY='calc((100vh - 290px)/1.0)',
+                    #scrollY='calc((100vh - 290px)/1.0)',
                     searching = TRUE,
                     paging=TRUE,
                     autoWidth = TRUE,
                     rownames=TRUE
+                    #rowCallback = JS("function(r,d) {$(r).attr('height', '100px')}")
                   ))
   })  
   
@@ -407,7 +408,7 @@ shinyServer(function(input, output, session) {
     DT::datatable(ecdc_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`)),
                   options = list(
                     pageLength = 10,
-                    scrollY='calc((100vh - 290px)/1.0)',
+                    #scrollY='calc((100vh - 290px)/1.0)',
                     searching = TRUE,
                     paging=TRUE,
                     autoWidth = TRUE,
@@ -427,7 +428,7 @@ shinyServer(function(input, output, session) {
     DT::datatable(biggest_change,
                   options = list(
                     pageLength = 10,
-                    scrollY='calc((100vh - 290px)/1.0)',
+                    #scrollY='calc((100vh - 290px)/1.0)',
                     searching = TRUE,
                     paging=TRUE,
                     autoWidth = TRUE,
