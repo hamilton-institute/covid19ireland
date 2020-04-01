@@ -64,7 +64,7 @@ body <- dashboardBody(
   tabItems(
     tabItem(tabName = 'summary',
             box(width = 12,
-                tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px}"))),
+                tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
                  fluidRow(
                    column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
                    column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
