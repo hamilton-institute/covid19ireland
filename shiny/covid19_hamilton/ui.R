@@ -37,11 +37,10 @@ ecdc_world = ecdc_raw %>%
 
 ecdc = bind_rows(ecdc_world, ecdc_raw)
 
-
-
 header <- dashboardHeader(
-  title = paste("Hamilton Covid-19 Dashboard: Updated", last_update),
-  titleWidth = 600
+  title = paste0("Hamilton Covid-19 Dashboard: app updated ", last_update, '. Most recent data: ', 
+                format(max(ecdc$dateRep), "%d-%b-%Y")),
+  titleWidth = 850
 )
 
 sidebar <- dashboardSidebar(
