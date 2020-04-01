@@ -67,7 +67,8 @@ latest_county_table$Cases <- strtoi(gsub("[^0-9.-]", "", latest_county_table$`Nu
 cs2 <- rgdal::readOGR("counties_simple.geojson")
 cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 #Color the counties by number of cases
-pal2 <- colorNumeric("Reds", log2(cs2$Cases))
+pal2 <- colorNumeric("Blues", log2(cs2$Cases))
+#pal2 <- colorNumeric(scales::viridis_pal(), log2(cs2$Cases))
 
 #Since we don't have data on a county by county basis for
 #Nor Ire, we fill it with data for the whole region
@@ -474,13 +475,14 @@ shinyServer(function(input, output, session) {
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
       ) %>%
-      setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
+      setView(lng = -7.635498, lat = 53.186288, zoom = 6) %>% 
       addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
                  icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
       addPolygons(stroke = FALSE, 
                   smoothFactor = 0.3, 
                   fillOpacity = 0.7,
                   fillColor = ~pal2(log2(Cases)),
+                  #fillColor = ~viridis_pal(option = "B")(log2(Cases)),
                   label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
       addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
                 labFormat = labelFormat(transform = function(x) round(2^x)))

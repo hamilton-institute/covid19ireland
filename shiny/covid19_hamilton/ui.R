@@ -22,11 +22,11 @@ last_update = format(file.info('summary_stats_current.csv')$mtime,
 
 ecdc_raw <- readRDS('ECDC_data_current.rds') %>% 
   mutate(countriesAndTerritories = 
-            recode(countriesAndTerritories, 
-                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
-                   'United_States_of_America' = 'USA',
-                   'United_Kingdom' = 'UK'
-            ))
+           recode(countriesAndTerritories, 
+                  'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
+                  'United_States_of_America' = 'USA',
+                  'United_Kingdom' = 'UK'
+           ))
 
 ecdc_world = ecdc_raw %>% 
   group_by(dateRep) %>% 
@@ -53,7 +53,7 @@ sidebar <- dashboardSidebar(
     menuItem("Hospitals", tabName = "patientprofile
              ", icon = icon("hospital")),
     menuItem("Animations", icon = icon("chart-line"), tabName = "animation")
-    )
+  )
 )
 
 body <- dashboardBody(
@@ -63,59 +63,48 @@ body <- dashboardBody(
   ),
   tabItems(
     tabItem(tabName = 'summary',
-            box(width = 12,
-                column(width = 12,
-                       tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
-                       fluidRow(
-                         column(width = 4, valueBoxOutput("ireCasesBox", width = NULL)),
-                         column(width = 4, valueBoxOutput("ireDeathsBox", width = NULL)),
-                         #column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
-                         column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
-                       ),
-                       fluidRow(
-                         column(width = 4, valueBoxOutput("wCasesBox", width = NULL)),
-                         column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
-                         column(width = 4, valueBoxOutput("wRecovBox", width = NULL))
-                       ),
-                       fluidRow(
-                         column(width = 4, valueBoxOutput("worstHitCountryBox", width = NULL)),
-                         column(width = 4, valueBoxOutput("increaseDeathBox", width = NULL)),
-                         column(width = 4, valueBoxOutput("bigDecreaseBox", width = NULL))
-                       )
-                )
-                # column(width=6, 
-                #        box(
-                #          title = "COVID-19 map",
-                #          width = 12,
-                #          leafletOutput('covidMap2')
-                #        )
-                # )
+            column(width = 9,
+            fluidRow(
+              column(width = 3, valueBoxOutput("ireCasesBox", width = 12)),
+              column(width = 3, valueBoxOutput("ireHospBox", width = 12)),
+              column(width = 3, valueBoxOutput("ireDeathsBox", width = 12)),
+              column(width = 3, valueBoxOutput("ireICUBox", width = 12))
             ),
-            box(width = 12,
-                fluidRow(
-                  box(
-                    # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
-                    # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
-                    # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
-                    width = 3,
-                    title=HTML(fa(name = "calendar-day", fill = "#3d9970"), 
-                               paste0("Daily deaths: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
-                    DT::dataTableOutput("highestDaily")
-                  ),
-                  box(
-                    width = 3,
-                    title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
-                    DT::dataTableOutput("highestTotal")
-                  )
-                  ,
-                  box(
-                    width = 3,
-                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
-                    DT::dataTableOutput("biggestChange")
-                  )
-                  
-                )
-            )            
+            fluidRow(
+              column(width = 4, valueBoxOutput("wCasesBox", width = 12)),
+              column(width = 4, valueBoxOutput("wDeathsBox", width = 12)),
+              column(width = 4, valueBoxOutput("wRecovBox", width = 12)),
+            ),
+            fluidRow(
+              column(width = 4, valueBoxOutput("worstHitCountryBox", width = 12)),
+              column(width = 4, valueBoxOutput("increaseDeathBox", width = 12)),
+              column(width = 4, valueBoxOutput("bigDecreaseBox", width = 12))
+            )),
+            column(width = 3, 
+                   leafletOutput('covidMap2')
+            ),
+            column(width = 12,
+              box(
+                # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
+                # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
+                # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
+                width = 4,
+                title=HTML(fa(name = "calendar-day", fill = "#3d9970"),
+                           paste0("Daily deaths: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
+                DT::dataTableOutput("highestDaily")
+              ),
+              box(
+                width = 4,
+                title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
+                DT::dataTableOutput("highestTotal")
+              ),
+              box(
+                width = 4,
+                title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
+                DT::dataTableOutput("biggestChange")
+              )
+
+            )
     ),
     tabItem(tabName = 'country',
             fluidRow(
@@ -154,112 +143,112 @@ body <- dashboardBody(
     ),
     tabItem(tabName = "county",
             fluidRow(
-                column(width=3,
-                    box(
-                        title='Cases by County',
-                        width=12,
-                        DT::dataTableOutput("countyCasesTable")
-                    )
-                ),
-                column(width=9, 
-                    box(
-                      title = "COVID-19 in Ireland",
-                      width=12,
-                      leafletOutput('covidMap')
-                    )
-                )
+              column(width=3,
+                     box(
+                       title='Cases by County',
+                       width=12,
+                       DT::dataTableOutput("countyCasesTable")
+                     )
+              ),
+              column(width=9, 
+                     box(
+                       title = "COVID-19 in Ireland",
+                       width=12,
+                       leafletOutput('covidMap')
+                     )
+              )
             )
             
-        ),
-    
-        tabItem(tabName = "animation",
-                tags$style(type="text/css", ".recalculating {opacity: 1.0;}"),
-                fluidRow(
-                  column(width = 3,
-                         pickerInput("sel_ctry2",
-                                     "Select Countries", 
-                                     choices=unique(ecdc$countriesAndTerritories),
-                                     selected = c('Ireland', 'UK', 'Italy', 'USA',
-                                                  'Spain', 'China'),
-                                     options = list(`actions-box` = TRUE,
-                                                    `live-search` = TRUE),
-                                     multiple = TRUE)
-                  ),
-                  column(width = 3,
-                         pickerInput("sel_horiz",
-                                     "Select horizontal axis", 
-                                     choices=c('Cumulative cases', 'Cumulative deaths', 
-                                               'Log cumulative cases', 'Log cumulative deaths', 
-                                               'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
-                                               'Cumulative cases per million population',
-                                               'Cumulative deaths per million population'),
-                                     selected = c('Sqrt cumulative cases'),
-                                     multiple = FALSE)
-                  ),
-                  column(width = 3,
-                         pickerInput("sel_vert",
-                                     "Select vertical axis", 
-                                     choices=c('Cumulative cases', 'Cumulative deaths', 
-                                               'Log cumulative cases', 'Log cumulative deaths', 
-                                               'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
-                                               'Cumulative cases per million population',
-                                               'Cumulative deaths per million population'),
-                                     selected = c('Sqrt cumulative deaths'),
-                                     multiple = FALSE)
-                  )
-                ),
-                fluidRow(
-                  column(width = 9,
-                         sliderInput("theDate", "Date (click play or move slider)", min = min(ecdc$dateRep), 
-                                     max = max(ecdc$dateRep), value = min(ecdc$dateRep),
-                                     width = "75%",
-                                     timeFormat = "%d/%b",
-                                     animate=animationOptions(interval=1000, 
-                                                              loop = FALSE)
-                         )
-                  ),
-                  column(width = 9,
-                         plotOutput("AnimPlot", height = "500px")
-                  )
-                )
-        ),
-        
-        tabItem(tabName = "patientprofile",
-                fluidRow(
-                  fluidRow(
-                    box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
-                  ),
-                  fluidRow(
-                    box(plotlyOutput('ageCases'), width = '40%')
-                  ),
-                  fluidRow(
-                    box(plotlyOutput('howContracted')),
-                    box(plotlyOutput('icuProportion'))
-                    
-                  ),
-                  fluidRow(
-                    box(plotlyOutput('genderCases')),
-                    box(plotlyOutput('helthcarePatients'))
-                  )
-                  
-                )
-        )
     ),
-    #These style tags are necessary to cope with the
-    #buggy renderInfoBox function
-    tags$style("#ireCasesBox {width:300px;}"),
-    tags$style("#ireDeathsBox {width:300px;}"),
-    tags$style("#ireRecoverBox {width:300px;}"),
-    tags$style("#wCasesBox {width:300px;}"),
-    tags$style("#wDeathsBox {width:300px;}"),
-    tags$style("#wRecoverBox {width:300px;}"),
     
-    #The tags allow for nice vertical spacing
-    tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
-    tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
-    tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
-    tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
-    tags$style(type = "text/css", "#cumSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}")
+    tabItem(tabName = "animation",
+            tags$style(type="text/css", ".recalculating {opacity: 1.0;}"),
+            fluidRow(
+              column(width = 3,
+                     pickerInput("sel_ctry2",
+                                 "Select Countries", 
+                                 choices=unique(ecdc$countriesAndTerritories),
+                                 selected = c('Ireland', 'UK', 'Italy', 'USA',
+                                              'Spain', 'China'),
+                                 options = list(`actions-box` = TRUE,
+                                                `live-search` = TRUE),
+                                 multiple = TRUE)
+              ),
+              column(width = 3,
+                     pickerInput("sel_horiz",
+                                 "Select horizontal axis", 
+                                 choices=c('Cumulative cases', 'Cumulative deaths', 
+                                           'Log cumulative cases', 'Log cumulative deaths', 
+                                           'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
+                                           'Cumulative cases per million population',
+                                           'Cumulative deaths per million population'),
+                                 selected = c('Sqrt cumulative cases'),
+                                 multiple = FALSE)
+              ),
+              column(width = 3,
+                     pickerInput("sel_vert",
+                                 "Select vertical axis", 
+                                 choices=c('Cumulative cases', 'Cumulative deaths', 
+                                           'Log cumulative cases', 'Log cumulative deaths', 
+                                           'Sqrt cumulative cases', 'Sqrt cumulative deaths', 
+                                           'Cumulative cases per million population',
+                                           'Cumulative deaths per million population'),
+                                 selected = c('Sqrt cumulative deaths'),
+                                 multiple = FALSE)
+              )
+            ),
+            fluidRow(
+              column(width = 9,
+                     sliderInput("theDate", "Date (click play or move slider)", min = min(ecdc$dateRep), 
+                                 max = max(ecdc$dateRep), value = min(ecdc$dateRep),
+                                 width = "75%",
+                                 timeFormat = "%d/%b",
+                                 animate=animationOptions(interval=1000, 
+                                                          loop = FALSE)
+                     )
+              ),
+              column(width = 9,
+                     plotOutput("AnimPlot", height = "500px")
+              )
+            )
+    ),
+    
+    tabItem(tabName = "patientprofile",
+            fluidRow(
+              fluidRow(
+                box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
+              ),
+              fluidRow(
+                box(plotlyOutput('ageCases'), width = '40%')
+              ),
+              fluidRow(
+                box(plotlyOutput('howContracted')),
+                box(plotlyOutput('icuProportion'))
+                
+              ),
+              fluidRow(
+                box(plotlyOutput('genderCases')),
+                box(plotlyOutput('helthcarePatients'))
+              )
+              
+            )
+    )
+  ),
+  #These style tags are necessary to cope with the
+  #buggy renderInfoBox function
+  # tags$style("#ireCasesBox {width:300px;}"),
+  # tags$style("#ireDeathsBox {width:300px;}"),
+  # tags$style("#ireRecoverBox {width:300px;}"),
+  # tags$style("#wCasesBox {width:300px;}"),
+  # tags$style("#wDeathsBox {width:300px;}"),
+  # tags$style("#wRecoverBox {width:300px;}"),
+  # 
+  #The tags allow for nice vertical spacing
+  tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
+  tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+  tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+  tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
+  tags$style(type = "text/css", "#cumSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}")
 )
 
 # Put them together into a dashboardPage
@@ -269,3 +258,20 @@ dashboardPage(
   body = body,
   title = 'Hamilton Insitute Covid-19 Visualisation'
 )
+
+
+
+# box(width = 12,
+#     
+#            tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
+#            fluidRow(
+#            )
+#     )
+# column(width=6, 
+#        box(
+#          title = "COVID-19 map",
+#          width = 12,
+#          leafletOutput('covidMap2')
+#        )
+# )
+# ),
