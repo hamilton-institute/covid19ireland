@@ -65,42 +65,51 @@ body <- dashboardBody(
     tabItem(tabName = 'summary',
             box(width = 12,
                 tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
-                 fluidRow(
-                   column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
-                   column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
-                   column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
-                   column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
-                 ),
-                 fluidRow(
-                  column(width = 3, valueBoxOutput("wCasesBox", width = NULL)),
-                  column(width = 3, valueBoxOutput("wDeathsBox", width = NULL)),
-                  column(width = 3, valueBoxOutput("wRecovBox", width = NULL))
-                ),
-                fluidRow(
-                  column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
-                  column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
-                  column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
+                column(width = 9,
+                       fluidRow(
+                         column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
+                         column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
+                         #column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
+                         column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
+                       ),
+                       fluidRow(
+                         column(width = 3, valueBoxOutput("wCasesBox", width = NULL)),
+                         column(width = 3, valueBoxOutput("wDeathsBox", width = NULL)),
+                         column(width = 3, valueBoxOutput("wRecovBox", width = NULL))
+                       ),
+                       fluidRow(
+                         column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
+                         column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
+                         column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
+                       )
                 )
+                # column(width=6, 
+                #        box(
+                #          title = "COVID-19 map",
+                #          width = 12,
+                #          leafletOutput('covidMap2')
+                #        )
+                # )
             ),
-            box(width = 12,
+            box(width = 9,
                 fluidRow(
                   box(
                     # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
                     # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
                     # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
-                    width = 4,
+                    width = 3,
                     title=HTML(fa(name = "calendar-day", fill = "#3d9970"), 
-                               paste0("Daily deaths from ECDC: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
+                               paste0("Daily deaths: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
                     DT::dataTableOutput("highestDaily")
                   ),
                   box(
-                    width = 4,
+                    width = 3,
                     title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
                     DT::dataTableOutput("highestTotal")
                   )
                   ,
                   box(
-                    width = 4,
+                    width = 3,
                     title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
                     DT::dataTableOutput("biggestChange")
                   )
@@ -110,7 +119,7 @@ body <- dashboardBody(
     ),
     tabItem(tabName = 'country',
             fluidRow(
-              column(width = 4,
+              column(width = 3,
                      pickerInput("sel_ctry",
                                  "Select countries", 
                                  choices= unique(ecdc$countriesAndTerritories),
@@ -119,7 +128,7 @@ body <- dashboardBody(
                                                 `live-search` = TRUE),
                                  multiple = TRUE)
               ),
-              column(width = 4,
+              column(width = 3,
                      pickerInput("sel_var",
                                  "Select variables", 
                                  choices=c('Cumulative cases', 'Cumulative deaths', 
@@ -130,15 +139,15 @@ body <- dashboardBody(
                                  selected = c('Deaths per million population'),
                                  multiple = TRUE)
               ),
-              column(width = 4,
+              column(width = 3,
                      pickerInput("sel_axis",
                                  "Select horizontal axis", 
                                  choices=c('Date', 'Days since 1st case', 'Days since 10th case',
                                            'Days since 1st death'),
-                                 selected = c('Date'),
+                                 selected = c('Days since 1st death'),
                                  multiple = FALSE)
               ),
-              column(width = 12,
+              column(width = 9,
                      plotlyOutput("CountryPlot", height = "500px")
               )
             )        
@@ -166,7 +175,7 @@ body <- dashboardBody(
         tabItem(tabName = "animation",
                 tags$style(type="text/css", ".recalculating {opacity: 1.0;}"),
                 fluidRow(
-                  column(width = 4,
+                  column(width = 3,
                          pickerInput("sel_ctry2",
                                      "Select Countries", 
                                      choices=unique(ecdc$countriesAndTerritories),
@@ -176,7 +185,7 @@ body <- dashboardBody(
                                                     `live-search` = TRUE),
                                      multiple = TRUE)
                   ),
-                  column(width = 4,
+                  column(width = 3,
                          pickerInput("sel_horiz",
                                      "Select horizontal axis", 
                                      choices=c('Cumulative cases', 'Cumulative deaths', 
@@ -187,7 +196,7 @@ body <- dashboardBody(
                                      selected = c('Sqrt cumulative cases'),
                                      multiple = FALSE)
                   ),
-                  column(width = 4,
+                  column(width = 3,
                          pickerInput("sel_vert",
                                      "Select vertical axis", 
                                      choices=c('Cumulative cases', 'Cumulative deaths', 
@@ -200,7 +209,7 @@ body <- dashboardBody(
                   )
                 ),
                 fluidRow(
-                  column(width = 12,
+                  column(width = 9,
                          sliderInput("theDate", "Date (click play or move slider)", min = min(ecdc$dateRep), 
                                      max = max(ecdc$dateRep), value = min(ecdc$dateRep),
                                      width = "75%",
@@ -209,7 +218,7 @@ body <- dashboardBody(
                                                               loop = FALSE)
                          )
                   ),
-                  column(width = 12,
+                  column(width = 9,
                          plotOutput("AnimPlot", height = "500px")
                   )
                 )

@@ -299,7 +299,7 @@ shinyServer(function(input, output, session) {
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland: ICU",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
-             icon = icon("heart"))
+             icon = icon("hand-holding-medical"))
   })
   
   #Worldwide cases infobox in summary tab
@@ -357,14 +357,13 @@ shinyServer(function(input, output, session) {
   output$increaseDeathBox <- renderValueBox({  
     biggest_increase = ecdc_change %>% 
       filter(deaths != 0) %>% 
-      arrange(desc(deaths))
-    
+      arrange(deaths)
     name = str_sub(str_replace(biggest_increase$countriesAndTerritories[1], '_', ' '),
                    1, 10)
     
     valueBox(value = tags$p(name, 
                             style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", biggest_increase$deaths[1])),
+             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", -biggest_increase$deaths[1])),
              color = 'light-blue',
              icon = icon("arrow-up"))
   })
@@ -373,7 +372,7 @@ shinyServer(function(input, output, session) {
   output$bigDecreaseBox <- renderValueBox({  
     biggest_decrease = ecdc_change %>% 
       filter(deaths != 0) %>% 
-      arrange(deaths) %>% 
+      arrange(desc(deaths)) %>% 
       slice(1)
     name = str_sub(str_replace(biggest_decrease$countriesAndTerritories, '_', ' '),
                    1, 10)
@@ -421,8 +420,8 @@ shinyServer(function(input, output, session) {
     biggest_change = ecdc_change %>% 
       filter(deaths != 0) %>% 
       arrange(desc(deaths)) %>% 
-      rename(Country = countriesAndTerritories,
-             `Change in deaths` = deaths) %>% 
+      rename(Country = countriesAndTerritories) %>% 
+      mutate(`Change in deaths` = -deaths) %>% 
       select(Country, `Change in deaths`) %>% 
       arrange(desc(`Change in deaths`))
     DT::datatable(biggest_change,
@@ -453,6 +452,23 @@ shinyServer(function(input, output, session) {
   
   #Map in Counties tab
   output$covidMap <- renderLeaflet({
+    leaflet(cs2) %>% 
+      addProviderTiles(providers$Stamen.TonerLite,
+                       options = providerTileOptions(noWrap = TRUE)
+      ) %>%
+      setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
+      addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
+                 icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
+      addPolygons(stroke = FALSE, 
+                  smoothFactor = 0.3, 
+                  fillOpacity = 0.7,
+                  fillColor = ~pal2(log2(Cases)),
+                  label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
+      addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
+                labFormat = labelFormat(transform = function(x) round(2^x)))
+  })
+  
+  output$covidMap2 <- renderLeaflet({
     leaflet(cs2) %>% 
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
