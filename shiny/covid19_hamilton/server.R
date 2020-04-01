@@ -300,7 +300,7 @@ shinyServer(function(input, output, session) {
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland: ICU",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
-             icon = icon("hand-holding-medical"))
+             icon = icon("briefcase-medical"))
   })
   
   #Worldwide cases infobox in summary tab
