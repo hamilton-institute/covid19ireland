@@ -634,7 +634,8 @@ shinyServer(function(input, output, session) {
       theme_shiny_dashboard() +
       ggtitle('Cases by Age: Ireland')
     
-    ggplotly(g, tooltip=c("Type", "Cases"))
+    ggplotly(g, tooltip=c("Type", "Cases"))%>%
+      config(displayModeBar = FALSE)
     
   })
   
@@ -683,7 +684,8 @@ shinyServer(function(input, output, session) {
       }
       
       
-      ggplotly(g, tooltip = 'Percentage')
+      ggplotly(g, tooltip = 'Percentage')%>%
+        config(displayModeBar = FALSE)
       
       
       
@@ -717,17 +719,17 @@ shinyServer(function(input, output, session) {
       
       
       g <- ggplot(data = data, aes(x, y))+
-        geom_bar(stat = 'identity', fill = 'deepskyblue2', alpha = 0.7,width = 0.7) +
+        geom_bar(stat = 'identity', fill = 'orchid2', alpha = 0.7,width = 0.7) +
         theme_shiny_dashboard() +
         labs(y="Count", x = " ") +
         ggtitle('Number of Healthcare Workers Tested Positive') +
-        geom_text(aes(label=x),nudge_y = -100) +
         theme(
-          axis.text.x = element_blank(),
           axis.ticks = element_blank()) 
       
       
-      ggplotly(g)  %>% layout(margin = list(l = 75))
+      
+      ggplotly(g)  %>% layout(margin = list(l = 75)) %>%
+        config(displayModeBar = FALSE)
       
       
       
@@ -778,7 +780,8 @@ shinyServer(function(input, output, session) {
           legend.position = "none")
       
       
-      ggplotly(g, tooltip=c("Count")) %>% layout(margin = list(l = 75))
+      ggplotly(g, tooltip=c("Count")) %>% layout(margin = list(l = 75))%>%
+        config(displayModeBar = FALSE)
       
       
       
@@ -825,9 +828,12 @@ shinyServer(function(input, output, session) {
         labs(x="Date", y = "Number of patients") +
         ggtitle('Hospitalised Patients') + theme(
           legend.title = element_blank(),
-          axis.ticks = element_blank())
+          axis.ticks = element_blank(),
+          axis.text.x = element_text(face = "bold", 
+                                     size = 12, angle = 45))
 
-      ggplotly(p) %>% layout(margin = list(l = 75))    
+      ggplotly(p) %>% layout(margin = list(l = 75))    %>%
+        config(displayModeBar = FALSE)
       # fig <- plot_ly(x = ~ data$dates) %>% 
       #   add_lines(y = ~ data$hosp.pats, text = paste(data$hosp.pats, " patients in hospital"), name = "Hospitalised Patients") %>%
       #   add_lines(y = ~ data$icu.pats, text = paste(data$icu.pats, " patients in ICU"), name = "ICU Patients") 
