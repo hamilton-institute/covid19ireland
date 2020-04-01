@@ -224,13 +224,20 @@ body <- dashboardBody(
                     box(plotlyOutput('ageCases'), width = '40%')
                   ),
                   fluidRow(
-                    box(plotlyOutput('howContracted')),
-                    box(plotlyOutput('icuProportion'))
-                    
+                    box(tabsetPanel(type = "tabs",
+                                    tabPanel("Latest", plotlyOutput("howContracted")),
+                                    tabPanel("History", plotlyOutput("howContractedHistory")))),
+                    box(tabsetPanel(type = "tabs",
+                                    tabPanel("Latest", plotlyOutput("icuProportion")),
+                                    tabPanel("History", plotlyOutput("icuProportionHistory"))))
                   ),
                   fluidRow(
-                    box(plotlyOutput('genderCases')),
-                    box(plotlyOutput('helthcarePatients'))
+                    box(tabsetPanel(type = "tabs",
+                                      tabPanel("Latest", plotlyOutput("genderCases")),
+                                      tabPanel("History", plotlyOutput("genderCasesHistory")))),
+                    box(tabsetPanel(type = "tabs",
+                                    tabPanel("Latest", plotlyOutput("helthcarePatients")),
+                                    tabPanel("History", plotlyOutput("helthcarePatientsHistory"))))
                   )
                   
                 )
