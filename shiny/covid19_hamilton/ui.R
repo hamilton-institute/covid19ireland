@@ -66,8 +66,8 @@ body <- dashboardBody(
             column(width = 9,
             fluidRow(
               column(width = 3, valueBoxOutput("ireCasesBox", width = 12)),
-              column(width = 3, valueBoxOutput("ireHospBox", width = 12)),
               column(width = 3, valueBoxOutput("ireDeathsBox", width = 12)),
+              column(width = 3, valueBoxOutput("ireHospBox", width = 12)),
               column(width = 3, valueBoxOutput("ireICUBox", width = 12))
             ),
             fluidRow(
