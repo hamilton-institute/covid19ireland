@@ -173,8 +173,8 @@ shinyServer(function(input, output, session) {
       # mutate(Colours = sample(new_colors, n())) %>% 
       # mutate(Colours = replace(Colours,
       #                          countriesAndTerritories == "Ireland", "green")) %>%
-      mutate(Colours = replace(Colours,
-                               countriesAndTerritories == "Ireland", "#40C575")) %>%
+      # mutate(Colours = replace(Colours,
+      #                          countriesAndTerritories == "Ireland", "#40C575")) %>%
       deframe()
     
     shiny::validate(
@@ -246,22 +246,35 @@ shinyServer(function(input, output, session) {
   
   #Ireland cases infobox in summary tab
   output$ireCasesBox <- renderValueBox({
-    pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'ireland']/sum_stats_yesterday$Cases[sum_stats$Region == 'ireland'] - 1))
+    ecdc_current = ecdc %>% filter(countriesAndTerritories == 'Ireland') %>% 
+      arrange(desc(dateRep)) %>% 
+      top_n(2)
+    pc_change = round(100*(sum(ecdc_current$cases)/sum(ecdc_current$cases[2:nrow(ecdc_current)]) - 1))
+    #pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'ireland']/sum_stats_yesterday$Cases[sum_stats$Region == 'ireland'] - 1))
+    update_date = format(as.Date(ecdc_current$dateRep[1]), "%d-%b")
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
+                                    # br(),em('Last updated:',update_date, style = "font-size: 80%;"))),
              color = 'olive',
              icon = icon("thermometer-three-quarters"))
   })
   
   #Ireland deaths infobox in summary tab
   output$ireDeathsBox <- renderValueBox({
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'ireland']/sum_stats_yesterday$Deaths[sum_stats$Region == 'ireland'] - 1))
+    ecdc_current = ecdc %>% filter(countriesAndTerritories == 'Ireland') %>% 
+      arrange(desc(dateRep)) %>% 
+      top_n(2)
+    pc_change = round(100*(sum(ecdc_current$deaths)/sum(ecdc_current$deaths[2:nrow(ecdc_current)]) - 1))
+    #pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'ireland']/sum_stats_yesterday$Cases[sum_stats$Region == 'ireland'] - 1))
+    update_date = format(as.Date(ecdc_current$dateRep[1]), "%d-%b")
+    #pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'ireland']/sum_stats_yesterday$Deaths[sum_stats$Region == 'ireland'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+                                    #br(),em('Last updated:',update_date,style = "font-size: 80%"))),
              color = 'olive',
              icon = icon("exclamation-triangle"))
     
@@ -509,8 +522,8 @@ shinyServer(function(input, output, session) {
       # mutate(Colours = sample(new_colors, n())) %>% 
       # mutate(Colours = replace(Colours,
       #                          countriesAndTerritories == "Ireland", "green")) %>%
-      mutate(Colours = replace(Colours,
-                               countriesAndTerritories == "Ireland", "#40C575")) %>%
+      # mutate(Colours = replace(Colours,
+      #                          countriesAndTerritories == "Ireland", "#40C575")) %>%
       deframe()
     
     shiny::validate(

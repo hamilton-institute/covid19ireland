@@ -72,10 +72,10 @@ body <- dashboardBody(
                    column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
                  ),
                  fluidRow(
-                   column(width = 3, valueBoxOutput("wCasesBox", width = NULL)),
-                   column(width = 3, valueBoxOutput("wDeathsBox", width = NULL)),
-                   column(width = 3, valueBoxOutput("wRecovBox", width = NULL))
-                 ),
+                  column(width = 3, valueBoxOutput("wCasesBox", width = NULL)),
+                  column(width = 3, valueBoxOutput("wDeathsBox", width = NULL)),
+                  column(width = 3, valueBoxOutput("wRecovBox", width = NULL))
+                ),
                 fluidRow(
                   column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
                   column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
@@ -95,13 +95,13 @@ body <- dashboardBody(
                   ),
                   box(
                     width = 4,
-                    title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Highest total"),
+                    title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
                     DT::dataTableOutput("highestTotal")
                   )
                   ,
                   box(
                     width = 4,
-                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Biggest increase from yesterday"),
+                    title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
                     DT::dataTableOutput("biggestChange")
                   )
                   
