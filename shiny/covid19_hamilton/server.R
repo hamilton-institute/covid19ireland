@@ -812,7 +812,7 @@ shinyServer(function(input, output, session) {
       theme_shiny_dashboard() +
       labs(y="Count", x = "") +
       theme(legend.position = 'none')+
-      ggtitle('Gender Breakdown') +
+      ggtitle('Hospitalisation type') +
       scale_fill_brewer(palette="Accent")
     
     ggplotly(g) %>% layout(margin = list(l = 75))    %>%
