@@ -59,8 +59,8 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
-#all_tables <- readRDS('all_tables_current.rds')
-all_tables <- readRDS('/Users/dairehealy/OneDrive\ -\ Maynooth\ University/github-projects/hamilton-monitor/all_tables_current.rds')
+all_tables <- readRDS('all_tables_current.rds')
+#all_tables <- readRDS('/Users/dairehealy/OneDrive\ -\ Maynooth\ University/github-projects/hamilton-monitor/all_tables_current.rds')
 
 
 
