@@ -100,6 +100,8 @@ county_cumulative_cases<-map(cs2$NAME_TAG,
                                      %>% filter(County==as.character(.x)),
                                      aes(x=date,y=`Number of Cases`,group=County))+
                                geom_point()+geom_line()+
+                               theme_bw() + 
+                               scale_x_date(breaks = scales::breaks_pretty(n = 10)) +
                                ggtitle(label = paste0("Total cases in ",.x, " at ",county_total_date$date[[1]],": ",
                                                       county_total_date$`Number of Cases`[county_total_date$date==county_total_date$date[[1]] & county_total_date$County==.x]))+
                                xlab('Date')+
@@ -158,7 +160,9 @@ ecdc_table3 = left_join(ecdc_table1, ecdc_table2, by = 'Country') %>%
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   
-  #Ireland cumulative plot in Summary tab
+
+# Graphs tab --------------------------------------------------------------
+
   output$CountryPlot <- renderPlotly({
     ecdc_agg = ecdc %>%
       filter(countriesAndTerritories %in% input$sel_ctry) %>%
@@ -197,7 +201,9 @@ shinyServer(function(input, output, session) {
     if(input$sel_axis == 'Days since 1st case' | input$sel_axis == 'Date') {
       ecdc_agg = ecdc_agg %>% filter(cum_cases > 0) 
     } else if(input$sel_axis == 'Days since 1st death') {
-      ecdc_agg = ecdc_agg %>% filter(cum_deaths > 0) 
+      ecdc_agg = ecdc_agg %>% filter(cum_deaths > 0)
+    } else if(input$sel_axis == 'Days since 10th death') {
+        ecdc_agg = ecdc_agg %>% filter(cum_deaths >= 10) 
     } else if(input$sel_axis == 'Days since 10th case') {
       ecdc_agg = ecdc_agg %>% filter(cum_cases >= 10) 
     }
@@ -220,10 +226,14 @@ shinyServer(function(input, output, session) {
                                         'Log cumulative deaths' = 'cum_deaths',
                                         'Cases per million population' = 'cases_per_million',
                                         'Deaths per million population' = 'deaths_per_million'))
+    
     ecdc_agg = ecdc_agg %>% 
       filter(Type %in% y_pick)
+    ecdc_agg = ecdc_agg %>% 
+      mutate(data_point = paste0("\nx_axis: ", ecdc_agg[[x_pick]], "\n","y_axis: ", formatC(signif(Number,digits=3), digits=3, format="fg", flag="#")))
     
-    p = ggplot(ecdc_agg, aes_string(x = x_pick, y = 'Number', colour = 'countriesAndTerritories')) + 
+    p = ggplot(ecdc_agg, aes_string(x = x_pick, y = 'Number', colour = 'countriesAndTerritories',
+                                    label = "data_point")) + 
       geom_line(aes(linetype = Type)) + 
       #geom_point(show.legend = FALSE) +
       labs(x = input$sel_axis,
@@ -246,7 +256,8 @@ shinyServer(function(input, output, session) {
         scale_y_continuous(breaks = scales::breaks_pretty(n = 5))
       }}
     
-    ggplotly(p) %>% layout(margin = list(l = 75))
+    ggplotly(p, tooltip=c("label")) %>% layout(margin = list(l = 75))
+    #ggplotly(p) %>% layout(margin = list(l = 75))
     
   })
   
@@ -355,9 +366,10 @@ shinyServer(function(input, output, session) {
       top_n(1)
     name = str_sub(str_replace(worst_countries$countriesAndTerritories[1], '_', ' '),
                    1, 10)
+    val = format(worst_countries$totalDeaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
                             style = "font-size: 110%;"),
-             subtitle = HTML(paste0("Most deaths overall: ",worst_countries$totalDeaths[1])),
+             subtitle = HTML(paste0("Most deaths overall: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
   })
@@ -369,10 +381,11 @@ shinyServer(function(input, output, session) {
       arrange(deaths)
     name = str_sub(str_replace(biggest_increase$countriesAndTerritories[1], '_', ' '),
                    1, 10)
+    val = format(-biggest_increase$deaths[1], big.mark=',')
     
     valueBox(value = tags$p(name, 
                             style = "font-size: 110%;"),
-             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", -biggest_increase$deaths[1])),
+             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
   })
@@ -385,11 +398,12 @@ shinyServer(function(input, output, session) {
       slice(1)
     name = str_sub(str_replace(biggest_decrease$countriesAndTerritories, '_', ' '),
                    1, 10)
+    val = format(abs(biggest_decrease$deaths), big.mark=',')
     
     valueBox(value = tags$p(name, 
                             style = "font-size: 110%;"),
              subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
-                                    abs(biggest_decrease$deaths))),
+                                    val)),
              color = 'light-blue',
              icon = icon("arrow-down", class = "color: rgb(59, 91, 152)"))
   })
@@ -404,9 +418,10 @@ shinyServer(function(input, output, session) {
       slice(1)
     name = str_sub(str_replace(daily_death$countriesAndTerritories[1], '_', ' '),
                    1, 10)
+    val = format(daily_death$deaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
                             style = "font-size: 110%;"),
-             subtitle = HTML(paste0("Most deaths today: ",daily_death$deaths[1])),
+             subtitle = HTML(paste0("Most deaths today: ",val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
   })
@@ -461,7 +476,9 @@ shinyServer(function(input, output, session) {
                   ))
   })  
   
-  #################################COUNTIES TAB#################################
+
+# Counties tab ------------------------------------------------------------
+  
   #Counties table in Counties tab
   output$countyCasesTable <- DT::renderDataTable({
     DT::datatable(caption = paste0("Updated: ",all_tables[[1]]$published),

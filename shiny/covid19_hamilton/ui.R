@@ -44,19 +44,19 @@ ecdc = bind_rows(ecdc_world, ecdc_raw)
 # Header and sidebar ------------------------------------------------------
 
 header <- dashboardHeader(
-  title = paste0("Hamilton Covid-19 Dashboard: app updated ", last_update, '. Most recent data: ', 
-                 format(max(ecdc$dateRep), "%d-%b-%Y")),
-  titleWidth = 850
+  title = HTML(paste0("Hamilton Covid-19 Dashboard: ", em(paste0("Global data updated ", last_update, ', Irish data updated ', 
+                 format(max(ecdc$dateRep), "%d-%b-%Y"))))),
+  titleWidth = 950
 )
 
 sidebar <- dashboardSidebar(
   width = 150,
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
-    menuItem("Graphs", tabName = "country", icon = icon("bar-chart-o")),
     menuItem("Map", tabName = "county", icon = icon("map")),
     menuItem("Hospitals", tabName = "patientprofile
              ", icon = icon("hospital")),
+    menuItem("Graphs", tabName = "country", icon = icon("bar-chart-o")),
     menuItem("Animations", icon = icon("chart-line"), tabName = "animation")
   )
 )
@@ -151,7 +151,7 @@ body <- dashboardBody(
                      pickerInput("sel_axis",
                                  "Select horizontal axis", 
                                  choices=c('Date', 'Days since 1st case', 'Days since 10th case',
-                                           'Days since 1st death'),
+                                           'Days since 1st death', 'Days since 10th death'),
                                  selected = c('Days since 1st death'),
                                  multiple = FALSE)
               ),
@@ -274,6 +274,7 @@ body <- dashboardBody(
   
   #The tags allow for nice vertical spacing
   tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
+  tags$style(type = "text/css", "#covidMap2 {height: calc((100vh - 540px)/1.0) !important;}"),
   tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
   tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
   tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
