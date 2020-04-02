@@ -8,7 +8,7 @@ library(rgdal)
 library(DT)
 library(lubridate)
 library(ggdark)
-library(leafpop)
+#library(leafpop)
 #library(viridis)
 library(scales)
 library(ggdark)
@@ -59,7 +59,8 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
-all_tables <- readRDS('all_tables_current.rds')
+#all_tables <- readRDS('all_tables_current.rds')
+all_tables <- readRDS('/Users/dairehealy/OneDrive\ -\ Maynooth\ University/github-projects/hamilton-monitor/all_tables_current.rds')
 
 
 
@@ -658,41 +659,153 @@ shinyServer(function(input, output, session) {
 
 # age in hospital plot ----------------------------------------------------
 
-  output$ageCases <- renderPlotly({
+  
+  
+  # data for age plots data
+  hosp.ages = c("<5","5 - 14","15 - 24","25 - 34","35 - 44","45 - 54","55 - 64","65+" )
+  
+  age.hosp <- all_tables %>% 
+    map('age_hospitalised') %>% 
+    list.clean(., fun = is.null) %>%
+    map(1) %>%
+    unlist() %>%
+    .[. %in% c(hosp.ages,"25 - 34 69")]
+  
+  age.hosp <- replace(age.hosp, age.hosp=="25 - 34 69", "25 - 34")
+  
+  num.dates = length(all_tables %>% 
+                       map('age_hospitalised') %>% 
+                       list.clean(., fun = is.null) )
+  
+  date.hosp <- all_tables %>% 
+    map('published') %>% 
+    map(1) %>%
+    unlist() %>%
+    .[1:num.dates]
+  
+  date.hosp <- rep(date.hosp,each=length(hosp.ages))
+  
+  count.hosp <- all_tables %>% 
+    map('age_hospitalised') %>% 
+    list.clean(., fun = is.null) %>%
+    map(2) %>%
+    lapply(., function(x) x[1:length(hosp.ages)]) %>%
+    unlist() 
+  
+  # formatting error on gov.ie
+  count.hosp <- replace(count.hosp, count.hosp=="8.3", "69")
+  
+  all.data <- data.frame(date.hosp, age.hosp, count.hosp)
+  names(all.data) <- c('date', 'age', 'count')
+  all.data$age <- as.character(all.data$age)
+  all.data$date <- as.Date(all.data$date, format = '%d %B %y')
+  all.data$count<- as.numeric(as.character(all.data$count))
+  
+  
+  # time series for positive cases data
+  
+  nothosp.ages = c("<1","1 - 4","5 - 14","15 - 24","25 - 34","35 - 44","45 - 54","55 - 64","65+" )
+  
+  age.not.hosp <- all_tables %>% 
+    map('age') %>% 
+    list.clean(., fun = is.null) %>%
+    map(1) %>%
+    unlist() %>%
+    .[. %in% nothosp.ages]
+  
+  num.dates.not.hosp = length(all_tables %>% 
+                                map('age') %>% 
+                                list.clean(., fun = is.null) )
+  
+  date.not.hosp <- all_tables %>% 
+    map('published') %>% 
+    map(1) %>%
+    unlist() %>%
+    .[1:num.dates.not.hosp]
+  
+  date.not.hosp <- rep(date.not.hosp,each=length(nothosp.ages))
+  count.not.hosp <- all_tables %>% 
+    map('age') %>% 
+    list.clean(., fun = is.null) %>%
+    map(2) %>%
+    lapply(., function(x) x[1:length(nothosp.ages)]) %>%
+    unlist() 
+  
+  all.data.not.hosp <- data.frame(date.not.hosp, age.not.hosp, count.not.hosp)
+  names(all.data.not.hosp) <- c('date', 'age', 'count')
+  
+  all.data.not.hosp$age <- as.character(all.data.not.hosp$age)
+  all.data.not.hosp$date <- as.Date(all.data.not.hosp$date, format = '%d %B %y')
+  all.data.not.hosp$count <- as.numeric(as.character(all.data.not.hosp$count))
+  all.data.not.hosp[(all.data.not.hosp$age=='<1'),]$count = all.data.not.hosp[(all.data.not.hosp$age=='<1'),]$count + all.data.not.hosp[(all.data.not.hosp$age=='1 - 4'),]$count
+  all.data.not.hosp[(all.data.not.hosp$age=='<1'),]$age = '<5'
+  all.data.not.hosp = all.data.not.hosp[(all.data.not.hosp$age!='1 - 4'),]
+  
+  
+  
+  
+  
+  
+  
+  output$ageHist <- renderPlotly({
     
-    # Main data on hospitalisation
-    age.hosp <- (all_tables[[1]]$age_hospitalised) %>% 
-      rename('Age' = "Hospitalised Age",
-             `Hospitalised cases` = `Number of Cases`) %>% 
-      select(Age, `Hospitalised cases`)
+    dates <- all_tables %>% map('published') %>% lubridate::dmy()
     
-    # Data on all cases  
-    age.all = (all_tables[[1]]$age) %>% 
-      rename(`All cases` = `Number of Cases`) %>% 
-      mutate(`All cases` = as.numeric(`All cases`)) %>% 
-      select(Age, `All cases`)
+    latest.data.age = all.data.not.hosp %>% filter(date == dates[1])
+    latest.data.hosp = all.data %>% filter(date == dates[1])
     
-    age_bind = left_join(age.all, age.hosp, 
-                         by = c("Age")) %>% 
-      replace_na(list(`Hospitalised cases` = 0)) %>% 
-      mutate('Non-hospitalised cases' = `All cases` - `Hospitalised cases`,
-             Age = factor(Age, 
-                          levels = Age,
-                          ordered = TRUE)) %>% 
-      select(-`All cases`) %>% 
-      filter(Age != 'Unknown') %>% 
-      pivot_longer(names_to = 'Type', values_to = 'Cases', -Age)
+    # order bars according to age
+    latest.data.age$age <- factor(latest.data.age$age, levels = latest.data.age$age)
+    latest.data.hosp$age <- factor(latest.data.hosp$age, levels = latest.data.hosp$age)
     
-    g<-ggplot(data = age_bind, aes(Age, Cases, fill=Type))+
-      geom_bar(stat = 'identity') +
+    g <- ggplot() +
+      geom_bar(data = latest.data.age, aes(age, count, fill = 'Total'),stat = 'identity', width=0.5) +
+      geom_bar(data = latest.data.hosp, aes(age, count, fill = 'Hospitalised'),stat = 'identity', width=0.5) +
       theme_shiny_dashboard() +
+      labs(x="Age Group", y = "Count") +
+      theme(legend.title = element_blank())+
       ggtitle('Cases by Age: Ireland')
     
-    ggplotly(g, tooltip=c("Type", "Cases"))%>%
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
   })
   
+  
+  output$ageHospHistory <- renderPlotly({
+    g<- ggplot(all.data, aes(x = date, y = count, color = age))+
+      geom_line(aes(group = age, linetype=age)) +
+      theme_shiny_dashboard() +
+      labs(x="Date", y = "Count") +
+      ggtitle('Hospitalised by Age Group') + theme(
+        legend.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(face = "bold", 
+                                   size = 12, angle = 45))
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+    
+  })
+  
+  
+  
+  output$ageTotalHistory <- renderPlotly({
+    
+    g<- ggplot(all.data.not.hosp, aes(x = date, y = count, color = age))+
+      geom_line(aes(group = age, linetype=age)) +
+      theme_shiny_dashboard() +
+      labs(x="Date", y = "Count") +
+      ggtitle('Positive Cases by Age Group') + theme(
+        legend.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(face = "bold", 
+                                   size = 12, angle = 45))
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+
+  })
 
 # Gender Breakdown --------------------------------------------------------
 

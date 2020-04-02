@@ -249,7 +249,10 @@ body <- dashboardBody(
                 box(h4('These graphics represent the population of The Republic of Ireland', align = "center"), width ='100%')
               ),
               fluidRow(
-                box(plotlyOutput('ageCases'), width = '40%')
+                box(tabsetPanel(type = "tabs",
+                                tabPanel("Latest", plotlyOutput("ageHist")),
+                                tabPanel("Hospitalised History", plotlyOutput("ageHospHistory")),
+                                tabPanel("Total History", plotlyOutput("ageTotalHistory"))), width = '40%')
               ),
               fluidRow(
                 box(tabsetPanel(type = "tabs",
