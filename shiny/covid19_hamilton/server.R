@@ -60,7 +60,6 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
 all_tables <- readRDS('all_tables_current.rds')
-#all_tables <- readRDS('/Users/dairehealy/OneDrive\ -\ Maynooth\ University/github-projects/hamilton-monitor/all_tables_current.rds')
 
 
 
@@ -775,32 +774,41 @@ shinyServer(function(input, output, session) {
     latest.data.age$age <- factor(latest.data.age$age, levels = latest.data.age$age)
     latest.data.hosp$age <- factor(latest.data.hosp$age, levels = latest.data.hosp$age)
     
+    latest.data.age = latest.data.age %>% 
+      mutate(data_point = paste0("\n<b>Date: </b>", latest.data.age$date, "\n","<b>Age: </b>", latest.data.age$age, "\n","<b>Count:</b> ", latest.data.age$count))
+    latest.data.hosp = latest.data.hosp %>% 
+      mutate(data_point = paste0("\n<b>Date: </b>", latest.data.hosp$date, "\n","<b>Age: </b>", latest.data.hosp$age, "\n","<b>Count: </b>", latest.data.hosp$count))
+    
+    
     g <- ggplot() +
-      geom_bar(data = latest.data.age, aes(age, count, fill = 'Total'),stat = 'identity', width=0.5) +
-      geom_bar(data = latest.data.hosp, aes(age, count, fill = 'Hospitalised'),stat = 'identity', width=0.5) +
+      geom_bar(data = latest.data.age, aes(age, count, fill = 'Total',text=data_point),stat = 'identity', width=0.5) +
+      geom_bar(data = latest.data.hosp, aes(age, count, fill = 'Hospitalised',text=data_point),stat= 'identity', width=0.5) +
       theme_shiny_dashboard() +
       labs(x="Age Group", y = "Count") +
       theme(legend.title = element_blank())+
       ggtitle('Cases by Age: Ireland')
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g, tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
   })
   
   
   output$ageHospHistory <- renderPlotly({
+    
+    all.data = all.data %>% 
+      mutate(data_point = paste0("\n<b>Date: </b>", all.data$date, "\n","<b>Age:</b> ", all.data$age, "\n","<b>Count: </b>", all.data$count))
+
+    
     g<- ggplot(all.data, aes(x = date, y = count, color = age))+
-      geom_line(aes(group = age, linetype=age)) +
+      geom_line(aes(group = age, text = data_point)) +
       theme_shiny_dashboard() +
       labs(x="Date", y = "Count") +
       ggtitle('Hospitalised by Age Group') + theme(
         legend.title = element_blank(),
-        axis.ticks = element_blank(),
-        axis.text.x = element_text(face = "bold", 
-                                   size = 12, angle = 45))
+        axis.ticks = element_blank())
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
   })
@@ -809,17 +817,19 @@ shinyServer(function(input, output, session) {
   
   output$ageTotalHistory <- renderPlotly({
     
+    
+    all.data.not.hosp = all.data.not.hosp %>% 
+      mutate(data_point = paste0("\n<b>Date:</b> ", all.data.not.hosp$date, "\n","<b>Age: </b>", all.data.not.hosp$age, "\n","<b>Count: </b>", all.data.not.hosp$count))
+    
     g<- ggplot(all.data.not.hosp, aes(x = date, y = count, color = age))+
-      geom_line(aes(group = age, linetype=age)) +
+      geom_line(aes(group = age, text = data_point)) +
       theme_shiny_dashboard() +
       labs(x="Date", y = "Count") +
       ggtitle('Positive Cases by Age Group') + theme(
         legend.title = element_blank(),
-        axis.ticks = element_blank(),
-        axis.text.x = element_text(face = "bold", 
-                                   size = 12, angle = 45))
+        axis.ticks = element_blank())
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
 
   })
@@ -850,14 +860,19 @@ shinyServer(function(input, output, session) {
     data3 = latest.data %>% 
       pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
     
-    g <- ggplot(data = data3, aes(type, Precentage, fill=type))+
+    
+    data3 = data3 %>% 
+      mutate(data_point = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Gender:</b> ", data3$type, "\n","<b>Precentage: </b>", data3$Precentage,"%"))
+    
+    
+    g <- ggplot(data = data3, aes(type, Precentage, fill=type, text=data_point))+
       geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
       theme_shiny_dashboard() +
       labs(y="%", x = "") +
       theme(legend.position = 'none')+
       ggtitle('Gender Breakdown')
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
   })
   
@@ -868,8 +883,12 @@ shinyServer(function(input, output, session) {
     data2 = data %>% 
       pivot_longer(names_to = 'type', values_to = 'patients', -Date) %>% mutate(Date = as.POSIXct(Date))
     
-    g <- ggplot(data2, aes(x = Date, y = patients, colour = type)) + 
-      geom_line(size=1)+
+    data2 = data2 %>% 
+      mutate(info = paste0("\n<b>Date:</b> ", as_date(data2$Date), "\n","<b>Gender:</b> ", data2$type, "\n","<b>Precentage: </b>", data2$patients,"%"))
+    
+    
+    g <- ggplot(data2, aes(x = Date, y = patients,colour = type)) + 
+      geom_line(size=1, aes(group = type, text = info))+
       theme_shiny_dashboard() +
       scale_x_datetime(breaks = '2 days',
                        date_labels = "%d%b") +
@@ -880,7 +899,7 @@ shinyServer(function(input, output, session) {
         axis.text.x = element_text(face = "bold", 
                                    size = 12, angle = 45))
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
     
@@ -937,7 +956,13 @@ shinyServer(function(input, output, session) {
     data3 = latest.data %>% 
       pivot_longer(names_to = 'type', values_to = 'Count', -Date) 
     
-    g <- ggplot(data = data3, aes(type, Count, fill=type))+
+    
+    data3 = data3 %>% 
+      mutate(info = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Group:</b> ", data3$type, "\n","<b>Count: </b>", data3$Count))
+    
+    
+    
+    g <- ggplot(data = data3, aes(type, Count, fill=type, text = info))+
       geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
       theme_shiny_dashboard() +
       labs(y="Count", x = "") +
@@ -945,7 +970,7 @@ shinyServer(function(input, output, session) {
       ggtitle('Hospitalisation type') +
       scale_fill_brewer(palette="Accent")
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
     
@@ -959,8 +984,16 @@ shinyServer(function(input, output, session) {
     data2 = data.host.count %>% 
       pivot_longer(names_to = 'type', values_to = 'count', -Date) %>% mutate(Date = as.POSIXct(Date))
     
+    
+    
+    data2 = data2 %>% 
+      mutate(info = paste0("\n<b>Date:</b> ",as_date(data2$Date), "\n","<b>Group:</b> ", data2$type, "\n","<b>Count: </b>", data2$count))
+    
+    
+    
+    
     g <- ggplot(data2, aes(x = Date, y = count, colour = type)) + 
-      geom_line(size=1)+
+      geom_line(size=1, aes(group = type, text = info))+
       theme_shiny_dashboard() +
       scale_x_datetime(breaks = '2 days',
                        date_labels = "%d%b") +
@@ -973,7 +1006,7 @@ shinyServer(function(input, output, session) {
       scale_color_brewer(palette="Accent")
     
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
     
@@ -1053,7 +1086,14 @@ shinyServer(function(input, output, session) {
       data3 = latest.data %>% 
         pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
       
-      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type))+
+      
+      data3 = data3 %>% 
+        mutate(info = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Type:</b> ", data3$type, "\n","<b>Precentage: </b>", data3$Precentage, "%"))
+      
+      
+      
+      
+      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type, text =info))+
         geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
         theme_shiny_dashboard() +
         labs(y="%", x = "") +
@@ -1066,7 +1106,11 @@ shinyServer(function(input, output, session) {
       data3 = latest.data %>% 
         pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
       
-      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type))+
+      
+      data3 = data3 %>% 
+        mutate(info = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Type:</b> ", data3$type, "\n","<b>Precentage: </b>", data3$Precentage, "%"))
+      
+      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type, text =info))+
         geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
         theme_shiny_dashboard() +
         labs(y="%", x = "") +
@@ -1077,7 +1121,7 @@ shinyServer(function(input, output, session) {
       
     }
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
   }) 
@@ -1091,8 +1135,12 @@ shinyServer(function(input, output, session) {
     data2 = data.transmission %>% 
       pivot_longer(names_to = 'type', values_to = 'patients', -Date) %>% mutate(Date = as.POSIXct(Date))
     
+    
+    data2 = data2 %>% 
+      mutate(info = paste0("\n<b>Date:</b> ", as_date(data2$Date), "\n","<b>Type:</b> ", data2$type, "\n","<b>Precentage: </b>", data2$patients, "%"))
+    
     g <- ggplot(data2, aes(x = Date, y = patients, colour = type)) + 
-      geom_line(size=1)+
+      geom_line(size=1, aes(group = type, text = info))+
       theme_shiny_dashboard() +
       scale_x_datetime(breaks = '2 days',
                        date_labels = "%d%b") +
@@ -1105,7 +1153,7 @@ shinyServer(function(input, output, session) {
       scale_color_brewer(palette="Set2")
     
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
     
@@ -1147,8 +1195,14 @@ shinyServer(function(input, output, session) {
     data2 = data.icu.prop %>% 
       pivot_longer(names_to = 'type', values_to = 'count', -Date) %>% mutate(Date = as.POSIXct(Date))
     
+    
+    
+    data2 = data2 %>% 
+      mutate(info = paste0("\n<b>Date:</b> ", as_date(data2$Date), "\n","<b>Type:</b> ", data2$type, "\n","<b>Count: </b>", data2$count))
+    
+    
     g <- ggplot(data2, aes(x = Date, y = count, colour = type)) + 
-      geom_line(size=1)+
+      geom_line(size=1, aes(group =type, text = info))+
       theme_shiny_dashboard() +
       scale_x_datetime(breaks = '2 days',
                        date_labels = "%d%b") +
@@ -1160,7 +1214,7 @@ shinyServer(function(input, output, session) {
                                    size = 12, angle = 45))
     
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text") ) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
     
     
@@ -1175,14 +1229,18 @@ shinyServer(function(input, output, session) {
     data3 = latest.data %>% 
       pivot_longer(names_to = 'type', values_to = 'Count', -Date) 
     
-    g <- ggplot(data = data3, aes(type, Count, fill=type))+
+    
+    data3 = data3 %>% 
+      mutate(info = paste0("\n<b>Date:</b> ", data3$Date, "\n","<b>Type:</b> ", data3$type, "\n","<b>Count: </b>", data3$Count))
+    
+    g <- ggplot(data = data3, aes(type, Count, fill=type, text =info))+
       geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
       theme_shiny_dashboard() +
       labs(y="Count", x = "") +
       theme(legend.position = 'none')+
       ggtitle('Hospitalised Patients')
     
-    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+    ggplotly(g,tooltip = c("text") ) %>% layout(margin = list(l = 75))    %>%
       config(displayModeBar = FALSE)
   })
     
