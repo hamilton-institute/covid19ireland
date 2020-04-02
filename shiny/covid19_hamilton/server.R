@@ -507,9 +507,9 @@ shinyServer(function(input, output, session) {
                   fillOpacity = 0.7,
                   fillColor = ~pal2(log2(Cases)),
                   #fillColor = ~viridis_pal(option = "B")(log2(Cases)),
-                  label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) %>%
-      addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
-                labFormat = labelFormat(transform = function(x) round(2^x)))
+                  label = ~paste0(NAME_TAG, ": ", `Number of Cases`, ' cases') ) #%>%
+      # addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
+      #           labFormat = labelFormat(transform = function(x) round(2^x)))
   })
   
 
