@@ -77,22 +77,22 @@ body <- dashboardBody(
     tabItem(tabName = 'summary',
             column(width = 9,
                    fluidRow(
-                     column(width = 3, valueBoxOutput("ireCasesBox", width = 12)),
-                     column(width = 3, valueBoxOutput("ireDeathsBox", width = 12)),
-                     column(width = 3, valueBoxOutput("ireHospBox", width = 12)),
-                     column(width = 3, valueBoxOutput("ireICUBox", width = 12))
+                     column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
+                     column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
+                     column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
+                     column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
                    ),
                    fluidRow(
-                     column(width = 4, valueBoxOutput("wCasesBox", width = 12)),
-                     column(width = 4, valueBoxOutput("wDeathsBox", width = 12)),
-                     column(width = 4, valueBoxOutput("wRecovBox", width = 12)),
+                     column(width = 4, valueBoxOutput("wCasesBox", width = NULL)),
+                     column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
+                     column(width = 4, valueBoxOutput("wRecovBox", width = NULL)),
                    ),
                    tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
                    fluidRow(
-                     column(width = 3, valueBoxOutput("bigDailyBox", width = 12)),
-                     column(width = 3, valueBoxOutput("worstHitCountryBox", width = 12)),
-                     column(width = 3, valueBoxOutput("increaseDeathBox", width = 12)),
-                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = 12))
+                     column(width = 3, valueBoxOutput("bigDailyBox", width = NULL)),
+                     column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
+                     column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
+                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
                    )),
             column(width = 3, 
                    leafletOutput('covidMap2')
