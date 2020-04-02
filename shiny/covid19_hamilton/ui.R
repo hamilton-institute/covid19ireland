@@ -47,6 +47,8 @@ header <- dashboardHeader(
   title = HTML(paste0("Hamilton Covid-19 Dashboard: ", em(paste0("Global data updated ", last_update, ', Irish data updated ', 
                  format(max(ecdc$dateRep), "%d-%b-%Y"))))),
   titleWidth = 950
+  # tags$li(class = "dropdown", 
+  #         )
 )
 
 sidebar <- dashboardSidebar(
@@ -57,7 +59,14 @@ sidebar <- dashboardSidebar(
     menuItem("Hospitals", tabName = "patientprofile
              ", icon = icon("hospital")),
     menuItem("Graphs", tabName = "country", icon = icon("bar-chart-o")),
-    menuItem("Animations", icon = icon("chart-line"), tabName = "animation")
+    menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
+    fixedPanel(
+      a(actionButton("cont", "Contact us",
+                     icon = icon("envelope")),
+        href = "mailto:andrew.parnell@mu.ie"),
+      left = 5,
+      bottom = 10
+    )
   )
 )
 

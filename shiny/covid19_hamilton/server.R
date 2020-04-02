@@ -1240,6 +1240,4 @@ shinyServer(function(input, output, session) {
       config(displayModeBar = FALSE)
   })
     
-    
-    
 })
