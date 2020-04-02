@@ -492,8 +492,8 @@ shinyServer(function(input, output, session) {
                        options = providerTileOptions(noWrap = TRUE)
       ) %>%
       setView(lng = -7.635498, lat = 53.186288, zoom = 6) %>% 
-      addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
-                 icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
+      # addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
+      #            icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
       addPolygons(stroke = FALSE, 
                   smoothFactor = 0.3, 
                   fillOpacity = 0.7,
