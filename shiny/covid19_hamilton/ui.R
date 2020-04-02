@@ -277,7 +277,7 @@ body <- dashboardBody(
   
   #The tags allow for nice vertical spacing
   tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
-  tags$style(type = "text/css", "#covidMap2 {height: calc((100vh - 540px)/1.0) !important;}"),
+  #tags$style(type = "text/css", "#covidMap2 {height: calc((100vh - 540px)/1.0) !important;}"),
   tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
   tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
   tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
