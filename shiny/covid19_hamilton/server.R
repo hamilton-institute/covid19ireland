@@ -62,10 +62,6 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 all_tables <- readRDS('all_tables_current.rds')
 
 
-
-
-
-
 #Get the latest table containing info on all counties
 latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int
@@ -302,7 +298,7 @@ shinyServer(function(input, output, session) {
   
   #Ireland hospitalised infobox in summary tab
   output$ireHospBox <- renderValueBox({
-    pc_change = str_pad(round(100*(sum_stats$Hospitalised[sum_stats$Region == 'ireland']/sum_stats_yesterday$Hospitalised[sum_stats$Region == 'ireland'] - 1)),3, 'left')
+    pc_change = round(100*(sum_stats$Hospitalised[sum_stats$Region == 'ireland']/sum_stats_yesterday$Hospitalised[sum_stats$Region == 'ireland'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Hospitalised[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 120%;"),
