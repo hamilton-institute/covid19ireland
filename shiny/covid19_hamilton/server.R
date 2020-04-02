@@ -60,6 +60,12 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
 all_tables <- readRDS('all_tables_current.rds')
+
+
+
+
+
+
 #Get the latest table containing info on all counties
 latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int

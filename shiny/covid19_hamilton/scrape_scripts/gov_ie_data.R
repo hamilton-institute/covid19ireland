@@ -162,8 +162,11 @@ all_tables <- corona_urls %>%
       html_nodes("div.col-sm-8")%>% 
       html_text() 
     
-    
     published <- str_extract(text[1], pattern = "Published: [0-9]{2}[ ][:alpha:]{5,9}[ ]2020")
+    if (is.na(published)){
+      published <- str_extract(text[1], pattern = "Published: [0-9]{1}[ ][:alpha:]{5,9}[ ]2020")
+    }
+    print(published)
     published <- str_remove(published, "Published: ")  
 
     
