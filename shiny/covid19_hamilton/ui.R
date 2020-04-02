@@ -17,6 +17,9 @@ library(dashboardthemes)
 library(fontawesome) # remotes::install_github('rstudio/fontawesome')
 library(shinyWidgets)
 
+
+# Data wrangling ----------------------------------------------------------
+
 last_update = format(file.info('summary_stats_current.csv')$mtime,
                      "%d-%b-%Y, %H:%M")
 
@@ -37,9 +40,12 @@ ecdc_world = ecdc_raw %>%
 
 ecdc = bind_rows(ecdc_world, ecdc_raw)
 
+
+# Header and sidebar ------------------------------------------------------
+
 header <- dashboardHeader(
   title = paste0("Hamilton Covid-19 Dashboard: app updated ", last_update, '. Most recent data: ', 
-                format(max(ecdc$dateRep), "%d-%b-%Y")),
+                 format(max(ecdc$dateRep), "%d-%b-%Y")),
   titleWidth = 850
 )
 
@@ -55,58 +61,70 @@ sidebar <- dashboardSidebar(
   )
 )
 
+# Body -------------------------------------------------------------------
+
 body <- dashboardBody(
   tags$head(tags$style(type='text/css', ".slider-animate-button { font-size: 20pt !important; }")),
   shinyDashboardThemes(
     theme = "grey_dark"
   ),
+  
+  
+  # Summary tab -------------------------------------------------------------
+  
+  
   tabItems(
     tabItem(tabName = 'summary',
             column(width = 9,
-            fluidRow(
-              column(width = 3, valueBoxOutput("ireCasesBox", width = 12)),
-              column(width = 3, valueBoxOutput("ireDeathsBox", width = 12)),
-              column(width = 3, valueBoxOutput("ireHospBox", width = 12)),
-              column(width = 3, valueBoxOutput("ireICUBox", width = 12))
-            ),
-            fluidRow(
-              column(width = 4, valueBoxOutput("wCasesBox", width = 12)),
-              column(width = 4, valueBoxOutput("wDeathsBox", width = 12)),
-              column(width = 4, valueBoxOutput("wRecovBox", width = 12)),
-            ),
-            tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
-            fluidRow(
-              column(width = 3, valueBoxOutput("bigDailyBox", width = 12)),
-              column(width = 3, valueBoxOutput("worstHitCountryBox", width = 12)),
-              column(width = 3, valueBoxOutput("increaseDeathBox", width = 12)),
-              column(width = 3, valueBoxOutput("bigDecreaseBox", width = 12))
-            )),
+                   fluidRow(
+                     column(width = 3, valueBoxOutput("ireCasesBox", width = 12)),
+                     column(width = 3, valueBoxOutput("ireDeathsBox", width = 12)),
+                     column(width = 3, valueBoxOutput("ireHospBox", width = 12)),
+                     column(width = 3, valueBoxOutput("ireICUBox", width = 12))
+                   ),
+                   fluidRow(
+                     column(width = 4, valueBoxOutput("wCasesBox", width = 12)),
+                     column(width = 4, valueBoxOutput("wDeathsBox", width = 12)),
+                     column(width = 4, valueBoxOutput("wRecovBox", width = 12)),
+                   ),
+                   tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
+                   fluidRow(
+                     column(width = 3, valueBoxOutput("bigDailyBox", width = 12)),
+                     column(width = 3, valueBoxOutput("worstHitCountryBox", width = 12)),
+                     column(width = 3, valueBoxOutput("increaseDeathBox", width = 12)),
+                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = 12))
+                   )),
             column(width = 3, 
                    leafletOutput('covidMap2')
             ),
             column(width = 12,
-              box(
-                # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
-                # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
-                # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
-                width = 4,
-                title=HTML(fa(name = "calendar-day", fill = "#3d9970"),
-                           paste0("Daily deaths: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
-                DT::dataTableOutput("highestDaily")
-              ),
-              box(
-                width = 4,
-                title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
-                DT::dataTableOutput("highestTotal")
-              ),
-              box(
-                width = 4,
-                title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
-                DT::dataTableOutput("biggestChange")
-              )
-
+                   box(
+                     # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
+                     # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
+                     # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
+                     width = 4,
+                     title=HTML(fa(name = "calendar-day", fill = "#3d9970"),
+                                paste0("Daily deaths: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
+                     DT::dataTableOutput("highestDaily")
+                   ),
+                   box(
+                     width = 4,
+                     title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
+                     DT::dataTableOutput("highestTotal")
+                   ),
+                   box(
+                     width = 4,
+                     title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
+                     DT::dataTableOutput("biggestChange")
+                   )
+                   
             )
     ),
+    
+    
+    # country tab -------------------------------------------------------------
+    
+    
     tabItem(tabName = 'country',
             fluidRow(
               column(width = 3,
@@ -142,6 +160,10 @@ body <- dashboardBody(
               )
             )        
     ),
+    
+    
+    # County tab --------------------------------------------------------------
+    
     tabItem(tabName = "county",
             fluidRow(
               column(width=3,
@@ -161,6 +183,10 @@ body <- dashboardBody(
             )
             
     ),
+    
+    
+    # Animation tab -----------------------------------------------------------
+    
     
     tabItem(tabName = "animation",
             tags$style(type="text/css", ".recalculating {opacity: 1.0;}"),
@@ -214,6 +240,9 @@ body <- dashboardBody(
             )
     ),
     
+    
+    # patientprofile tab ------------------------------------------------------
+    
     tabItem(tabName = "patientprofile",
             fluidRow(
               fluidRow(
@@ -223,27 +252,26 @@ body <- dashboardBody(
                 box(plotlyOutput('ageCases'), width = '40%')
               ),
               fluidRow(
-                box(plotlyOutput('howContracted')),
-                box(plotlyOutput('icuProportion'))
-                
+                box(tabsetPanel(type = "tabs",
+                                tabPanel("Latest", plotlyOutput("howContracted")),
+                                tabPanel("History", plotlyOutput("howContractedHistory")))),
+                box(tabsetPanel(type = "tabs",
+                                tabPanel("Latest", plotlyOutput("icuProportion")),
+                                tabPanel("History", plotlyOutput("icuProportionHistory"))))
               ),
               fluidRow(
-                box(plotlyOutput('genderCases')),
-                box(plotlyOutput('helthcarePatients'))
+                box(tabsetPanel(type = "tabs",
+                                tabPanel("Latest", plotlyOutput("genderCases")),
+                                tabPanel("History", plotlyOutput("genderCasesHistory")))),
+                box(tabsetPanel(type = "tabs",
+                                tabPanel("Latest", plotlyOutput("helthcarePatients")),
+                                tabPanel("History", plotlyOutput("helthcarePatientsHistory"))))
               )
               
             )
     )
   ),
-  #These style tags are necessary to cope with the
-  #buggy renderInfoBox function
-  # tags$style("#ireCasesBox {width:300px;}"),
-  # tags$style("#ireDeathsBox {width:300px;}"),
-  # tags$style("#ireRecoverBox {width:300px;}"),
-  # tags$style("#wCasesBox {width:300px;}"),
-  # tags$style("#wDeathsBox {width:300px;}"),
-  # tags$style("#wRecoverBox {width:300px;}"),
-  # 
+  
   #The tags allow for nice vertical spacing
   tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
   tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
@@ -252,6 +280,9 @@ body <- dashboardBody(
   tags$style(type = "text/css", "#cumSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}")
 )
 
+
+# Dashboard page ----------------------------------------------------------
+
 # Put them together into a dashboardPage
 dashboardPage(
   header = header,
@@ -259,20 +290,3 @@ dashboardPage(
   body = body,
   title = 'Hamilton Insitute Covid-19 Visualisation'
 )
-
-
-
-# box(width = 12,
-#     
-#            tags$head(tags$style(HTML(".small-box {height: 150px; width: 250px;}"))),
-#            fluidRow(
-#            )
-#     )
-# column(width=6, 
-#        box(
-#          title = "COVID-19 map",
-#          width = 12,
-#          leafletOutput('covidMap2')
-#        )
-# )
-# ),

@@ -15,6 +15,8 @@ library(ggdark)
 library(stringr)
 library(grid)
 library(RColorBrewer)
+library(wesanderson)
+library(rlist)
 
 # Create a ggplot theme to match the background
 theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
@@ -647,13 +649,11 @@ shinyServer(function(input, output, session) {
 
 # Hospital tab ------------------------------------------------------------
 
-  
-  
-  #############################################
-  #             age in hospital plot
-  #############################################
-  output$ageCases <- renderPlotly({
 
+# age in hospital plot ----------------------------------------------------
+
+  output$ageCases <- renderPlotly({
+    
     # Main data on hospitalisation
     age.hosp <- (all_tables[[1]]$age_hospitalised) %>% 
       rename('Age' = "Hospitalised Age",
@@ -667,7 +667,7 @@ shinyServer(function(input, output, session) {
       select(Age, `All cases`)
     
     age_bind = left_join(age.all, age.hosp, 
-                          by = c("Age")) %>% 
+                         by = c("Age")) %>% 
       replace_na(list(`Hospitalised cases` = 0)) %>% 
       mutate('Non-hospitalised cases' = `All cases` - `Hospitalised cases`,
              Age = factor(Age, 
@@ -687,208 +687,368 @@ shinyServer(function(input, output, session) {
     
   })
   
-    
-    #############################################
-    #             Gender Breakdown
-    #############################################
-    output$genderCases <- renderPlotly({
-      
-      gender <- all_tables[[1]]$gender
-      x<-as.character(gender$Gender)
-      x <- x[-length(x)]
-      
-      y<-as.numeric(gender$`Number of Cases`)
-      y <- y[-length(y)]
-      sum <- sum(y)
-      y <- (y/sum)*100
-      text<- paste0(y, ' patients')
-      
-      
-      data <- data.frame(x, y)
-      data$x <- factor(data$x, levels = x)
-      
-      data$col <- ' '
-      names(data) <- c('Gender', 'Percentage', 'holder')
-      
-      
-      if(length(data$Gender) == 3){
-        g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
-          geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
-          theme_shiny_dashboard() +
-          labs(y="%", x = "") +
-          ggtitle('Gender Breakdown') + 
-          theme(legend.position = 'none')+
-          scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4", 'Unknown' = 'grey'))
-        
-      }else{
-        g<-ggplot(data = data, aes(Gender, Percentage, fill=Gender))+
-          geom_bar(stat = 'identity',width = 0.7, position = position_dodge()) +
-          theme_shiny_dashboard() +
-          labs(y="%", x = "") +
-          ggtitle('Gender Breakdown') + 
-          theme(legend.position = 'none')+
-          scale_fill_manual("legend", values = c("Male" = "darkorchid3", "Female" = "aquamarine4"))
-        
-      }
-      
-      
-      ggplotly(g, tooltip = 'Percentage')%>%
-        config(displayModeBar = FALSE)
-      
-      
-      
-    })
-    
-  
-  
-  
-  
-  #############################################
-  #      Proporting on healthcare patients
-  ############################################# 
-    
-    output$helthcarePatients <- renderPlotly({
-      helthcare.workers <- all_tables[[1]]$totals %>% 
-        filter(Totals == 'Total number of healthcare workers') %>%
-        select('Number of Cases') %>%
-        as.numeric()
-      
-      total.cases <- all_tables[[1]]$totals %>% 
-        filter(Totals == 'Total number of cases') %>%
-        select('Number of Cases') %>%
-        as.numeric()
-        x<- c( "Healthcare Workers", 'Total Cases')
-      
-      y<-c(helthcare.workers, total.cases)
-      text<- paste0(y, ' patients')
 
-      data <- data.frame(x, y, text)
-      data$x <- factor(data$x, levels = x)
-      
-      
-      g <- ggplot(data = data, aes(x, y))+
-        geom_bar(stat = 'identity', fill = 'orchid2', alpha = 0.7,width = 0.7) +
-        theme_shiny_dashboard() +
-        labs(y="Count", x = " ") +
-        ggtitle('Number of Healthcare Workers Tested Positive') +
-        theme(
-          axis.ticks = element_blank()) 
-      
-      
-      
-      ggplotly(g)  %>% layout(margin = list(l = 75)) %>%
-        config(displayModeBar = FALSE)
-      
-      
-      
-    })  
+# Gender Breakdown --------------------------------------------------------
+
+  
+  
+  # data necessary for gender plots
+  dates <- all_tables %>% map('published') %>% lubridate::dmy()
+  gender.data <- all_tables %>% map('gender')
+  female.prec = gender.data %>% map('% Total') %>% map(1) %>% unlist() %>% as.numeric() # female
+  male.prec =  gender.data %>% map('% Total') %>% map(2) %>% unlist() %>% as.numeric()# male
+  unknown.prec =  gender.data %>% map('% Total') %>% map(3) %>% unlist() %>% as.numeric() %>% replace_na(.,0)# unknown
+  dates = dates[1:length(female.prec)]
+  
+  data <- tibble(dates,female.prec,male.prec,unknown.prec)
+  names(data) <- c('Date','Female','Male','Unknown')
+  
+  
+  
+  # latest gender plot (histogram)
+  output$genderCases <- renderPlotly({
+    
+    latest.data = data %>% dplyr::filter(Date == dates[1])
+    x<-as.character(names(latest.data))
+    x <- x[-1]
+    data3 = latest.data %>% 
+      pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
+    
+    g <- ggplot(data = data3, aes(type, Precentage, fill=type))+
+      geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
+      theme_shiny_dashboard() +
+      labs(y="%", x = "") +
+      theme(legend.position = 'none')+
+      ggtitle('Gender Breakdown')
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+  })
+  
+  
+  
+  # time series of gender data
+  output$genderCasesHistory <- renderPlotly({
+    data2 = data %>% 
+      pivot_longer(names_to = 'type', values_to = 'patients', -Date) %>% mutate(Date = as.POSIXct(Date))
+    
+    g <- ggplot(data2, aes(x = Date, y = patients, colour = type)) + 
+      geom_line(size=1)+
+      theme_shiny_dashboard() +
+      scale_x_datetime(breaks = '2 days',
+                       date_labels = "%d%b") +
+      labs(x="Date", y = "Precentage") +
+      ggtitle('Gender Breakdown') + theme(
+        legend.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(face = "bold", 
+                                   size = 12, angle = 45))
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
     
     
+  })
+  
+
+# Proportion healthcare patients ------------------------------------------
+
+  
+  #data for proportion of health care patients
+  dates <- all_tables %>% map('published') %>% lubridate::dmy()
+  
+  host.count.data <- all_tables %>% 
+    map('totals') %>% 
+    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number of healthcare workers",
+                                                         "Total number healthcare workers")))%>%
+    map(2) %>%
+    unlist() %>%
+    as.numeric()
+  
+  
+  tot.count.data <- all_tables %>% 
+    map('totals') %>% 
+    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number of cases"))) %>%
+    map(2) %>%
+    unlist() %>%
+    as.numeric()
+  
+  
+  host.count.data = host.count.data[-length(host.count.data)]
+  dates.host.count = dates[-length(dates)]
+  
+  # timeseries
+  data.host.count <- tibble(dates.host.count, 
+                            host.count.data, 
+                            tot.count.data)
+  
+  
+  names(data.host.count) <- c('Date',
+                              'HealthCareWorkers',
+                              'TotalCases')
+  
+  
+  # histogram
+  output$helthcarePatients <- renderPlotly({
+    
+    
+    latest.data = data.host.count %>% filter(Date == dates[1])
+    latest.data$GeneralPopulation = latest.data$TotalCases - latest.data$HealthCareWorkers
+    latest.data = latest.data%>%dplyr::select(-TotalCases)
+    
+    names(latest.data) <- c("Date","Health Care Workers","General Pop.")
+    
+    data3 = latest.data %>% 
+      pivot_longer(names_to = 'type', values_to = 'Count', -Date) 
+    
+    g <- ggplot(data = data3, aes(type, Count, fill=type))+
+      geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
+      theme_shiny_dashboard() +
+      labs(y="Count", x = "") +
+      theme(legend.position = 'none')+
+      ggtitle('Gender Breakdown') +
+      scale_fill_brewer(palette="Accent")
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+    
+    
+  })  
+  
+  
+  # timeseries
+  output$helthcarePatientsHistory <- renderPlotly({
+    
+    data.host.count$GeneralPopulation = data.host.count$TotalCases - data.host.count$HealthCareWorkers
+    data2 = data.host.count %>% 
+      pivot_longer(names_to = 'type', values_to = 'count', -Date) %>% mutate(Date = as.POSIXct(Date))
+    
+    g <- ggplot(data2, aes(x = Date, y = count, colour = type)) + 
+      geom_line(size=1)+
+      theme_shiny_dashboard() +
+      scale_x_datetime(breaks = '2 days',
+                       date_labels = "%d%b") +
+      labs(x="Date", y = "Count") +
+      ggtitle('Number of Healthcare Workers Tested Positive') + theme(
+        legend.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(face = "bold", 
+                                   size = 12, angle = 45))+
+      scale_color_brewer(palette="Accent")
+    
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+    
+    
+  })
+  
+
+# How virus spreads -------------------------------------------------------
+
+  
+  # data required for how virus spreads plots
+  dates.transmission <- all_tables %>% map('published') %>% lubridate::dmy()
+  transmission.data <- all_tables %>% map('transmission')
+  
+  transmission.data = list.clean(transmission.data, fun = is.null)
+  
+  transmission.data[[length(transmission.data)]] <- NULL
+  
+  Community.count <- transmission.data %>% 
+    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Community transmission"))) %>%
+    map(2) %>%
+    unlist() %>%
+    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
+    as.numeric()
+  
+  
+  travel.count <- transmission.data %>% 
+    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Travel Abroad"))) %>%
+    map(2) %>%
+    unlist() %>%
+    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
+    as.numeric()
+  
+  contact.count <- transmission.data %>% 
+    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Close contact with confirmed case"))) %>%
+    map(2) %>%
+    unlist() %>%
+    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
+    as.numeric()
+  
+  investigation.count <- transmission.data %>% 
+    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Under investigation"))) %>%
+    map(2) %>%
+    replace_na(.,0) %>%
+    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
+    lapply(., function(x) as.numeric(sub("258", "0", x))) %>%
+    as.numeric()
   
   
   
+  dates.transmission = dates[1:length(investigation.count)]
+  # timeseries
+  data.transmission <- tibble(dates.transmission, 
+                              Community.count, 
+                              travel.count,
+                              contact.count,
+                              investigation.count)
   
-  #############################################
-  #            How virus spreads
-  ############################################# 
-    output$howContracted <- renderPlotly({
-      how.transmitted <- all_tables[[1]]$transmission
+  
+  names(data.transmission) <- c('Date',
+                                'Community',
+                                'Travel',
+                                'Close Contact',
+                                'Investigation')
+  
+  
+  #histogram
+  output$howContracted <- renderPlotly({
+    
+    
+    latest.data = data.transmission %>% filter(Date == dates[1])
+    x<-as.character(names(latest.data))
+    x <- x[-1]
+    
+    
+    if(latest.data$Investigation==0){
+      latest.data = latest.data %>% dplyr::select(-Investigation)
+      data3 = latest.data %>% 
+        pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
       
-      x<-as.character(how.transmitted$Transmission)
-      y<-as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases))))
-      
-      total.cases <- all_tables[[1]]$totals %>% 
-        filter(Totals == 'Total number of cases') %>%
-        select('Number of Cases') %>%
-        as.numeric()
-      y<-(total.cases/100)*y
-      
-      text<- paste0(as.numeric(unlist(regmatches(how.transmitted$Cases, gregexpr("[[:digit:]]+", how.transmitted$Cases)))), ' %')
-      x <- c('Community\ntransmission','Contact with\nknown case', 'Travel\nAbroad')
-      
-      data <- data.frame(x, y, text)
-      data$x <- factor(data$x, levels = x)
-      
-      names(data) <- c("Class",    "Count",    "text")
-      g <- ggplot(data = data, aes(Class, Count, fill=Class, text = text))+
-        geom_bar(stat = 'identity') +
+      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type))+
+        geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
         theme_shiny_dashboard() +
+        labs(y="%", x = "") +
         coord_flip()+
-        #geom_text(aes(label=Class),nudge_y = -85) +
-        # annotate(geom = "text",
-        #          x = 1:4,
-        #          y = 0,
-        #          label = data$Class,
-        #          hjust = 0) +
-        #geom_text(aes(y = 0, label = Class, hjust = 0)) +
-        labs(y="Count", x = "") +
-        ggtitle('How is COVID-19 Being Transmitted?') + theme(
-          #axis.text.y= element_blank(),
-          axis.ticks = element_blank(),
-          legend.position = "none")
+        theme(legend.position = 'none')+
+        ggtitle('How is COVID-19 Being Transmitted?')+
+        scale_fill_brewer(palette="Set2")
       
+    }else{
+      data3 = latest.data %>% 
+        pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
       
-      ggplotly(g, tooltip=c("Count")) %>% layout(margin = list(l = 75))%>%
-        config(displayModeBar = FALSE)
-      
-      
-      
-    }) 
-    
-    
-    
-    
-    
-    output$icuProportion <- renderPlotly({
-      dates <- all_tables %>% map('published') %>% lubridate::dmy()
-      hosp.data <- all_tables %>% map('totals')
-      
-      icu.pats <- c()
-      for (df in hosp.data){
-        icu.pats <- c(icu.pats, (df %>% 
-                                   filter(Totals == 'Total number admitted to ICU') %>% 
-                                   select('Number of Cases') %>% 
-                                   unlist() %>% 
-                                   as.numeric()) )
-      }
-      
-      hosp.pats <- c()
-      for (df in hosp.data){
-        hosp.pats <- c(hosp.pats, (df %>% 
-                                     filter(Totals == 'Total number hospitalised') %>% 
-                                     select('Number of Cases') %>% 
-                                     unlist() %>% 
-                                     as.numeric()) )
-      }
-
-      data <- tibble(dates, 
-                     ICU = icu.pats, 
-                     Hospital = hosp.pats)
-      data2 = data %>% 
-        pivot_longer(names_to = 'type', values_to = 'patients', -dates) %>% 
-        mutate(datetime = as.POSIXct(dates))
-      
-      p = ggplot(data2, aes(x = datetime, y = patients, colour = type)) + 
-        geom_line() +
+      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type))+
+        geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
         theme_shiny_dashboard() +
-        scale_x_datetime(breaks = '2 days',
-                         date_labels = "%d%b") +
-        labs(x="Date", y = "Number of patients") +
-        ggtitle('Hospitalised Patients') + theme(
-          legend.title = element_blank(),
-          axis.ticks = element_blank(),
-          axis.text.x = element_text(face = "bold", 
-                                     size = 12, angle = 45))
+        labs(y="%", x = "") +
+        coord_flip()+
+        theme(legend.position = 'none')+
+        ggtitle('How is COVID-19 Being Transmitted?')+
+        scale_fill_brewer(palette="Set2")
+      
+    }
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+    
+  }) 
+  
+  
+  #timeseries
+  
+  output$howContractedHistory <- renderPlotly({
+    
+    
+    data2 = data.transmission %>% 
+      pivot_longer(names_to = 'type', values_to = 'patients', -Date) %>% mutate(Date = as.POSIXct(Date))
+    
+    g <- ggplot(data2, aes(x = Date, y = patients, colour = type)) + 
+      geom_line(size=1)+
+      theme_shiny_dashboard() +
+      scale_x_datetime(breaks = '2 days',
+                       date_labels = "%d%b") +
+      labs(x="Date", y = "Precentage") +
+      ggtitle('How is COVID-19 Being Transmitted?') + theme(
+        legend.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(face = "bold", 
+                                   size = 12, angle = 45))+
+      scale_color_brewer(palette="Set2")
+    
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+    
+    
+  })
+  
 
-      ggplotly(p) %>% layout(margin = list(l = 75))    %>%
-        config(displayModeBar = FALSE)
-      # fig <- plot_ly(x = ~ data$dates) %>% 
-      #   add_lines(y = ~ data$hosp.pats, text = paste(data$hosp.pats, " patients in hospital"), name = "Hospitalised Patients") %>%
-      #   add_lines(y = ~ data$icu.pats, text = paste(data$icu.pats, " patients in ICU"), name = "ICU Patients") 
-      # 
-      # fig <- fig %>% layout(title = 'Hospitalised Patients', yaxis = list(title = "Count"), xaxis = list(title = "Date"))
-      # fig
-    }) 
+# ICU percentage ----------------------------------------------------------
+
+  #data for icu plots
+  dates <- all_tables %>% map('published') %>% lubridate::dmy()
+  
+  total.hosp <- all_tables %>% 
+    map('totals') %>% 
+    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number hospitalised")))%>%
+    map(2) %>%
+    unlist() %>%
+    as.numeric()
+  
+  
+  total.icu <- all_tables %>% 
+    map('totals') %>% 
+    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number admitted to ICU"))) %>%
+    map(2) %>%
+    unlist() %>%
+    as.numeric()
+  
+  data.icu.prop <- tibble(dates, 
+                          total.hosp, 
+                          total.icu)
+  
+  
+  names(data.icu.prop) <- c('Date',
+                            'Hospital',
+                            'ICU')
+  
+  
+  #timeseries
+  output$icuProportionHistory <- renderPlotly({
+    data2 = data.icu.prop %>% 
+      pivot_longer(names_to = 'type', values_to = 'count', -Date) %>% mutate(Date = as.POSIXct(Date))
+    
+    g <- ggplot(data2, aes(x = Date, y = count, colour = type)) + 
+      geom_line(size=1)+
+      theme_shiny_dashboard() +
+      scale_x_datetime(breaks = '2 days',
+                       date_labels = "%d%b") +
+      labs(x="Date", y = "Count") +
+      ggtitle('Hospitalised Patients') + theme(
+        legend.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(face = "bold", 
+                                   size = 12, angle = 45))
+    
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+    
+    
+  }) 
+  
+  
+  #histogram
+  output$icuProportion <- renderPlotly({
+    latest.data = data.icu.prop %>% filter(Date == dates[1])
+    
+    
+    data3 = latest.data %>% 
+      pivot_longer(names_to = 'type', values_to = 'Count', -Date) 
+    
+    g <- ggplot(data = data3, aes(type, Count, fill=type))+
+      geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
+      theme_shiny_dashboard() +
+      labs(y="Count", x = "") +
+      theme(legend.position = 'none')+
+      ggtitle('Hospitalised Patients')
+    
+    ggplotly(g) %>% layout(margin = list(l = 75))    %>%
+      config(displayModeBar = FALSE)
+  })
     
     
     
