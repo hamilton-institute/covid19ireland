@@ -281,13 +281,7 @@ body <- dashboardBody(
             )
     )
   ),
-  HTML('<div data-iframe-height></div>'),
-  
-  #The tags allow for nice vertical spacing
-  tags$head(
-    tags$script(src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/3.5.16/iframeResizer.contentWindow.min.js",
-                type="text/javascript")
-  ),
+
   tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
   tags$style(type = "text/css", "#covidMap2 {height: calc((48vh)/1.0) !important;}"),
   tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
