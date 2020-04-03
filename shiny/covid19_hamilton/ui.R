@@ -201,7 +201,7 @@ body <- dashboardBody(
             fluidRow(
               column(width = 3,
                      pickerInput("sel_ctry2",
-                                 "Select Countries", 
+                                 "Select countries", 
                                  choices=unique(ecdc$countriesAndTerritories),
                                  selected = c('Ireland', 'UK', 'Italy', 'USA',
                                               'Spain', 'China'),
