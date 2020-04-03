@@ -363,8 +363,9 @@ shinyServer(function(input, output, session) {
       ungroup() %>% 
       arrange(desc(totalDeaths)) %>% 
       top_n(1)
-    name = str_sub(str_replace(worst_countries$countriesAndTerritories[1], '_', ' '),
-                   1, 10)
+    # name = str_sub(str_replace(worst_countries$countriesAndTerritories[1], '_', ' '),
+    #                1, 10)
+    name = str_replace(worst_countries$countriesAndTerritories[1], '_', ' ')
     val = format(worst_countries$totalDeaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
                             style = "font-size: 3vw"),
@@ -379,8 +380,9 @@ shinyServer(function(input, output, session) {
     biggest_increase = ecdc_change %>% 
       filter(deaths != 0) %>% 
       arrange(deaths)
-    name = str_sub(str_replace(biggest_increase$countriesAndTerritories[1], '_', ' '),
-                   1, 10)
+    # name = str_sub(str_replace(biggest_increase$countriesAndTerritories[1], '_', ' '),
+    #                1, 10)
+    name = str_replace(biggest_increase$countriesAndTerritories[1], '_', ' ')
     val = format(-biggest_increase$deaths[1], big.mark=',')
     
     valueBox(value = tags$p(name, 
@@ -396,8 +398,9 @@ shinyServer(function(input, output, session) {
       filter(deaths != 0) %>% 
       arrange(desc(deaths)) %>% 
       slice(1)
-    name = str_sub(str_replace(biggest_decrease$countriesAndTerritories, '_', ' '),
-                   1, 10)
+    # name = str_sub(str_replace(biggest_decrease$countriesAndTerritories, '_', ' '),
+    #                1, 10)
+    name = str_replace(biggest_decrease$countriesAndTerritories, '_', ' ')
     val = format(abs(biggest_decrease$deaths), big.mark=',')
     
     valueBox(value = tags$p(name, 
@@ -416,8 +419,9 @@ shinyServer(function(input, output, session) {
       ungroup() %>% 
       arrange(desc(deaths)) %>% 
       slice(1)
-    name = str_sub(str_replace(daily_death$countriesAndTerritories[1], '_', ' '),
-                   1, 10)
+    # name = str_sub(str_replace(daily_death$countriesAndTerritories[1], '_', ' '),
+    #                1, 10)
+    name = str_replace(daily_death$countriesAndTerritories[1], '_', ' ')
     val = format(daily_death$deaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
                             style = "font-size: 3vw;"),
