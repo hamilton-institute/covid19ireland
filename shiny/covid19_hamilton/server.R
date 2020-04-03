@@ -229,7 +229,11 @@ shinyServer(function(input, output, session) {
     ecdc_agg = ecdc_agg %>% 
       filter(Type %in% y_pick)
     ecdc_agg = ecdc_agg %>% 
-      mutate(data_point = paste0("\nx_axis: ", ecdc_agg[[x_pick]], "\n","y_axis: ", formatC(signif(Number,digits=3), digits=3, format="fg", flag="#")))
+      mutate(data_point = paste0("\ncountry: ",ecdc_agg$countriesAndTerritories,"\nx_axis: ", ecdc_agg[[x_pick]], "\n","y_axis: ", formatC(signif(Number,digits=3), digits=3, format="fg", flag="#")))
+    
+    # Find the number of countries and the number of variables picked and remove the legend if bigger than 10
+    n_countries = ecdc_agg %>% select(countriesAndTerritories) %>% table %>% length
+    n_vars = length(input$sel_var)
     
     p = ggplot(ecdc_agg, aes_string(x = x_pick, y = 'Number', colour = 'countriesAndTerritories',
                                     label = "data_point")) + 
@@ -246,14 +250,14 @@ shinyServer(function(input, output, session) {
       }} +
       theme_shiny_dashboard() +
       { if(x_pick == 'dateRep') theme(axis.text.x = element_text(angle = 45, hjust = 1)) } +
-      theme(legend.title = element_blank(),
-            legend.position = 'bottom') +
+      theme(legend.title = element_blank()) +
       {if ('Log cumulative cases' %in% input$sel_var | 
            'Log cumulative deaths' %in% input$sel_var)  {
         scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 5))
       } else {
         scale_y_continuous(breaks = scales::breaks_pretty(n = 5))
-      }}
+      }} + 
+      {if(n_countries * n_vars > 10) theme(legend.position = "none")}
     
     ggplotly(p, tooltip=c("label")) %>% layout(margin = list(l = 75))
     #ggplotly(p) %>% layout(margin = list(l = 75))
