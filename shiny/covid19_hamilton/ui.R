@@ -44,17 +44,16 @@ ecdc = bind_rows(ecdc_world, ecdc_raw)
 # Header and sidebar ------------------------------------------------------
 
 header <- dashboardHeader(
-  title = HTML(paste0("Hamilton Covid-19 Dashboard: ", em(paste0("Global data updated ", last_update, ', Irish data updated ', 
-                 format(max(ecdc$dateRep), "%d-%b-%Y"))))),
+  title = HTML(paste0("Hamilton Covid-19 Dashboard: ", 
+                      em(paste0("Global data updated ", last_update, ', Irish data updated ', 
+                                format(max(ecdc$dateRep), "%d-%b-%Y"))))),
   titleWidth = 950,
   tags$li(class = 'dropdown',
-          fixedPanel(
-            a(actionButton("cont", "Contact us",
-                           icon = icon("envelope")),
-              href = "mailto:andrew.parnell@mu.ie"),
-            right = 5,
-            top = 10
-          ))
+          a(icon("github"),
+            href = "https://github.com/hamilton-institute/covid19ireland")),
+  tags$li(class = 'dropdown',
+          a(icon("envelope"),
+            href = "mailto:andrew.parnell@mu.ie"))
 )
 
 sidebar <- dashboardSidebar(
@@ -285,7 +284,7 @@ body <- dashboardBody(
   
   #The tags allow for nice vertical spacing
   tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
-  #tags$style(type = "text/css", "#covidMap2 {height: calc((100vh - 540px)/1.0) !important;}"),
+  tags$style(type = "text/css", "#covidMap2 {height: calc((48vh)/1.0) !important;}"),
   tags$style(type = "text/css", "#newSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
   tags$style(type = "text/css", "#cumSumIrelandPlot {height: calc((100vh - 250px)/2.0) !important;}"),
   tags$style(type = "text/css", "#newSumWorldPlot {height: calc((100vh - 250px)/2.0) !important;}"),
