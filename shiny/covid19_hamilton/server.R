@@ -273,7 +273,7 @@ shinyServer(function(input, output, session) {
     update_date = format(as.Date(ecdc_current$dateRep[1]), "%d-%b")
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"), #tags$p(val, style = "font-size: 120%;"),
              subtitle = HTML(paste0("Ireland: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
                                     # br(),em('Last updated:',update_date, style = "font-size: 80%;"))),
              color = 'olive',
@@ -291,7 +291,7 @@ shinyServer(function(input, output, session) {
     #pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'ireland']/sum_stats_yesterday$Deaths[sum_stats$Region == 'ireland'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Ireland: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
                                     #br(),em('Last updated:',update_date,style = "font-size: 80%"))),
              color = 'olive',
@@ -304,7 +304,7 @@ shinyServer(function(input, output, session) {
     pc_change = round(100*(sum_stats$Hospitalised[sum_stats$Region == 'ireland']/sum_stats_yesterday$Hospitalised[sum_stats$Region == 'ireland'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Hospitalised[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Ireland: Hospitalised ",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("hospital"))
@@ -315,7 +315,7 @@ shinyServer(function(input, output, session) {
     pc_change = round(100*(sum_stats$ICU[sum_stats$Region == 'ireland']/sum_stats_yesterday$ICU[sum_stats$Region == 'ireland'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$ICU[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Ireland: ICU",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("briefcase-medical"))
@@ -326,7 +326,7 @@ shinyServer(function(input, output, session) {
     pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'world']/sum_stats_yesterday$Cases[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Global: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("globe"))
@@ -337,7 +337,7 @@ shinyServer(function(input, output, session) {
     pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Global: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("cross"))
@@ -348,7 +348,7 @@ shinyServer(function(input, output, session) {
     pc_change = round(100*(sum_stats$Recovered[sum_stats$Region == 'world']/sum_stats_yesterday$Recovered[sum_stats$Region == 'world'] - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 120%;"),
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Global: Recovered",br(),html_message,' ', pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("heart"))
@@ -367,7 +367,8 @@ shinyServer(function(input, output, session) {
                    1, 10)
     val = format(worst_countries$totalDeaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
-                            style = "font-size: 110%;"),
+                            style = "font-size: 3vw"),
+                            #style = "font-size: 110%;"),
              subtitle = HTML(paste0("Most deaths overall: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -383,7 +384,7 @@ shinyServer(function(input, output, session) {
     val = format(-biggest_increase$deaths[1], big.mark=',')
     
     valueBox(value = tags$p(name, 
-                            style = "font-size: 110%;"),
+                            style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -400,7 +401,7 @@ shinyServer(function(input, output, session) {
     val = format(abs(biggest_decrease$deaths), big.mark=',')
     
     valueBox(value = tags$p(name, 
-                            style = "font-size: 110%;"),
+                            style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
                                     val)),
              color = 'light-blue',
@@ -419,7 +420,7 @@ shinyServer(function(input, output, session) {
                    1, 10)
     val = format(daily_death$deaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
-                            style = "font-size: 110%;"),
+                            style = "font-size: 3vw;"),
              subtitle = HTML(paste0("Most deaths today: ",val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
