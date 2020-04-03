@@ -368,8 +368,7 @@ shinyServer(function(input, output, session) {
     name = str_replace(worst_countries$countriesAndTerritories[1], '_', ' ')
     val = format(worst_countries$totalDeaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
-                            style = "font-size: 3vw"),
-                            #style = "font-size: 110%;"),
+                            style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vw;")),
              subtitle = HTML(paste0("Most deaths overall: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -386,7 +385,7 @@ shinyServer(function(input, output, session) {
     val = format(-biggest_increase$deaths[1], big.mark=',')
     
     valueBox(value = tags$p(name, 
-                            style = "font-size: 3vw;"),
+                            style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vw;")),
              subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
@@ -404,7 +403,7 @@ shinyServer(function(input, output, session) {
     val = format(abs(biggest_decrease$deaths), big.mark=',')
     
     valueBox(value = tags$p(name, 
-                            style = "font-size: 3vw;"),
+                            style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vw;")),
              subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
                                     val)),
              color = 'light-blue',
@@ -424,7 +423,7 @@ shinyServer(function(input, output, session) {
     name = str_replace(daily_death$countriesAndTerritories[1], '_', ' ')
     val = format(daily_death$deaths[1], big.mark=',')
     valueBox(value = tags$p(name, 
-                            style = "font-size: 3vw;"),
+                            style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vw;")),
              subtitle = HTML(paste0("Most deaths today: ",val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
