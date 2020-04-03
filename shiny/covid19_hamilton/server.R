@@ -62,6 +62,9 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 all_tables <- readRDS('all_tables_current.rds')
 
 
+
+
+
 #Get the latest table containing info on all counties
 latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int
@@ -922,8 +925,8 @@ shinyServer(function(input, output, session) {
     lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number of cases"))) %>%
     map(2) %>%
     unlist() %>%
+    str_replace(.,',','')%>%
     as.numeric()
-  
   
   host.count.data = host.count.data[-length(host.count.data)]
   dates.host.count = dates[-length(dates)]
