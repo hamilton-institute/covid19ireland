@@ -88,7 +88,16 @@ yesterday = format(as.Date(Sys.time(), tz = "Europe/Dublin") - 1, "%Y%m%d")
 sum_stats_yesterday = read_csv(paste0("old_data/summary_stats",yesterday,".csv"))
 
 #Create the datable with county and date information
-county_total_date<-map_df(all_tables,~add_column(.x$counties,date=lubridate::dmy(.x$published)))%>% arrange(desc(date))
+#county_total_date<-map_df(all_tables,~add_column(.x$counties,date=lubridate::dmy(.x$published)))%>% arrange(desc(date))
+county_total_date = all_tables %>% 
+  # Extract the totals
+  map(.,  "counties") %>% 
+  # Convert everything to character
+  map(., ~mutate_all(., as.character)) %>% 
+  # Add the dates 
+  map2_df(., map(all_tables, "published"), ~ mutate(.x, Date = .y)) %>% 
+  # Fix the date variable
+  mutate(Date = as.Date(Date, "%d %B %Y")) 
 
 #Aproximate to 5 the "<= 5 cases"
 county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.numeric %>% ifelse(is.na(.),5,.) 
