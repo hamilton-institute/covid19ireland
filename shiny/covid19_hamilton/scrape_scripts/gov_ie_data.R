@@ -13,9 +13,9 @@ corona_urls <- urls[
 corona_urls <- corona_urls[
   str_detect(corona_urls, "analysis")]
 
-all_tables <- corona_urls %>% 
+gov_ie_data <- corona_urls %>% 
   map(~{
-    print(.x)
+    #print(.x)
     html_reading <- paste0(
       "https://www.gov.ie", .x) %>% 
       xml2::read_html() %>% 
@@ -166,7 +166,7 @@ all_tables <- corona_urls %>%
     if (is.na(published)){
       published <- str_extract(text[1], pattern = "Published: [0-9]{1}[ ][:alpha:]{5,9}[ ]2020")
     }
-    print(published)
+    #print(published)
     published <- str_remove(published, "Published: ")  
 
     
@@ -180,6 +180,3 @@ all_tables <- corona_urls %>%
          totals = totals
     )
   })
-
-
-saveRDS(all_tables, "all_tables_current.rds")

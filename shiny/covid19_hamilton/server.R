@@ -62,9 +62,6 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 all_tables <- readRDS('all_tables_current.rds')
 
 
-
-
-
 #Get the latest table containing info on all counties
 latest_county_table <- head(all_tables, n=1)[[1]]$counties
 #Change the number of cases from char to int
@@ -134,6 +131,7 @@ ecdc_change = ecdc %>% group_by(countriesAndTerritories) %>%
   ungroup() %>% 
   filter(dateRep == max(dateRep))
 
+# Create neat table of cases
 ecdc_table1 = ecdc %>% 
   group_by(countriesAndTerritories) %>% 
   filter(dateRep == max(dateRep)) %>% 

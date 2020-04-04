@@ -28,7 +28,8 @@ hosp.count <- gov.data[[1]]$totals %>% filter(Totals == 'Total number hospitalis
 icu.count <- gov.data[[1]]$totals %>% filter(Totals == 'Total number admitted to ICU') %>% select('Number of Cases') %>% as.numeric()
 
 
-summary_stats_irl <- data.frame('ireland',as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[1])),
+summary_stats_irl <- data.frame('ireland',as.numeric(gsub("[^0-9.]", "",  
+                                                          summary_stats_irl[1])),
                             as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[2])),
                             as.numeric(gsub("[^0-9.]", "",  summary_stats_irl[3])),
                             hosp.count,
@@ -61,6 +62,6 @@ all.data <- rbind(summary_stats_world, summary_stats_irl)
 
 # write data
 today = format(Sys.time(), "%Y%m%d")
-write_csv(all.data, paste0("old_data/summary_stats",today,".csv"))
+swrite_csv(all.data, paste0("old_data/summary_stats",today,".csv"))
 #write_csv(all.data, "data/scraped/summary_stats.csv")
 write_csv(all.data, "summary_stats_current.csv")
