@@ -20,10 +20,10 @@ library(shinyWidgets)
 
 # Data wrangling ----------------------------------------------------------
 
-last_update = format(file.info('summary_stats_current.csv')$mtime,
-                     "%d-%b-%Y, %H:%M")
+# Get the latest update data
+last_updated = read_csv(file = 'last_updated.csv') %>% deframe
 
-ecdc_raw <- readRDS('ECDC_data_current.rds') %>% 
+ecdc_raw <- readRDS('latest_ECDC_data.rds') %>% 
   mutate(countriesAndTerritories = 
            recode(countriesAndTerritories, 
                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
@@ -43,11 +43,11 @@ ecdc = bind_rows(ecdc_world, ecdc_raw)
 
 # Header and sidebar ------------------------------------------------------
 
+
+
 header <- dashboardHeader(
-  title = HTML(paste0("Hamilton Covid-19 Dashboard: ", 
-                      em(paste0("Global data updated ", last_update, ', Irish data updated ', 
-                                format(max(ecdc$dateRep), "%d-%b-%Y"))))),
-  titleWidth = 950,
+  title = "Hamilton Institute Covid-19 Dashboard",
+  titleWidth = 380,
   tags$li(class = 'dropdown',
           a(icon("github"),
             href = "https://github.com/hamilton-institute/covid19ireland")),
@@ -76,7 +76,6 @@ body <- dashboardBody(
     theme = "grey_dark"
   ),
   
-  
   # Summary tab -------------------------------------------------------------
   
   
@@ -90,9 +89,9 @@ body <- dashboardBody(
                      column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
                    ),
                    fluidRow(
-                     column(width = 4, valueBoxOutput("wCasesBox", width = NULL)),
-                     column(width = 4, valueBoxOutput("wDeathsBox", width = NULL)),
-                     column(width = 4, valueBoxOutput("wRecovBox", width = NULL)),
+                     column(width = 6, valueBoxOutput("wCasesBox", width = NULL)),
+                     column(width = 6, valueBoxOutput("wDeathsBox", width = NULL)),
+                     #scolumn(width = 4, valueBoxOutput("wRecovBox", width = NULL)),
                    ),
                    tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
                    fluidRow(
@@ -102,7 +101,13 @@ body <- dashboardBody(
                      column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
                    )),
             column(width = 3, 
-                   leafletOutput('covidMap2')
+                   leafletOutput('covidMap2'),
+                   helpText(HTML(paste0("<h3><em>ECDC data updated<br>",
+                          format(last_updated['ECDC'],
+                                 "%d-%b-%Y %H:%M"), "<br> 
+                                Irish data updated <br>",
+                          format(last_updated['GOV_IE'],
+                                 "%d-%b-%Y %H:%M"), "</em></h3>")))
             ),
             column(width = 12,
                    box(
@@ -274,8 +279,8 @@ body <- dashboardBody(
                                 tabPanel("Latest", plotlyOutput("genderCases")),
                                 tabPanel("History", plotlyOutput("genderCasesHistory")))),
                 box(tabsetPanel(type = "tabs",
-                                tabPanel("Latest", plotlyOutput("helthcarePatients")),
-                                tabPanel("History", plotlyOutput("helthcarePatientsHistory"))))
+                                tabPanel("Latest", plotlyOutput("healthcarePatients")),
+                                tabPanel("History", plotlyOutput("healthcarePatientsHistory"))))
               )
               
             )

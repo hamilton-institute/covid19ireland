@@ -37,7 +37,7 @@ theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
     )   
 }
 
-ecdc_raw <- readRDS('ECDC_data_current.rds') %>% 
+ecdc_raw <- readRDS('latest_ECDC_data.rds') %>% 
   mutate(countriesAndTerritories = 
            recode(countriesAndTerritories, 
                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
@@ -59,16 +59,20 @@ ecdc = bind_rows(ecdc_raw, ecdc_world)
 
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
-all_tables <- readRDS('all_tables_current.rds')
+#all_tables <- readRDS('all_tables_current.rds')
+latest_irish_data = readRDS('latest_irish_data.rds')
 
-
-
-
+# Get totals and one day old totals
+latest_irish_totals = latest_irish_data$totals %>% 
+  filter(Date == max(Date))
+previous_irish_totals = latest_irish_data$totals %>% 
+  filter(Date == 
+           sort(.$Date, partial = n()-1)[n()-1])
 
 #Get the latest table containing info on all counties
-latest_county_table <- head(all_tables, n=1)[[1]]$counties
-#Change the number of cases from char to int
-latest_county_table$Cases <- strtoi(gsub("[^0-9.-]", "", latest_county_table$`Number of Cases`))
+latest_county_table = latest_irish_data$total_by_county %>%
+  filter(Date == max(Date)) %>% 
+  mutate(Cases = strtoi(gsub("[^0-9.-]", "", `Number of Cases`)))
 
 #Read in the county shapes file and join it with county case info
 cs2 <- rgdal::readOGR("counties_simple.geojson")
@@ -82,36 +86,29 @@ pal2 <- colorNumeric("Blues", log2(cs2$Cases))
 nor_ire_counties = c('Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry','Tyrone')
 cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
 
-#Read in summary stats for Ireland
-sum_stats <- read.csv('summary_stats_current.csv')
-yesterday = format(as.Date(Sys.time(), tz = "Europe/Dublin") - 1, "%Y%m%d")
-sum_stats_yesterday = read_csv(paste0("old_data/summary_stats",yesterday,".csv"))
+#Aproximate to 5 the "<= 5 cases" - SHOULD IT BE 5? - I"m going to leave as NA
+latest_county_table = latest_county_table %>% 
+  mutate(`Number of Cases` = as.numeric(`Number of Cases`))# %>% 
+           #replace_na(5))
+#county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.numeric %>% ifelse(is.na(.),5,.) 
 
-#Create the datable with county and date information
-#county_total_date<-map_df(all_tables,~add_column(.x$counties,date=lubridate::dmy(.x$published)))%>% arrange(desc(date))
-county_total_date = all_tables %>% 
-  # Extract the totals
-  map(.,  "counties") %>% 
-  # Convert everything to character
-  map(., ~mutate_all(., as.character)) %>% 
-  # Add the dates 
-  map2_df(., map(all_tables, "published"), ~ mutate(.x, Date = .y)) %>% 
-  # Fix the date variable
-  mutate(Date = as.Date(Date, "%d %B %Y")) 
-
-#Aproximate to 5 the "<= 5 cases"
-county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.numeric %>% ifelse(is.na(.),5,.) 
+# Get all the county data in numeric format
+all_county_table = latest_irish_data$total_by_county %>% 
+  mutate(`Number of Cases` = as.numeric(`Number of Cases`))
 
 #Create the plots for county cumulatie
-county_cumulative_cases<-map(cs2$NAME_TAG,
-                             ~ggplot(county_total_date 
-                                     %>% filter(County==as.character(.x)),
-                                     aes(x=date,y=`Number of Cases`,group=County))+
-                               geom_point()+geom_line()+
-                               theme_bw() + 
-                               scale_x_date(breaks = scales::breaks_pretty(n = 10)) +
-                               ggtitle(label = paste0("Total cases in ",.x, " at ",county_total_date$date[[1]],": ",
-                                                      county_total_date$`Number of Cases`[county_total_date$date==county_total_date$date[[1]] & county_total_date$County==.x]))+
+county_cumulative_cases = 
+  map(cs2$NAME_TAG,
+      ~ggplot(all_county_table 
+              %>% filter(County==as.character(.x)),
+              aes(x=Date,y=`Number of Cases`,group=County))+
+        geom_point()+geom_line()+
+        theme_bw() + 
+        scale_x_date(breaks = scales::breaks_pretty(n = 10)) +
+        scale_y_continuous(breaks = scales::breaks_pretty(n = 10)) +
+        ggtitle(label = paste0("Total cases in ",.x, 
+                               " at ",all_county_table$Date[[1]],": ",
+                               all_county_table$`Number of Cases`[all_county_table$Date==all_county_table$Date[[1]] & all_county_table$County==.x]))+
                                xlab('Date')+
                                ylab('Number of individuals')+
                                #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
@@ -143,6 +140,10 @@ ecdc_change = ecdc %>% group_by(countriesAndTerritories) %>%
   ungroup() %>% 
   filter(dateRep == max(dateRep))
 
+# Get the latest update data
+last_updated = read_csv(file = 'last_updated.csv')
+
+# Create neat table of cases
 ecdc_table1 = ecdc %>% 
   group_by(countriesAndTerritories) %>% 
   filter(dateRep == max(dateRep)) %>% 
@@ -188,14 +189,7 @@ shinyServer(function(input, output, session) {
     country_colours = ecdc_agg %>%
       select(countriesAndTerritories) %>% 
       distinct() %>%
-      #mutate(Colours = gradient_n_pal()(seq(0, 1, length.out = n()))) %>%
-      #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
-      # mutate(Colours = sample(new_colors, n())) %>% 
-      # mutate(Colours = replace(Colours,
-      #                          countriesAndTerritories == "Ireland", "green")) %>%
-      # mutate(Colours = replace(Colours,
-      #                          countriesAndTerritories == "Ireland", "#40C575")) %>%
       deframe()
     
     shiny::validate(
@@ -278,94 +272,97 @@ shinyServer(function(input, output, session) {
   
   #Ireland cases infobox in summary tab
   output$ireCasesBox <- renderValueBox({
-    ecdc_current = ecdc %>% filter(countriesAndTerritories == 'Ireland') %>% 
-      arrange(desc(dateRep)) %>% 
-      top_n(2)
-    pc_change = round(100*(sum(ecdc_current$cases)/sum(ecdc_current$cases[2:nrow(ecdc_current)]) - 1))
-    #pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'ireland']/sum_stats_yesterday$Cases[sum_stats$Region == 'ireland'] - 1))
-    update_date = format(as.Date(ecdc_current$dateRep[1]), "%d-%b")
+    pc_change = round(100*(latest_irish_totals$`Total number of cases`/previous_irish_totals$`Total number of cases` - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"), #tags$p(val, style = "font-size: 120%;"),
-             subtitle = HTML(paste0("Ireland: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
-                                    # br(),em('Last updated:',update_date, style = "font-size: 80%;"))),
+    val = str_pad(format(latest_irish_totals$`Total number of cases`, 
+                         big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(val, style = "font-size: 3vw;"), 
+             subtitle = HTML(paste0("Ireland: Diagnoses",br(),
+                                    html_message,' ', 
+                                    pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("thermometer-three-quarters"))
   })
   
   #Ireland deaths infobox in summary tab
   output$ireDeathsBox <- renderValueBox({
-    ecdc_current = ecdc %>% filter(countriesAndTerritories == 'Ireland') %>% 
-      arrange(desc(dateRep)) %>% 
-      top_n(2)
-    pc_change = round(100*(sum(ecdc_current$deaths)/sum(ecdc_current$deaths[2:nrow(ecdc_current)]) - 1))
-    #pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'ireland']/sum_stats_yesterday$Cases[sum_stats$Region == 'ireland'] - 1))
-    update_date = format(as.Date(ecdc_current$dateRep[1]), "%d-%b")
-    #pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'ireland']/sum_stats_yesterday$Deaths[sum_stats$Region == 'ireland'] - 1))
+    pc_change = round(100*(latest_irish_totals$`Total number of deaths`/previous_irish_totals$`Total number of deaths` - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    val = str_pad(format(latest_irish_totals$`Total number of deaths`, 
+                         big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Ireland: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
-                                    #br(),em('Last updated:',update_date,style = "font-size: 80%"))),
+             subtitle = HTML(paste0("Ireland: Deaths",br(),
+                                    html_message,' ', 
+                                    pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("exclamation-triangle"))
-    
   })
   
   #Ireland hospitalised infobox in summary tab
   output$ireHospBox <- renderValueBox({
-    pc_change = round(100*(sum_stats$Hospitalised[sum_stats$Region == 'ireland']/sum_stats_yesterday$Hospitalised[sum_stats$Region == 'ireland'] - 1))
+    pc_change = round(100*(latest_irish_totals$`Total number hospitalised`/previous_irish_totals$`Total number hospitalised` - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Hospitalised[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    val = str_pad(format(latest_irish_totals$`Total number hospitalised`, big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Ireland: Hospitalised ",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Ireland: Hospitalised ",br(),
+                                    html_message,' ', 
+                                    pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("hospital"))
   })
   
   #Ireland ICU infobox in summary tab
   output$ireICUBox <- renderValueBox({
-    pc_change = round(100*(sum_stats$ICU[sum_stats$Region == 'ireland']/sum_stats_yesterday$ICU[sum_stats$Region == 'ireland'] - 1))
+    pc_change = round(100*(latest_irish_totals$`Total number admitted to ICU`/previous_irish_totals$`Total number admitted to ICU` - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$ICU[sum_stats$Region == 'ireland'], big.mark=','), 9, side = 'right')
+    val = str_pad(format(latest_irish_totals$`Total number admitted to ICU`,
+                         big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Ireland: ICU",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Ireland: ICU",br(),
+                                    html_message,' ', 
+                                    pc_change,'% since yesterday')),
              color = 'olive',
              icon = icon("briefcase-medical"))
   })
   
   #Worldwide cases infobox in summary tab
   output$wCasesBox <- renderValueBox({
-    pc_change = round(100*(sum_stats$Cases[sum_stats$Region == 'world']/sum_stats_yesterday$Cases[sum_stats$Region == 'world'] - 1))
+    pc_change = round(100*(ecdc_world %>% select(cases) %>% sum/ecdc_world %>% select(cases) %>% slice(-n()) %>% sum - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Cases[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    val = str_pad(format(ecdc_world %>% select(cases) %>% sum, 
+                         big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Global: Cases",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Global: Diagnoses",
+                                    br(),html_message,' ', 
+                                    pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("globe"))
   })
   
   #Worldwide deaths infobox in summary tab
   output$wDeathsBox <- renderValueBox({  
-    pc_change = round(100*(sum_stats$Deaths[sum_stats$Region == 'world']/sum_stats_yesterday$Deaths[sum_stats$Region == 'world'] - 1))
+    pc_change = round(100*(ecdc_world %>% select(deaths) %>% sum/ecdc_world %>% select(deaths) %>% slice(-n()) %>% sum - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Deaths[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+    val = str_pad(format(ecdc_world %>% select(deaths) %>% sum, 
+                         big.mark=','), 9, side = 'right')
     valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Global: Deaths",br(),html_message,' ', pc_change,'% since yesterday')),
+             subtitle = HTML(paste0("Global: Deaths",br(),
+                                    html_message,' ', 
+                                    pc_change,'% since yesterday')),
              color = 'maroon',
              icon = icon("cross"))
   })
   
   #Worldwide recovered infobox in summary tab
-  output$wRecovBox <- renderValueBox({  
-    pc_change = round(100*(sum_stats$Recovered[sum_stats$Region == 'world']/sum_stats_yesterday$Recovered[sum_stats$Region == 'world'] - 1))
-    html_message = get_html_message(pc_change)
-    val = str_pad(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Global: Recovered",br(),html_message,' ', pc_change,'% since yesterday')),
-             color = 'maroon',
-             icon = icon("heart"))
-  })
+  # output$wRecovBox <- renderValueBox({  
+  #   pc_change = round(100*(sum_stats$Recovered[sum_stats$Region == 'world']/sum_stats_yesterday$Recovered[sum_stats$Region == 'world'] - 1))
+  #   html_message = get_html_message(pc_change)
+  #   val = str_pad(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
+  #   valueBox(value = tags$p(val, style = "font-size: 3vw;"),
+  #            subtitle = HTML(paste0("Global: Recovered",br(),html_message,' ', pc_change,'% since yesterday')),
+  #            color = 'maroon',
+  #            icon = icon("heart"))
+  # })
   
   # Worst hit country
   output$worstHitCountryBox <- renderValueBox({  
@@ -497,8 +494,8 @@ shinyServer(function(input, output, session) {
   
   #Counties table in Counties tab
   output$countyCasesTable <- DT::renderDataTable({
-    DT::datatable(caption = paste0("Updated: ",all_tables[[1]]$published),
-                  latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
+    
+    DT::datatable(latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
                   options = list(
                     pageLength = 20,
                     scrollY='calc((100vh - 290px)/1.0)',
@@ -691,294 +688,166 @@ shinyServer(function(input, output, session) {
 
 # age in hospital plot ----------------------------------------------------
 
-  
-  
-  # data for age plots data
-  hosp.ages = c("<5","5 - 14","15 - 24","25 - 34","35 - 44","45 - 54","55 - 64","65+" )
-  
-  age.hosp <- all_tables %>% 
-    map('age_hospitalised') %>% 
-    list.clean(., fun = is.null) %>%
-    map(1) %>%
-    unlist() %>%
-    .[. %in% c(hosp.ages,"25 - 34 69")]
-  
-  age.hosp <- replace(age.hosp, age.hosp=="25 - 34 69", "25 - 34")
-  
-  num.dates = length(all_tables %>% 
-                       map('age_hospitalised') %>% 
-                       list.clean(., fun = is.null) )
-  
-  date.hosp <- all_tables %>% 
-    map('published') %>% 
-    map(1) %>%
-    unlist() %>%
-    .[1:num.dates]
-  
-  date.hosp <- rep(date.hosp,each=length(hosp.ages))
-  
-  count.hosp <- all_tables %>% 
-    map('age_hospitalised') %>% 
-    list.clean(., fun = is.null) %>%
-    map(2) %>%
-    lapply(., function(x) x[1:length(hosp.ages)]) %>%
-    unlist() 
-  
-  # formatting error on gov.ie
-  count.hosp <- replace(count.hosp, count.hosp=="8.3", "69")
-  
-  all.data <- data.frame(date.hosp, age.hosp, count.hosp)
-  names(all.data) <- c('date', 'age', 'count')
-  all.data$age <- as.character(all.data$age)
-  all.data$date <- as.Date(all.data$date, format = '%d %B %y')
-  all.data$count<- as.numeric(as.character(all.data$count))
-  
-  
-  # time series for positive cases data
-  
-  nothosp.ages = c("<1","1 - 4","5 - 14","15 - 24","25 - 34","35 - 44","45 - 54","55 - 64","65+" )
-  
-  age.not.hosp <- all_tables %>% 
-    map('age') %>% 
-    list.clean(., fun = is.null) %>%
-    map(1) %>%
-    unlist() %>%
-    .[. %in% nothosp.ages]
-  
-  num.dates.not.hosp = length(all_tables %>% 
-                                map('age') %>% 
-                                list.clean(., fun = is.null) )
-  
-  date.not.hosp <- all_tables %>% 
-    map('published') %>% 
-    map(1) %>%
-    unlist() %>%
-    .[1:num.dates.not.hosp]
-  
-  date.not.hosp <- rep(date.not.hosp,each=length(nothosp.ages))
-  count.not.hosp <- all_tables %>% 
-    map('age') %>% 
-    list.clean(., fun = is.null) %>%
-    map(2) %>%
-    lapply(., function(x) x[1:length(nothosp.ages)]) %>%
-    unlist() 
-  
-  all.data.not.hosp <- data.frame(date.not.hosp, age.not.hosp, count.not.hosp)
-  names(all.data.not.hosp) <- c('date', 'age', 'count')
-  
-  all.data.not.hosp$age <- as.character(all.data.not.hosp$age)
-  all.data.not.hosp$date <- as.Date(all.data.not.hosp$date, format = '%d %B %y')
-  all.data.not.hosp$count <- as.numeric(as.character(all.data.not.hosp$count))
-  all.data.not.hosp[(all.data.not.hosp$age=='<1'),]$count = all.data.not.hosp[(all.data.not.hosp$age=='<1'),]$count + all.data.not.hosp[(all.data.not.hosp$age=='1 - 4'),]$count
-  all.data.not.hosp[(all.data.not.hosp$age=='<1'),]$age = '<5'
-  all.data.not.hosp = all.data.not.hosp[(all.data.not.hosp$age!='1 - 4'),]
-  
-  
-  
-  
-  
-  
-  
+  # Create latest hospitalised data
+  latest_data_hosp = latest_irish_data$total_by_age_all %>% 
+    # Recode the dodgy values
+    mutate("Number of cases" = case_when(.$Age == "25 - 34 69" ~ 69L,
+                                         TRUE ~ as.integer(.$`Number of cases`)),
+           "Age" = recode(.$Age, "25 - 34 69" = "25 - 34")) %>% 
+    # Reocde the two different age cateogisationss
+    mutate("Age2" = recode(.$Age, 
+                           "<1" = "<5",
+                           "1 - 4" = "<5",
+                           .default = as.character(.$Age)),
+           "Age2" = factor(Age2, 
+                           levels = c("<5", "5 - 14", "15 - 24", 
+                                      "25 - 34", "35 - 44", "45 - 54", 
+                                      "55 - 64", "65+", "Unknown"), 
+                           ordered = TRUE)) %>% 
+    # Turn the case numbers into integers
+    mutate_at(vars(`Number of cases`, `Number of hospitalised cases`),
+              as.integer) %>%
+    # Group by date and age to correct age categories
+    group_by(Date, Age2) %>% 
+    # Summarise to sum over <1, 1-4, and <5
+    summarise("Total cases" = sum(`Number of cases`, na.rm = TRUE),
+              "Hospitalised cases" = sum(`Number of hospitalised cases`, 
+                                                   na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    # Arrange in a nice format for easy inspection
+    arrange(desc(Date), Age2) %>% 
+    # Create non-hospitalised cases
+    mutate("Non-hospitalised cases" = 
+             `Total cases` - `Hospitalised cases`) %>% 
+    # Create nice format for plotting
+    pivot_longer(names_to = 'Type', values_to = "Cases",
+                 c(-Date, -Age2)) %>% 
+    mutate("data_point" = paste0("\n<b>Date: </b>", .$Date, "\n","<b>Age: </b>", .$Age2, "\n","<b>Count:</b> ", .$Cases))
+
   output$ageHist <- renderPlotly({
-    
-    dates <- all_tables %>% map('published') %>% lubridate::dmy()
-    
-    latest.data.age = all.data.not.hosp %>% filter(date == dates[1])
-    latest.data.hosp = all.data %>% filter(date == dates[1])
-    
-    # order bars according to age
-    latest.data.age$age <- factor(latest.data.age$age, levels = latest.data.age$age)
-    latest.data.hosp$age <- factor(latest.data.hosp$age, levels = latest.data.hosp$age)
-    
-    latest.data.age = latest.data.age %>% 
-      mutate(data_point = paste0("\n<b>Date: </b>", latest.data.age$date, "\n","<b>Age: </b>", latest.data.age$age, "\n","<b>Count:</b> ", latest.data.age$count))
-    latest.data.hosp = latest.data.hosp %>% 
-      mutate(data_point = paste0("\n<b>Date: </b>", latest.data.hosp$date, "\n","<b>Age: </b>", latest.data.hosp$age, "\n","<b>Count: </b>", latest.data.hosp$count))
-    
-    
-    g <- ggplot() +
-      geom_bar(data = latest.data.age, aes(age, count, fill = 'Total',text=data_point),stat = 'identity', width=0.5) +
-      geom_bar(data = latest.data.hosp, aes(age, count, fill = 'Hospitalised',text=data_point),stat= 'identity', width=0.5) +
+    g <- ggplot(data = latest_data_hosp %>% filter(Date == max(Date),
+                                                   Type != "Total cases"),
+                aes(x = Age2, y = Cases, fill = Type, 
+                    text = data_point)) +
+      geom_bar(stat = 'identity') +
       theme_shiny_dashboard() +
       labs(x="Age Group", y = "Count") +
       theme(legend.title = element_blank())+
-      ggtitle('Cases by Age: Ireland')
+      ggtitle('Cases by age: Ireland')
     
-    ggplotly(g, tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+    ggplotly(g, tooltip = c("text")) %>% 
+      layout(margin = list(l = 75)) %>%
+      plotly::config(displayModeBar = FALSE)
     
   })
   
   
   output$ageHospHistory <- renderPlotly({
     
-    all.data = all.data %>% 
-      mutate(data_point = paste0("\n<b>Date: </b>", all.data$date, "\n","<b>Age:</b> ", all.data$age, "\n","<b>Count: </b>", all.data$count))
-
     
-    g<- ggplot(all.data, aes(x = date, y = count, color = age))+
-      geom_line(aes(group = age, text = data_point)) +
+    g <- ggplot(data = latest_data_hosp %>% 
+                 filter(Type == "Hospitalised cases",
+                        Age2 != "Unknown"), 
+               aes(x = Date, y = Cases, color = Age2))+
+      geom_line(aes(group = Age2, text = data_point)) +
       theme_shiny_dashboard() +
+      scale_x_date(breaks = '3 days',
+                       date_labels = "%d%b") +
       labs(x="Date", y = "Count") +
-      ggtitle('Hospitalised by Age Group') + theme(
-        legend.title = element_blank(),
-        axis.ticks = element_blank())
+      ggtitle('Hospitalised by Age Group') + 
+      theme(legend.title = element_blank(),
+            axis.ticks = element_blank())
     
-    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+    ggplotly(g,tooltip = c("text")) %>% 
+      plotly::config(displayModeBar = FALSE) %>% 
+      layout(margin = list(l = 75))
+      
     
   })
   
-  
-  
   output$ageTotalHistory <- renderPlotly({
     
-    
-    all.data.not.hosp = all.data.not.hosp %>% 
-      mutate(data_point = paste0("\n<b>Date:</b> ", all.data.not.hosp$date, "\n","<b>Age: </b>", all.data.not.hosp$age, "\n","<b>Count: </b>", all.data.not.hosp$count))
-    
-    g<- ggplot(all.data.not.hosp, aes(x = date, y = count, color = age))+
-      geom_line(aes(group = age, text = data_point)) +
+    g <- ggplot(data = latest_data_hosp %>% 
+                 filter(Type == "Total cases",
+                        Age2 != "Unknown"), 
+               aes(x = Date, y = Cases, color = Age2))+
+      geom_line(aes(group = Age2, text = data_point)) +
       theme_shiny_dashboard() +
       labs(x="Date", y = "Count") +
-      ggtitle('Positive Cases by Age Group') + theme(
-        legend.title = element_blank(),
-        axis.ticks = element_blank())
+      scale_x_date(breaks = '3 days',
+                   date_labels = "%d%b") +
+      ggtitle('Total cases by Age Group') + 
+      theme(legend.title = element_blank(),
+            axis.ticks = element_blank())
     
     ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+      plotly::config(displayModeBar = FALSE)
 
   })
 
 # Gender Breakdown --------------------------------------------------------
-
-  
-  
-  # data necessary for gender plots
-  dates <- all_tables %>% map('published') %>% lubridate::dmy()
-  gender.data <- all_tables %>% map('gender')
-  female.prec = gender.data %>% map('% Total') %>% map(1) %>% unlist() %>% as.numeric() # female
-  male.prec =  gender.data %>% map('% Total') %>% map(2) %>% unlist() %>% as.numeric()# male
-  unknown.prec =  gender.data %>% map('% Total') %>% map(3) %>% unlist() %>% as.numeric() %>% replace_na(.,0)# unknown
-  dates = dates[1:length(female.prec)]
-  
-  data <- tibble(dates,female.prec,male.prec,unknown.prec)
-  names(data) <- c('Date','Female','Male','Unknown')
-  
-  
   
   # latest gender plot (histogram)
   output$genderCases <- renderPlotly({
     
-    latest.data = data %>% dplyr::filter(Date == dates[1])
-    x<-as.character(names(latest.data))
-    x <- x[-1]
-    data3 = latest.data %>% 
-      pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
-    
-    
-    data3 = data3 %>% 
-      mutate(data_point = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Gender:</b> ", data3$type, "\n","<b>Precentage: </b>", data3$Precentage,"%"))
-    
-    
-    g <- ggplot(data = data3, aes(type, Precentage, fill=type, text=data_point))+
+    gender_data = latest_irish_data$total_by_gender %>% 
+      mutate(data_point = paste0("\n<b>Date:</b> ", Date, "\n","<b>Gender:</b> ", Gender, "\n","<b>Percentage: </b>", `% Total`,"%"),
+             "% Total" = parse_number(`% Total`))
+
+    g <- ggplot(data = gender_data %>% filter(Date == max(Date)), 
+                aes(Gender, `% Total`, fill=Gender, text=data_point))+
       geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
       theme_shiny_dashboard() +
       labs(y="%", x = "") +
       theme(legend.position = 'none')+
       ggtitle('Gender Breakdown')
     
-    ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+    ggplotly(g,tooltip = c("text")) %>% 
+      layout(margin = list(l = 75)) %>%
+      plotly::config(displayModeBar = FALSE)
   })
-  
-  
   
   # time series of gender data
   output$genderCasesHistory <- renderPlotly({
-    data2 = data %>% 
-      pivot_longer(names_to = 'type', values_to = 'patients', -Date) %>% mutate(Date = as.POSIXct(Date))
+    gender_data_by_time = latest_irish_data$total_by_gender %>% 
+      mutate(data_point = paste0("\n<b>Date:</b> ", Date, "\n","<b>Gender:</b> ", Gender, "\n","<b>Percentage: </b>", `% Total`,"%"),
+             "% Total" = parse_number(`% Total`))
     
-    data2 = data2 %>% 
-      mutate(info = paste0("\n<b>Date:</b> ", as_date(data2$Date), "\n","<b>Gender:</b> ", data2$type, "\n","<b>Precentage: </b>", data2$patients,"%"))
-    
-    
-    g <- ggplot(data2, aes(x = Date, y = patients,colour = type)) + 
-      geom_line(size=1, aes(group = type, text = info))+
+    g <- ggplot(gender_data_by_time, 
+                aes(x = Date, y = `% Total`,colour = Gender)) + 
+      geom_line(size=1, aes(group = Gender, text = data_point))+
       theme_shiny_dashboard() +
-      scale_x_datetime(breaks = '2 days',
+      scale_x_date(breaks = '3 days',
                        date_labels = "%d%b") +
-      labs(x="Date", y = "Precentage") +
-      ggtitle('Gender Breakdown') + theme(
+      labs(x="Date", y = "Percentage") +
+      ggtitle('Gender Breakdown') + 
+      theme(
         legend.title = element_blank(),
         axis.ticks = element_blank(),
         axis.text.x = element_text(face = "bold", 
                                    size = 12, angle = 45))
     
     ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
-    
+      plotly::config(displayModeBar = FALSE)
     
   })
   
 
 # Proportion healthcare patients ------------------------------------------
 
-  
-  #data for proportion of health care patients
-  dates <- all_tables %>% map('published') %>% lubridate::dmy()
-  
-  host.count.data <- all_tables %>% 
-    map('totals') %>% 
-    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number of healthcare workers",
-                                                         "Total number healthcare workers")))%>%
-    map(2) %>%
-    unlist() %>%
-    as.numeric()
-  
-  
-  tot.count.data <- all_tables %>% 
-    map('totals') %>% 
-    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number of cases"))) %>%
-    map(2) %>%
-    unlist() %>%
-    str_replace(.,',','')%>%
-    as.numeric()
-  
-  host.count.data = host.count.data[-length(host.count.data)]
-  dates.host.count = dates[-length(dates)]
-  
-  # timeseries
-  data.host.count <- tibble(dates.host.count, 
-                            host.count.data, 
-                            tot.count.data)
-  
-  
-  names(data.host.count) <- c('Date',
-                              'HealthCareWorkers',
-                              'TotalCases')
+  healthcare_data = latest_irish_data$totals %>% 
+    rename(`Total cases` = `Total number of cases`,
+           `Healthcare workers` = `Total number of healthcare workers`) %>%
+    select(Date, `Total cases`, `Healthcare workers`) %>% 
+    pivot_longer(names_to = "Type", values_to = 'Cases', -Date) %>% 
+    mutate(data_point = paste0("\n<b>Date:</b> ", Date, "\n","<b>Type:</b> ", Type, "\n","<b>Cases: </b>", Cases))
   
   
   # histogram
-  output$helthcarePatients <- renderPlotly({
+  output$healthcarePatients <- renderPlotly({
     
-    
-    latest.data = data.host.count %>% filter(Date == dates[1])
-    latest.data$GeneralPopulation = latest.data$TotalCases - latest.data$HealthCareWorkers
-    latest.data = latest.data%>%dplyr::select(-TotalCases)
-    
-    names(latest.data) <- c("Date","Health Care Workers","General Pop.")
-    
-    data3 = latest.data %>% 
-      pivot_longer(names_to = 'type', values_to = 'Count', -Date) 
-    
-    
-    data3 = data3 %>% 
-      mutate(info = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Group:</b> ", data3$type, "\n","<b>Count: </b>", data3$Count))
-    
-    
-    
-    g <- ggplot(data = data3, aes(type, Count, fill=type, text = info))+
+    g <- ggplot(data = healthcare_data %>% filter(Date == max(Date)), 
+                aes(Type, Cases, fill=Type, text = data_point))+
       geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
       theme_shiny_dashboard() +
       labs(y="Count", x = "") +
@@ -987,158 +856,65 @@ shinyServer(function(input, output, session) {
       scale_fill_brewer(palette="Accent")
     
     ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+      plotly::config(displayModeBar = FALSE)
     
     
   })  
   
   
   # timeseries
-  output$helthcarePatientsHistory <- renderPlotly({
+  output$healthcarePatientsHistory <- renderPlotly({
     
-    data.host.count$GeneralPopulation = data.host.count$TotalCases - data.host.count$HealthCareWorkers
-    data2 = data.host.count %>% 
-      pivot_longer(names_to = 'type', values_to = 'count', -Date) %>% mutate(Date = as.POSIXct(Date))
-    
-    
-    
-    data2 = data2 %>% 
-      mutate(info = paste0("\n<b>Date:</b> ",as_date(data2$Date), "\n","<b>Group:</b> ", data2$type, "\n","<b>Count: </b>", data2$count))
-    
-    
-    
-    
-    g <- ggplot(data2, aes(x = Date, y = count, colour = type)) + 
-      geom_line(size=1, aes(group = type, text = info))+
+    g <- ggplot(healthcare_data, 
+                aes(x = Date, y = Cases, colour = Type)) + 
+      geom_line(size=1, aes(group = Type, text = data_point))+
       theme_shiny_dashboard() +
-      scale_x_datetime(breaks = '2 days',
+      scale_x_date(breaks = '3 days',
                        date_labels = "%d%b") +
       labs(x="Date", y = "Count") +
-      ggtitle('Number of Healthcare Workers Tested Positive') + theme(
+      ggtitle('Number of Healthcare Workers Tested Positive') + 
+      theme(
         legend.title = element_blank(),
         axis.ticks = element_blank(),
         axis.text.x = element_text(face = "bold", 
                                    size = 12, angle = 45))+
       scale_color_brewer(palette="Accent")
     
-    
     ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
-    
+      plotly::config(displayModeBar = FALSE)
     
   })
   
-
 # How virus spreads -------------------------------------------------------
 
   
-  # data required for how virus spreads plots
-  dates.transmission <- all_tables %>% map('published') %>% lubridate::dmy()
-  transmission.data <- all_tables %>% map('transmission')
-  
-  transmission.data = list.clean(transmission.data, fun = is.null)
-  
-  transmission.data[[length(transmission.data)]] <- NULL
-  
-  Community.count <- transmission.data %>% 
-    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Community transmission"))) %>%
-    map(2) %>%
-    unlist() %>%
-    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
-    as.numeric()
-  
-  
-  travel.count <- transmission.data %>% 
-    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Travel Abroad"))) %>%
-    map(2) %>%
-    unlist() %>%
-    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
-    as.numeric()
-  
-  contact.count <- transmission.data %>% 
-    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Close contact with confirmed case"))) %>%
-    map(2) %>%
-    unlist() %>%
-    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
-    as.numeric()
-  
-  investigation.count <- transmission.data %>% 
-    lapply(., function(x) dplyr::filter(x, Transmission %in% c("Under investigation"))) %>%
-    map(2) %>%
-    replace_na(.,0) %>%
-    lapply(., function(x) as.numeric(sub("%", "", x))) %>%
-    lapply(., function(x) as.numeric(sub("258", "0", x))) %>%
-    as.numeric()
-  
-  
-  
-  dates.transmission = dates[1:length(investigation.count)]
-  # timeseries
-  data.transmission <- tibble(dates.transmission, 
-                              Community.count, 
-                              travel.count,
-                              contact.count,
-                              investigation.count)
-  
-  
-  names(data.transmission) <- c('Date',
-                                'Community',
-                                'Travel',
-                                'Close Contact',
-                                'Investigation')
-  
+  transmission_data = latest_irish_data$total_by_transmission %>% 
+    mutate(data_point = paste0("\n<b>Date:</b> ", Date, "\n","<b>Type:</b> ", Transmission, "\n","<b>Count: </b>", Cases),
+           Transmission = recode(Transmission, 
+                                 "Close contact with confirmed case" = 
+                                   "Close contact with\nconfirmed case",
+                                 "Community transmission" = 
+                                   "Community\ntransmission",
+                                 "Under investigation" = 
+                                   "Under\ninvestigation"))
   
   #histogram
   output$howContracted <- renderPlotly({
-    
-    
-    latest.data = data.transmission %>% filter(Date == dates[1])
-    x<-as.character(names(latest.data))
-    x <- x[-1]
-    
-    
-    if(latest.data$Investigation==0){
-      latest.data = latest.data %>% dplyr::select(-Investigation)
-      data3 = latest.data %>% 
-        pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
       
-      
-      data3 = data3 %>% 
-        mutate(info = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Type:</b> ", data3$type, "\n","<b>Precentage: </b>", data3$Precentage, "%"))
-      
-      
-      
-      
-      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type, text =info))+
-        geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
+      g <- ggplot(data = transmission_data %>% filter(Date == max(Date)), 
+                  aes(x = reorder(Transmission, Cases), 
+                      y = Cases, fill=Transmission, text = data_point))+
+        geom_bar(stat = 'identity',width = 0.7, alpha=0.8, 
+                 position = position_dodge())+
         theme_shiny_dashboard() +
         labs(y="%", x = "") +
         coord_flip()+
         theme(legend.position = 'none')+
         ggtitle('How is COVID-19 Being Transmitted?')+
         scale_fill_brewer(palette="Set2")
-      
-    }else{
-      data3 = latest.data %>% 
-        pivot_longer(names_to = 'type', values_to = 'Precentage', -Date) 
-      
-      
-      data3 = data3 %>% 
-        mutate(info = paste0("\n<b>Date:</b> ", as_date(data3$Date), "\n","<b>Type:</b> ", data3$type, "\n","<b>Precentage: </b>", data3$Precentage, "%"))
-      
-      g <- ggplot(data = data3, aes(x = reorder(type, -Precentage), Precentage, fill=type, text =info))+
-        geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
-        theme_shiny_dashboard() +
-        labs(y="%", x = "") +
-        coord_flip()+
-        theme(legend.position = 'none')+
-        ggtitle('How is COVID-19 Being Transmitted?')+
-        scale_fill_brewer(palette="Set2")
-      
-    }
     
     ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+      plotly::config(displayModeBar = FALSE)
     
   }) 
   
@@ -1147,21 +923,15 @@ shinyServer(function(input, output, session) {
   
   output$howContractedHistory <- renderPlotly({
     
-    
-    data2 = data.transmission %>% 
-      pivot_longer(names_to = 'type', values_to = 'patients', -Date) %>% mutate(Date = as.POSIXct(Date))
-    
-    
-    data2 = data2 %>% 
-      mutate(info = paste0("\n<b>Date:</b> ", as_date(data2$Date), "\n","<b>Type:</b> ", data2$type, "\n","<b>Precentage: </b>", data2$patients, "%"))
-    
-    g <- ggplot(data2, aes(x = Date, y = patients, colour = type)) + 
-      geom_line(size=1, aes(group = type, text = info))+
+    g <- ggplot(transmission_data, 
+                aes(x = Date, y = Cases, colour = Transmission)) + 
+      geom_line(size=1, aes(group = Transmission, text = data_point))+
       theme_shiny_dashboard() +
-      scale_x_datetime(breaks = '2 days',
+      scale_x_date(breaks = '3 days',
                        date_labels = "%d%b") +
-      labs(x="Date", y = "Precentage") +
-      ggtitle('How is COVID-19 Being Transmitted?') + theme(
+      labs(x="Date", y = "Cases") +
+      ggtitle('How is COVID-19 Being Transmitted?') + 
+      theme(
         legend.title = element_blank(),
         axis.ticks = element_blank(),
         axis.text.x = element_text(face = "bold", 
@@ -1170,57 +940,31 @@ shinyServer(function(input, output, session) {
     
     
     ggplotly(g,tooltip = c("text")) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+      plotly::config(displayModeBar = FALSE)
     
     
   })
   
 
 # ICU percentage ----------------------------------------------------------
-
-  #data for icu plots
-  dates <- all_tables %>% map('published') %>% lubridate::dmy()
-  
-  total.hosp <- all_tables %>% 
-    map('totals') %>% 
-    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number hospitalised")))%>%
-    map(2) %>%
-    unlist() %>%
-    as.numeric()
-  
-  
-  total.icu <- all_tables %>% 
-    map('totals') %>% 
-    lapply(., function(x) dplyr::filter(x, Totals %in% c("Total number admitted to ICU"))) %>%
-    map(2) %>%
-    unlist() %>%
-    as.numeric()
-  
-  data.icu.prop <- tibble(dates, 
-                          total.hosp, 
-                          total.icu)
-  
-  
-  names(data.icu.prop) <- c('Date',
-                            'Hospital',
-                            'ICU')
-  
   
   #timeseries
+  ICU_data = latest_irish_data$totals %>% 
+    select(Date,
+           `Total number hospitalised`,
+           `Total number admitted to ICU`) %>% 
+    rename(`Hospitalised` = `Total number hospitalised`,
+           `ICU` = `Total number admitted to ICU`) %>% 
+    pivot_longer(names_to = "Type", values_to = "Cases", -Date) %>% 
+    mutate(data_point = paste0("\n<b>Date:</b> ", Date, "\n","<b>Type:</b> ", Type, "\n","<b>Count: </b>", Cases))
+  
   output$icuProportionHistory <- renderPlotly({
-    data2 = data.icu.prop %>% 
-      pivot_longer(names_to = 'type', values_to = 'count', -Date) %>% mutate(Date = as.POSIXct(Date))
     
-    
-    
-    data2 = data2 %>% 
-      mutate(info = paste0("\n<b>Date:</b> ", as_date(data2$Date), "\n","<b>Type:</b> ", data2$type, "\n","<b>Count: </b>", data2$count))
-    
-    
-    g <- ggplot(data2, aes(x = Date, y = count, colour = type)) + 
-      geom_line(size=1, aes(group =type, text = info))+
+    g <- ggplot(ICU_data, 
+                aes(x = Date, y = Cases, colour = Type)) + 
+      geom_line(size=1, aes(group = Type, text = data_point))+
       theme_shiny_dashboard() +
-      scale_x_datetime(breaks = '2 days',
+      scale_x_date(breaks = '3 days',
                        date_labels = "%d%b") +
       labs(x="Date", y = "Count") +
       ggtitle('Hospitalised Patients') + theme(
@@ -1229,9 +973,8 @@ shinyServer(function(input, output, session) {
         axis.text.x = element_text(face = "bold", 
                                    size = 12, angle = 45))
     
-    
     ggplotly(g,tooltip = c("text") ) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+      plotly::config(displayModeBar = FALSE)
     
     
   }) 
@@ -1239,25 +982,18 @@ shinyServer(function(input, output, session) {
   
   #histogram
   output$icuProportion <- renderPlotly({
-    latest.data = data.icu.prop %>% filter(Date == dates[1])
     
-    
-    data3 = latest.data %>% 
-      pivot_longer(names_to = 'type', values_to = 'Count', -Date) 
-    
-    
-    data3 = data3 %>% 
-      mutate(info = paste0("\n<b>Date:</b> ", data3$Date, "\n","<b>Type:</b> ", data3$type, "\n","<b>Count: </b>", data3$Count))
-    
-    g <- ggplot(data = data3, aes(type, Count, fill=type, text =info))+
-      geom_bar(stat = 'identity',width = 0.7, alpha=0.8, position = position_dodge())+
+    g <- ggplot(data = ICU_data %>% filter(Date == max(Date)), 
+                aes(x =Type, y = Cases, fill=Type, text =data_point))+
+      geom_bar(stat = 'identity',width = 0.7, alpha=0.8, 
+               position = position_dodge())+
       theme_shiny_dashboard() +
       labs(y="Count", x = "") +
       theme(legend.position = 'none')+
       ggtitle('Hospitalised Patients')
     
     ggplotly(g,tooltip = c("text") ) %>% layout(margin = list(l = 75))    %>%
-      config(displayModeBar = FALSE)
+      plotly::config(displayModeBar = FALSE)
   })
     
 })
