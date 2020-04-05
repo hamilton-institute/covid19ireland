@@ -81,6 +81,13 @@ body <- dashboardBody(
   
   tabItems(
     tabItem(tabName = 'summary',
+            column(width = 12,
+                   helpText(HTML(paste0("<h4><em>ECDC data updated ",
+                                        format(last_updated['ECDC'],
+                                               "%d-%b-%Y %H:%M"), 
+                                        ". Irish data updated ",
+                                        format(last_updated['GOV_IE'],
+                                               "%d-%b-%Y %H:%M"), "</em></h3>")))),
             column(width = 9,
                    fluidRow(
                      column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
@@ -101,14 +108,9 @@ body <- dashboardBody(
                      column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
                    )),
             column(width = 3, 
-                   leafletOutput('covidMap2'),
-                   helpText(HTML(paste0("<h3><em>ECDC data updated<br>",
-                          format(last_updated['ECDC'],
-                                 "%d-%b-%Y %H:%M"), "<br> 
-                                Irish data updated <br>",
-                          format(last_updated['GOV_IE'],
-                                 "%d-%b-%Y %H:%M"), "</em></h3>")))
+                   leafletOutput('covidMap2')
             ),
+            
             column(width = 12,
                    box(
                      # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
