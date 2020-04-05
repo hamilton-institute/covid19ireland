@@ -13,32 +13,38 @@ library(tidyverse)
 # Create a holder to determine when the data were updated
 # last_updated = tibble(
 #   data_set = c("ECDC", "GOV_IE"),
-#   dates = as.Date("2020/4/1")
+#   dates = as_datetime(Sys.time(), tz = "Europe/Dublin")
 # )
-last_updated = readRDS("last_updated.rds")
+last_updated = read_csv('last_updated.csv')
 
 # ECDC Scrape -------------------------------------------------------------
 
+cat('Scraping ECDC...\n')
 source("scrape_scripts/ECDC_scrape.R")
 
-# Compare this data file to the one that's already there
-ecdc_old = readRDS(file = 'ECDC_data_current.rds')
-
-# If not identical update the saved file and update the latest data set
-if(!identical(ecdc_data, ecdc_old)) {
+# See if it failed - if not keep going
+if(any(class(ecdc_data) != "try-error")) {
+  ecdc_old = readRDS(file = 'latest_ECDC_data.rds')
   
-  last_updated$dates[1] = as_datetime(Sys.time(), tz = "Europe/Dublin")
-  # Output to the scrape folder
-  saveRDS(data, file = paste0('ECDC_data_current.rds'))
+  # If not identical update the saved file and update the latest data set
+  if(!identical(ecdc_data, ecdc_old)) {
+    # Update scraped data
+    last_updated$dates[1] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+    # Output to the scrape folder
+    saveRDS(ecdc_data, file = paste0('latest_ECDC_data.rds'))
+    # Keep an old record in case things braek
+    saveRDS(ecdc_data, file = paste0('old_data/old_ECDC_data.rds'))
+  }
 }
 
 
 # GOV_IE ------------------------------------------------------------------
 
+cat('Scraping Irish government data...\n')
 source("scrape_scripts/gov_ie_data.R")
 
 # Compare this data file to the one that's already there
-gov_ie_old = readRDS(file = 'gov_ie_current.rds')
+old_irish_data = readRDS(file = 'latest_irish_data.rds')
 
 # Sort this data out into a neater tibble - Must be a better way to do this - Bruna?
 # First list is for daily cases/hospitalised/ICU for Ireland
@@ -73,12 +79,11 @@ total_by_county = gov_ie_data %>%
   # Extract the totals
   map(.,  "counties") %>% 
   # Convert everything to character
-  map(. ~mutate_all(as.character))
+  map(., ~mutate_all(., as.character)) %>% 
   # Add the dates 
   map2_df(., map(gov_ie_data, "published"), ~ mutate(.x, Date = .y)) %>% 
   # Fix the date variable
   mutate(Date = as.Date(Date, "%d %B %Y"))
-
 
 total_by_age = gov_ie_data %>% 
   # Extract standard age 
@@ -96,40 +101,99 @@ total_by_age_hopitalised = gov_ie_data %>%
   map(., "age_hospitalised") %>% 
   # Remove the two null elements at the end
   purrr::discard(is.null) %>% 
-
-
-
-
-%>% 
-  # map2_df(., 
-  #         , 
-  #                     ~ mutate(.x, Date = .y))              
-  #           
-  #             
-  #           
-  #           map(~mutate(., no_of_cases = as.character(`Number of Cases`))) %>% 
-  #             bind_rows(),
-  #           by = )
-  
-
-  
-# Collect only those variables where age_hospitalised is found
-
-
-
-map2_df(., map(gov_ie_data, "published"), ~ mutate(.x, Date = .y)) %>% 
+  # Add in date - but only for ones where it's not NULL
+  map2(., map(gov_ie_data, "published") %>%  
+            purrr::discard(., 
+                           .p = gov_ie_data %>% 
+                             map("age_hospitalised") %>% 
+                             map_lgl(is.null)), 
+          ~mutate(.x, Date = .y)) %>%
+  # Turn everything into character
+  map(., ~mutate_all(., as.character)) %>% 
+  # Bind into rows
+  bind_rows() %>% 
+  # Convert date
+  mutate(Date = as.Date(Date, "%d %B %Y")) %>% 
+  # Get rid of totals
+  rename('Age' = "Hospitalised Age") %>% 
   filter(Age != "Total")
-  
 
+# Join age and age_hospitalised together
+total_by_age_all = full_join(total_by_age,
+                             total_by_age_hopitalised,
+                             by = c("Age", 
+                                    "Date")) %>% 
+  rename(`Number of cases` = `Number of Cases.x`,
+         `Number of hospitalised cases` = `Number of Cases.y`) %>% 
+  select(Date, Age, `Number of cases`, `Number of hospitalised cases`) %>% 
+  arrange(desc(Date), Age)
+
+# Totals by gender
+total_by_gender = gov_ie_data %>% 
+  # Extract standard age 
+  map(., "gender") %>% 
+  # Remove the null elements at the end
+  purrr::discard(is.null) %>% 
+  # Add in dates for non-NULL 
+  map2(., map(gov_ie_data, "published") %>%  
+         purrr::discard(., 
+                        .p = gov_ie_data %>% 
+                          map("gender") %>% 
+                          map_lgl(is.null)), 
+       ~mutate(.x, Date = .y)) %>% 
+  # Convert all to character
+  map(., ~mutate_all(., as.character)) %>% 
+  # Bind together
+  bind_rows %>% 
+  # Remove total rows
+  filter(Gender != "Total") %>% 
+  # Fix the date variable
+  mutate(Date = as.Date(Date, "%d %B %Y")) %>% 
+  mutate_at("Number of Cases", as.numeric)
+
+# Totals by transmission
+total_by_transmission = gov_ie_data %>% 
+  # Extract standard age 
+  map(., "transmission") %>% 
+  # Remove the null elements at the end
+  purrr::discard(is.null) %>% 
+  # Add in the dates - removing the missing rowss
+  map2(., map(gov_ie_data, "published") %>%  
+         purrr::discard(., 
+                        .p = gov_ie_data %>% 
+                          map("transmission") %>% 
+                          map_lgl(is.null)), 
+       ~mutate(.x, Date = .y)) %>% 
+  # Remove all the pc signs 
+  map(., ~mutate_all(., as.character)) %>% 
+  # Bind together
+  bind_rows() %>% 
+  # Fix the date variable
+  mutate(Date = as.Date(Date, "%d %B %Y")) %>%
+  # Convert number of cases to number
+  mutate_at("Cases", parse_number)
+
+latest_irish_data = list(
+  totals = totals,
+  total_by_county = total_by_county,
+  total_by_age_all = total_by_age_all  ,
+  total_by_gender = total_by_gender,
+  total_by_transmission = total_by_transmission
+)
 
 # If not identical update the saved file and update the latest data set
-if(!identical(gov_ie_data, gov_ie_old)) {
+if(!identical(latest_irish_data, old_irish_data)) {
   
   last_updated$dates[2] = as_datetime(Sys.time(), tz = "Europe/Dublin")
   # Output to the scrape folder
-  saveRDS(gov_ie_data, file = paste0('gov_ie_current.rds'))
+  saveRDS(latest_irish_data, file = paste0('latest_irish_data.rds'))
+  # Keep an old copy
+  saveRDS(latest_irish_data, file = paste0('old_data/old_irish_data.rds'))
 }
+
 
 # Save last_updated -------------------------------------------------------
 
-saveRDS(last_updated, "last_updated.rds")
+write_csv(last_updated, path = 'last_updated.csv')
+
+cat('Completed!\n')
