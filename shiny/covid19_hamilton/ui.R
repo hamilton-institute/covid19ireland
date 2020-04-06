@@ -61,10 +61,11 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("Map", tabName = "county", icon = icon("map")),
-    menuItem("Hospitals", tabName = "patientprofile
-             ", icon = icon("hospital")),
+    menuItem("Hospitals", tabName = "patientprofile", 
+             icon = icon("hospital")),
     menuItem("Graphs", tabName = "country", icon = icon("bar-chart-o")),
     menuItem("Animations", icon = icon("chart-line"), tabName = "animation")
+    #menuItem("Sources", icon = icon("list-alt"), tabName = "sources")
   )
 )
 
@@ -76,10 +77,17 @@ body <- dashboardBody(
     theme = "grey_dark"
   ),
   
-  # Summary tab -------------------------------------------------------------
-  
+
+# Sources -----------------------------------------------------------------
+
   
   tabItems(
+    tabItem(tabName = 'sources',
+            helpText("Hello")
+    ),
+    
+    # Summary tab -------------------------------------------------------------
+    
     tabItem(tabName = 'summary',
             column(width = 12,
                    helpText(HTML(paste0("<h4><em>ECDC data updated ",
@@ -288,6 +296,7 @@ body <- dashboardBody(
             )
     )
   ),
+
 
   tags$style(type = "text/css", "#covidMap {height: calc((100vh - 200px)/1.0) !important;}"),
   tags$style(type = "text/css", "#covidMap2 {height: calc((48vh)/1.0) !important;}"),
