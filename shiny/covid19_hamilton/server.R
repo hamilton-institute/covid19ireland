@@ -424,17 +424,6 @@ shinyServer(function(input, output, session) {
              icon = icon("cross"))
   })
   
-  #Worldwide recovered infobox in summary tab
-  # output$wRecovBox <- renderValueBox({  
-  #   pc_change = round(100*(sum_stats$Recovered[sum_stats$Region == 'world']/sum_stats_yesterday$Recovered[sum_stats$Region == 'world'] - 1))
-  #   html_message = get_html_message(pc_change)
-  #   val = str_pad(format(sum_stats$Recovered[sum_stats$Region == 'world'], big.mark=','), 9, side = 'right')
-  #   valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-  #            subtitle = HTML(paste0("Global: Recovered",br(),html_message,' ', pc_change,'% since yesterday')),
-  #            color = 'maroon',
-  #            icon = icon("heart"))
-  # })
-  
   # Worst hit country
   output$worstHitCountryBox <- renderValueBox({  
     latest_date = format(max(ecdc_world$dateRep), "%d-%b")
@@ -469,7 +458,7 @@ shinyServer(function(input, output, session) {
     
     valueBox(value = tags$p(name, 
                             style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vw;")),
-             subtitle = HTML(paste0("Biggest increase in deaths since yesterday: ", val)),
+             subtitle = HTML(paste0("Biggest increase in deaths since previous day: ", val)),
              color = 'light-blue',
              icon = icon("arrow-up"))
   })
@@ -488,7 +477,7 @@ shinyServer(function(input, output, session) {
     
     valueBox(value = tags$p(name, 
                             style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vw;")),
-             subtitle = HTML(paste0("Biggest reduction in deaths since yesterday: ", 
+             subtitle = HTML(paste0("Biggest reduction in deaths since previous day: ", 
                                     val)),
              color = 'light-blue',
              icon = icon("arrow-down", class = "color: rgb(59, 91, 152)"))
