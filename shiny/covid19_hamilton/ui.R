@@ -209,7 +209,6 @@ body <- dashboardBody(
     
     # Animation tab -----------------------------------------------------------
     
-    
     tabItem(tabName = "animation",
             tags$style(type="text/css", ".recalculating {opacity: 1.0;}"),
             fluidRow(

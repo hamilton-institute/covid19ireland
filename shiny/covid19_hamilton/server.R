@@ -629,9 +629,26 @@ shinyServer(function(input, output, session) {
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
       deframe()
     
-    if(str_detect(input$sel_horiz,'death') | str_detect(input$sel_vert,'death')) {
+    if(str_detect(input$sel_horiz,'death') | 
+       str_detect(input$sel_vert,'death')) {
       ecdc_use = ecdc_use %>% 
         filter(cum_deaths > 1)
+    }
+    
+    if(str_detect(input$sel_horiz,'Daily cases') |
+       str_detect(input$sel_horiz,'Daily cases') | 
+       str_detect(input$sel_vert,'daily cases') | 
+       str_detect(input$sel_vert,'daily cases')) {
+      ecdc_use = ecdc_use %>% 
+        filter(daily_cases > 1)
+    }
+    
+    if(str_detect(input$sel_horiz,'daily deaths') | 
+       str_detect(input$sel_vert,'daily deaths') |
+       str_detect(input$sel_horiz,'Daily deaths') | 
+       str_detect(input$sel_vert,'Daily deaths')) {
+      ecdc_use = ecdc_use %>% 
+        filter(daily_deaths > 1)
     }
     
     shiny::validate(
@@ -707,7 +724,7 @@ shinyServer(function(input, output, session) {
                     'Sqrt daily deaths' = 'daily_deaths',
                     'Cumulative cases per million population' = 'cases_per_million',
                     'Cumulative deaths per million population' = 'deaths_per_million')
-  
+    
     ecdc_agg = ecdc_agg %>%
       mutate(countriesAndTerritories = parse_factor(countriesAndTerritories),
              month_day = format(dateRep, format = "%b-%d")) %>% 
@@ -722,7 +739,6 @@ shinyServer(function(input, output, session) {
       ecdc_agg = ecdc_agg %>% 
         filter(get(y_pick) > 1)
       }
-    
     
     # Find the median values of the biggest country
     ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 
