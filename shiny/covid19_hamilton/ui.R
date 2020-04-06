@@ -89,13 +89,13 @@ body <- dashboardBody(
     # Summary tab -------------------------------------------------------------
     
     tabItem(tabName = 'summary',
-            column(width = 12,
-                   helpText(HTML(paste0("<h4><em>ECDC data updated ",
-                                        format(last_updated['ECDC'],
-                                               "%d-%b-%Y %H:%M"), 
-                                        ". Irish data updated ",
-                                        format(last_updated['GOV_IE'],
-                                               "%d-%b-%Y %H:%M"), "</em></h3>")))),
+            # column(width = 12,
+            #        helpText(HTML(paste0("<h4><em>ECDC data updated ",
+            #                             format(last_updated['ECDC'],
+            #                                    "%d-%b-%Y %H:%M"), 
+            #                             ". Irish data updated ",
+            #                             format(last_updated['GOV_IE'],
+            #                                    "%d-%b-%Y %H:%M"), "</em></h3>")))),
             column(width = 9,
                    fluidRow(
                      column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
