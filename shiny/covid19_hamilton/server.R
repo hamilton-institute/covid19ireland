@@ -299,11 +299,12 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(latest_val, 
                          big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"), 
-             subtitle = HTML(paste0("Ireland: Diagnoses",br(),
-                                    html_message,' ', 
-                                    pc_change,'% since previous day',
-                                    br(),em(h6("Updated: ",latest_date)))),
+    text = paste0("Ireland: Diagnoses",br(),
+                  html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 6vh;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'olive',
              icon = icon("thermometer-three-quarters"))
   })
@@ -325,11 +326,12 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(latest_val, 
                          big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Ireland: Deaths",br(),
-                                    html_message,' ', 
-                                    pc_change,'% since previous day',
-                                    br(),em(h6("Updated: ",latest_date)))),
+    text = paste0("Ireland: Deaths",br(),
+                  html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 6vh;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'olive',
              icon = icon("exclamation-triangle"))
   })
@@ -350,11 +352,13 @@ shinyServer(function(input, output, session) {
     pc_change = round(100*(latest_val/previous_val - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(latest_val, big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Ireland: Hospitalised ",br(),
-                                    html_message,' ', 
-                                    pc_change,'% since previous day',
-                                    br(),em(h6("Updated: ",latest_date)))),
+    
+    text = paste0("Ireland: Hospitalised ",br(),
+                  html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 6vh;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'olive',
              icon = icon("hospital"))
   })
@@ -376,11 +380,12 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(latest_val,
                          big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Ireland: ICU",br(),
-                                    html_message,' ', 
-                                    pc_change,'% since previous day',
-                                    br(),em(h6("Updated: ",latest_date)))),
+    text = paste0("Ireland: ICU",br(),
+                  html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 6vh;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'olive',
              icon = icon("briefcase-medical"))
   })
@@ -392,11 +397,12 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(ecdc_world %>% select(cases) %>% sum, 
                          big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Global: Diagnoses",
-                                    br(),html_message,' ', 
-                                    pc_change,'% since previous day',
-                                    br(),em(h6("Updated: ",latest_date)))),
+    text = paste0("Global: Diagnoses",
+                  br(),html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 6vh;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'maroon',
              icon = icon("globe"))
   })
@@ -408,11 +414,12 @@ shinyServer(function(input, output, session) {
     html_message = get_html_message(pc_change)
     val = str_pad(format(ecdc_world %>% select(deaths) %>% sum, 
                          big.mark=','), 9, side = 'right')
-    valueBox(value = tags$p(val, style = "font-size: 3vw;"),
-             subtitle = HTML(paste0("Global: Deaths",br(),
-                                    html_message,' ', 
-                                    pc_change,'% since previous day',
-                                    br(),em(h6("Updated: ",latest_date)))),
+    text = paste0("Global: Deaths",
+                  br(),html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 6vh;"),
+             subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'maroon',
              icon = icon("cross"))
   })
@@ -620,10 +627,18 @@ shinyServer(function(input, output, session) {
       arrange(dateRep) %>% 
       mutate(cum_cases = cumsum(cases),
              cum_deaths = cumsum(deaths),
+             daily_cases = cases,
+             daily_deaths = deaths,
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup() %>% 
       filter(cum_cases >0)
+    
+    country_colours2 <<- ecdc_use %>%
+      select(countriesAndTerritories) %>% 
+      distinct() %>%
+      mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
+      deframe()
     
     if(str_detect(input$sel_horiz,'death') | str_detect(input$sel_vert,'death')) {
       ecdc_use = ecdc_use %>% 
@@ -650,21 +665,24 @@ shinyServer(function(input, output, session) {
       arrange(dateRep) %>% 
       mutate(cum_cases = cumsum(cases),
              cum_deaths = cumsum(deaths),
+             daily_cases = cases,
+             daily_deaths = deaths,
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
     
-    country_colours = ecdc %>% arrange(desc(popData2018)) %>% 
-      select(countriesAndTerritories) %>% 
-      distinct() %>%
-      #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
-      mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
-      # mutate(Colours = sample(new_colors, n())) %>% 
-      # mutate(Colours = replace(Colours,
-      #                          countriesAndTerritories == "Ireland", "green")) %>%
-      # mutate(Colours = replace(Colours,
-      #                          countriesAndTerritories == "Ireland", "#40C575")) %>%
-      deframe()
+    
+    # country_colours = ecdc %>% arrange(desc(popData2018)) %>% 
+    #   select(countriesAndTerritories) %>% 
+    #   distinct() %>%
+    #   #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
+    #   mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
+    #   # mutate(Colours = sample(new_colors, n())) %>% 
+    #   # mutate(Colours = replace(Colours,
+    #   #                          countriesAndTerritories == "Ireland", "green")) %>%
+    #   # mutate(Colours = replace(Colours,
+    #   #                          countriesAndTerritories == "Ireland", "#40C575")) %>%
+    #   deframe()
     
     shiny::validate(
       shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
@@ -673,6 +691,12 @@ shinyServer(function(input, output, session) {
     x_pick = switch(input$sel_horiz,
                     'Cumulative cases' = 'cum_cases', 
                     'Cumulative deaths' = 'cum_deaths',
+                    'Daily cases' = 'daily_cases',
+                    'Daily deaths' = 'daily_deaths',
+                    'Log daily cases' = 'daily_cases',
+                    'Log daily deaths' = 'daily_deaths',
+                    'Sqrt daily cases' = 'daily_cases',
+                    'Sqrt daily deaths' = 'daily_deaths',
                     'Sqrt cumulative cases' = 'cum_cases',
                     'Sqrt cumulative deaths' = 'cum_deaths',
                     'Log cumulative cases' = 'cum_cases',
@@ -686,6 +710,12 @@ shinyServer(function(input, output, session) {
                     'Sqrt cumulative deaths' = 'cum_deaths',
                     'Log cumulative cases' = 'cum_cases',
                     'Log cumulative deaths' = 'cum_deaths',
+                    'Daily cases' = 'daily_cases',
+                    'Daily deaths' = 'daily_deaths',
+                    'Log daily cases' = 'daily_cases',
+                    'Log daily deaths' = 'daily_deaths',
+                    'Sqrt daily cases' = 'daily_cases',
+                    'Sqrt daily deaths' = 'daily_deaths',
                     'Cumulative cases per million population' = 'cases_per_million',
                     'Cumulative deaths per million population' = 'deaths_per_million')
   
@@ -697,11 +727,11 @@ shinyServer(function(input, output, session) {
     
       if(str_detect(input$sel_horiz,'cases') | str_detect(input$sel_horiz,'death')) {
         ecdc_agg = ecdc_agg %>% 
-          filter(x_pick > 1)
+          filter(get(x_pick) > 1)
       }
       if(str_detect(input$sel_vert,'cases') | str_detect(input$sel_vert,'death') ) {
       ecdc_agg = ecdc_agg %>% 
-        filter(y_pick > 1)
+        filter(get(y_pick) > 1)
       }
     
     
@@ -709,9 +739,7 @@ shinyServer(function(input, output, session) {
     ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 
            aes_string(x_pick, y_pick, colour = "countriesAndTerritories", 
                       size = y_pick)) +
-      scale_color_manual(values = country_colours) +
-      # scale_colour_discrete(drop=TRUE,
-      #                       limits = levels(ecdc_agg$countriesAndTerritories)) +
+      scale_color_manual(values = country_colours2) +
       annotation_custom(grid::textGrob(ecdc_agg$month_day[match(input$theDate, ecdc_agg$dateRep)],
                                        gp=gpar(fontsize=200, col="grey")), 
                         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
@@ -721,19 +749,31 @@ shinyServer(function(input, output, session) {
       labs(x = str_to_sentence(str_remove(str_remove(input$sel_horiz, "Sqrt "), 'Log ')),
            y = str_to_sentence(str_remove(str_remove(input$sel_vert, "Sqrt "), 'Log '))) +
       scale_size(range = c(2, 12)) +
-      { if(input$sel_horiz == 'Sqrt cumulative cases' | input$sel_horiz == 'Sqrt cumulative deaths') {
+      { if(input$sel_horiz == 'Sqrt cumulative cases' | 
+           input$sel_horiz == 'Sqrt cumulative deaths' | 
+           input$sel_horiz == 'Sqrt daily cases' | 
+           input$sel_horiz == 'Sqrt daily deaths') {
         scale_x_sqrt(breaks = scales::breaks_pretty(n = 7),
                      limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
-      } else if(input$sel_horiz == 'Log cumulative cases' | input$sel_horiz == 'Log cumulative deaths') {
+      } else if(input$sel_horiz == 'Log cumulative cases' | 
+                input$sel_horiz == 'Log cumulative deaths' | 
+                input$sel_horiz == 'Log daily cases' | 
+                input$sel_horiz == 'Log daily deaths') {
         scale_x_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
                            limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
       } else {
         scale_x_continuous(limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
       }} +
-      { if(input$sel_vert == 'Sqrt cumulative cases' | input$sel_vert == 'Sqrt cumulative deaths') {
+      { if(input$sel_vert == 'Sqrt cumulative cases' | 
+           input$sel_vert == 'Sqrt cumulative deaths' |
+           input$sel_vert == 'Sqrt daily cases' | 
+           input$sel_vert == 'Sqrt daily deaths') {
         scale_y_sqrt(breaks = scales::breaks_pretty(n = 7),
                      limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
-      } else if(input$sel_vert == 'Log cumulative cases' | input$sel_vert == 'Log cumulative deaths') {
+      } else if(input$sel_vert == 'Log cumulative cases' | 
+                input$sel_vert == 'Log cumulative deaths' |
+                input$sel_vert == 'Log daily cases' | 
+                input$sel_vert == 'Log daily deaths') {
         scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
                            limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       } else {
