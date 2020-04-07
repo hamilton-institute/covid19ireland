@@ -199,7 +199,8 @@ shinyServer(function(input, output, session) {
       ungroup()
     
     country_colours = ecdc_agg %>%
-      select(countriesAndTerritories) %>% 
+      arrange(desc(popData2018)) %>%
+      select(countriesAndTerritories) %>%
       distinct() %>%
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
       deframe()
@@ -624,6 +625,7 @@ shinyServer(function(input, output, session) {
       filter(cum_cases >0)
     
     country_colours2 <<- ecdc_use %>%
+      arrange(desc(popData2018)) %>% 
       select(countriesAndTerritories) %>% 
       distinct() %>%
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
@@ -632,7 +634,7 @@ shinyServer(function(input, output, session) {
     if(str_detect(input$sel_horiz,'death') | 
        str_detect(input$sel_vert,'death')) {
       ecdc_use = ecdc_use %>% 
-        filter(cum_deaths > 1)
+        filter(cum_deaths > 0)
     }
     
     if(str_detect(input$sel_horiz,'Daily cases') |
@@ -640,7 +642,7 @@ shinyServer(function(input, output, session) {
        str_detect(input$sel_vert,'daily cases') | 
        str_detect(input$sel_vert,'daily cases')) {
       ecdc_use = ecdc_use %>% 
-        filter(daily_cases > 1)
+        filter(daily_cases > 0)
     }
     
     if(str_detect(input$sel_horiz,'daily deaths') | 
@@ -648,7 +650,7 @@ shinyServer(function(input, output, session) {
        str_detect(input$sel_horiz,'Daily deaths') | 
        str_detect(input$sel_vert,'Daily deaths')) {
       ecdc_use = ecdc_use %>% 
-        filter(daily_deaths > 1)
+        filter(daily_deaths > 0)
     }
     
     shiny::validate(
@@ -733,11 +735,11 @@ shinyServer(function(input, output, session) {
     
       if(str_detect(input$sel_horiz,'cases') | str_detect(input$sel_horiz,'death')) {
         ecdc_agg = ecdc_agg %>% 
-          filter(get(x_pick) > 1)
+          filter(get(x_pick) > 0)
       }
       if(str_detect(input$sel_vert,'cases') | str_detect(input$sel_vert,'death') ) {
       ecdc_agg = ecdc_agg %>% 
-        filter(get(y_pick) > 1)
+        filter(get(y_pick) > 0)
       }
     
     # Find the median values of the biggest country
@@ -748,8 +750,8 @@ shinyServer(function(input, output, session) {
       annotation_custom(grid::textGrob(ecdc_agg$month_day[match(input$theDate, ecdc_agg$dateRep)],
                                        gp=gpar(fontsize=200, col="grey")), 
                         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
-      geom_point(data = ecdc_agg %>% filter(dateRep < input$theDate)) + 
-      geom_point(alpha = 0.7) +
+      geom_point(data = ecdc_agg %>% filter(dateRep <= input$theDate)) + 
+      geom_line(data = ecdc_agg %>% filter(dateRep <= input$theDate), alpha = 0.4) +
       geom_label(aes(label = countriesAndTerritories)) +
       labs(x = str_to_sentence(str_remove(str_remove(input$sel_horiz, "Sqrt "), 'Log ')),
            y = str_to_sentence(str_remove(str_remove(input$sel_vert, "Sqrt "), 'Log '))) +
@@ -774,15 +776,15 @@ shinyServer(function(input, output, session) {
            input$sel_vert == 'Sqrt daily cases' | 
            input$sel_vert == 'Sqrt daily deaths') {
         scale_y_sqrt(breaks = scales::breaks_pretty(n = 7),
-                     limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
+                     limits = c(-10, max(ecdc_agg[[y_pick]])))#c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       } else if(input$sel_vert == 'Log cumulative cases' | 
                 input$sel_vert == 'Log cumulative deaths' |
                 input$sel_vert == 'Log daily cases' | 
                 input$sel_vert == 'Log daily deaths') {
         scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
-                           limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
+                           limits = c(-10, max(ecdc_agg[[y_pick]])))#c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       } else {
-        scale_y_continuous(limits = c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
+        scale_y_continuous(limits = c(-10, max(ecdc_agg[[y_pick]])))#c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
       }} +
       theme_shiny_dashboard() +
       theme(legend.position = 'None',
