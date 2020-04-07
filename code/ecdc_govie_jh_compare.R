@@ -46,9 +46,11 @@ p_cases = full_data %>%
   geom_line() + 
   labs(x = "", y = "Confirmed cases") + 
   scale_x_date(breaks = breaks_pretty(n=10)) + 
-  scale_y_continuous(breaks = breaks_log(n=10, base = 10), 
-                     trans = 'log10') + 
-  theme_bw() 
+  # scale_y_continuous(breaks = breaks_log(n=10, base = 10), 
+  #                    trans = 'log10') +
+  scale_y_continuous(breaks = breaks_pretty(n=10)) +
+  theme_bw() +
+  theme(legend.title = element_blank())
 ggplotly(p_cases)  
 
 # Plot the cases
@@ -57,8 +59,9 @@ p_deaths = full_data %>%
          Date > "2020-03-10") %>% 
   ggplot(aes(x = Date, y = Cases, colour = Type)) + 
   scale_x_date(breaks = breaks_pretty(n=10)) + 
-  scale_y_continuous(breaks = breaks_log(n=10, base = 10), 
-                     trans = 'log10') + 
+  # scale_y_continuous(breaks = breaks_log(n=10, base = 10), 
+  #                    trans = 'log10') +
+  scale_y_continuous(breaks = breaks_pretty(n=10)) +
   labs(x = "", y = "Confirmed deaths") + 
   geom_line() + 
   theme_bw()
