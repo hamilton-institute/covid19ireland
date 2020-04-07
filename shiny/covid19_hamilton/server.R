@@ -37,7 +37,7 @@ theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
     )   
 }
 
-ecdc_raw <- readRDS('latest_ECDC_data.rds') %>% 
+global_raw <- readRDS('latest_global_data.rds') %>% 
   mutate(countriesAndTerritories = 
            recode(countriesAndTerritories, 
                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
@@ -45,17 +45,17 @@ ecdc_raw <- readRDS('latest_ECDC_data.rds') %>%
                   'United_Kingdom' = 'UK'
                   ))
 
-ecdc_world = ecdc_raw %>% 
+global_world = global_raw %>% 
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE),
             cases = sum(cases, na.rm = TRUE),
-            popData2018 = sum(popData2018, na.rm = TRUE),
+            #popData2018 = sum(popData2018, na.rm = TRUE),
             day = min(day),
             month = min(month)) %>% 
   mutate(countriesAndTerritories = 'Global')
 
 # Bind together and add colours - specify some that are required
-ecdc = bind_rows(ecdc_raw, ecdc_world) 
+global = bind_rows(global_raw, global_world) 
 
 #All tables contains information on a county-by-county basis
 #will be used in the Counties tab
@@ -146,7 +146,7 @@ get_html_message = function(pc) {
 #pct <- function(x) {x/lag(x)}
 big_change = function(x) {x - lag(x)}
 is_bad <- function(x) is.na(x) | is.nan(x) | is.infinite((x))
-ecdc_change = ecdc %>% group_by(countriesAndTerritories) %>% 
+global_change = global %>% group_by(countriesAndTerritories) %>% 
   mutate_each(big_change, c(cases, deaths)) %>% 
   filter_all(all_vars(!is_bad(.))) %>% 
   ungroup() %>% 
@@ -156,7 +156,7 @@ ecdc_change = ecdc %>% group_by(countriesAndTerritories) %>%
 last_updated = read_csv(file = 'last_updated.csv')
 
 # Create neat table of cases
-ecdc_table1 = ecdc %>% 
+global_table1 = global %>% 
   group_by(countriesAndTerritories) %>% 
   filter(dateRep == max(dateRep)) %>% 
   ungroup() %>% 
@@ -166,7 +166,7 @@ ecdc_table1 = ecdc %>%
          `Daily cases` = cases,
          `Daily deaths` = deaths) %>% 
   select(Date, Country, `Daily cases`, `Daily deaths`)
-ecdc_table2 = ecdc %>% 
+global_table2 = global %>% 
   group_by(countriesAndTerritories) %>% 
   summarise(Date = as.Date(max(dateRep)),
             `Total cases` = sum(cases),
@@ -174,7 +174,7 @@ ecdc_table2 = ecdc %>%
   ungroup() %>% 
   rename(Country = countriesAndTerritories) %>% 
   select(Country, `Total cases`, `Total deaths`)
-ecdc_table3 = left_join(ecdc_table1, ecdc_table2, by = 'Country') %>% 
+global_table3 = left_join(global_table1, global_table2, by = 'Country') %>% 
   filter(Country != 'Global') %>% 
   arrange(desc(`Total deaths`))
 
@@ -185,7 +185,7 @@ shinyServer(function(input, output, session) {
 # Graphs tab --------------------------------------------------------------
 
   output$CountryPlot <- renderPlotly({
-    ecdc_agg = ecdc %>%
+    global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry) %>%
       select(dateRep, cases, deaths, countriesAndTerritories, popData2018) %>% 
       group_by(countriesAndTerritories) %>% 
@@ -198,7 +198,7 @@ shinyServer(function(input, output, session) {
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
     
-    country_colours = ecdc_agg %>%
+    country_colours = global_agg %>%
       arrange(desc(popData2018)) %>%
       select(countriesAndTerritories) %>%
       distinct() %>%
@@ -206,7 +206,7 @@ shinyServer(function(input, output, session) {
       deframe()
     
     shiny::validate(
-      shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
+      shiny::need(nrow(global_agg) > 0, "Please select some countries. Use Global for worldwide values.")
     )
 
     x_pick = switch(input$sel_axis,
@@ -214,16 +214,16 @@ shinyServer(function(input, output, session) {
                     'days_since')
     
     if(input$sel_axis == 'Days since 1st case' | input$sel_axis == 'Date') {
-      ecdc_agg = ecdc_agg %>% filter(cum_cases > 0) 
+      global_agg = global_agg %>% filter(cum_cases > 0) 
     } else if(input$sel_axis == 'Days since 1st death') {
-      ecdc_agg = ecdc_agg %>% filter(cum_deaths > 0)
+      global_agg = global_agg %>% filter(cum_deaths > 0)
     } else if(input$sel_axis == 'Days since 10th death') {
-        ecdc_agg = ecdc_agg %>% filter(cum_deaths >= 10) 
+        global_agg = global_agg %>% filter(cum_deaths >= 10) 
     } else if(input$sel_axis == 'Days since 10th case') {
-      ecdc_agg = ecdc_agg %>% filter(cum_cases >= 10) 
+      global_agg = global_agg %>% filter(cum_cases >= 10) 
     }
     
-    ecdc_agg = ecdc_agg %>% 
+    global_agg = global_agg %>% 
       group_by(countriesAndTerritories) %>% 
       mutate(days_since = 1:n()) %>% 
       ungroup() %>% 
@@ -242,16 +242,16 @@ shinyServer(function(input, output, session) {
                                         'Cases per million population' = 'cases_per_million',
                                         'Deaths per million population' = 'deaths_per_million'))
     
-    ecdc_agg = ecdc_agg %>% 
+    global_agg = global_agg %>% 
       filter(Type %in% y_pick)
-    ecdc_agg = ecdc_agg %>% 
-      mutate(data_point = paste0("\ncountry: ",ecdc_agg$countriesAndTerritories,"\nx_axis: ", ecdc_agg[[x_pick]], "\n","y_axis: ", formatC(signif(Number,digits=3), digits=3, format="fg", flag="#")))
+    global_agg = global_agg %>% 
+      mutate(data_point = paste0("\ncountry: ",global_agg$countriesAndTerritories,"\nx_axis: ", global_agg[[x_pick]], "\n","y_axis: ", formatC(signif(Number,digits=3), digits=3, format="fg", flag="#")))
     
     # Find the number of countries and the number of variables picked and remove the legend if bigger than 10
-    n_countries = ecdc_agg %>% select(countriesAndTerritories) %>% table %>% length
+    n_countries = global_agg %>% select(countriesAndTerritories) %>% table %>% length
     n_vars = length(input$sel_var)
     
-    p = ggplot(ecdc_agg, aes_string(x = x_pick, y = 'Number', colour = 'countriesAndTerritories',
+    p = ggplot(global_agg, aes_string(x = x_pick, y = 'Number', colour = 'countriesAndTerritories',
                                     label = "data_point")) + 
       geom_line(aes(linetype = Type)) + 
       #geom_point(show.legend = FALSE) +
@@ -393,10 +393,10 @@ shinyServer(function(input, output, session) {
   
   #Worldwide cases infobox in summary tab
   output$wCasesBox <- renderValueBox({
-    latest_date = format(max(ecdc_world$dateRep), "%d-%b")
-    pc_change = round(100*(ecdc_world %>% select(cases) %>% sum/ecdc_world %>% select(cases) %>% slice(-n()) %>% sum - 1))
+    latest_date = format(max(global_world$dateRep), "%d-%b")
+    pc_change = round(100*(global_world %>% select(cases) %>% sum/global_world %>% select(cases) %>% slice(-n()) %>% sum - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(ecdc_world %>% select(cases) %>% sum, 
+    val = str_pad(format(global_world %>% select(cases) %>% sum, 
                          big.mark=','), 9, side = 'right')
     text = paste0("Global: Diagnoses",
                   br(),html_message,' ', 
@@ -410,10 +410,10 @@ shinyServer(function(input, output, session) {
   
   #Worldwide deaths infobox in summary tab
   output$wDeathsBox <- renderValueBox({  
-    latest_date = format(max(ecdc_world$dateRep), "%d-%b")
-    pc_change = round(100*(ecdc_world %>% select(deaths) %>% sum/ecdc_world %>% select(deaths) %>% slice(-n()) %>% sum - 1))
+    latest_date = format(max(global_world$dateRep), "%d-%b")
+    pc_change = round(100*(global_world %>% select(deaths) %>% sum/global_world %>% select(deaths) %>% slice(-n()) %>% sum - 1))
     html_message = get_html_message(pc_change)
-    val = str_pad(format(ecdc_world %>% select(deaths) %>% sum, 
+    val = str_pad(format(global_world %>% select(deaths) %>% sum, 
                          big.mark=','), 9, side = 'right')
     text = paste0("Global: Deaths",
                   br(),html_message,' ', 
@@ -427,8 +427,8 @@ shinyServer(function(input, output, session) {
   
   # Worst hit country
   output$worstHitCountryBox <- renderValueBox({  
-    latest_date = format(max(ecdc_world$dateRep), "%d-%b")
-    worst_countries = ecdc %>% 
+    latest_date = format(max(global_world$dateRep), "%d-%b")
+    worst_countries = global %>% 
       filter(countriesAndTerritories != 'Global') %>% 
       group_by(countriesAndTerritories) %>% 
       summarise(totalDeaths = sum(deaths)) %>% 
@@ -448,8 +448,8 @@ shinyServer(function(input, output, session) {
   
   # Biggest Increase in Deaths Country
   output$increaseDeathBox <- renderValueBox({  
-    latest_date = format(max(ecdc_world$dateRep), "%d-%b")
-    biggest_increase = ecdc_change %>% 
+    latest_date = format(max(global_world$dateRep), "%d-%b")
+    biggest_increase = global_change %>% 
       filter(deaths != 0) %>% 
       arrange(deaths)
     # name = str_sub(str_replace(biggest_increase$countriesAndTerritories[1], '_', ' '),
@@ -466,8 +466,8 @@ shinyServer(function(input, output, session) {
   
   # Biggest decrease in deaths
   output$bigDecreaseBox <- renderValueBox({  
-    latest_date = format(max(ecdc_world$dateRep), "%d-%b")
-    biggest_decrease = ecdc_change %>% 
+    latest_date = format(max(global_world$dateRep), "%d-%b")
+    biggest_decrease = global_change %>% 
       filter(deaths != 0) %>% 
       arrange(desc(deaths)) %>% 
       slice(1)
@@ -485,8 +485,8 @@ shinyServer(function(input, output, session) {
   })
   
   output$bigDailyBox <- renderValueBox({  
-    latest_date = format(max(ecdc_world$dateRep), "%d-%b")
-    daily_death = ecdc %>% 
+    latest_date = format(max(global_world$dateRep), "%d-%b")
+    daily_death = global %>% 
       filter(countriesAndTerritories != 'Global') %>% 
       group_by(countriesAndTerritories) %>% 
       filter(dateRep == max(dateRep)) %>% 
@@ -509,7 +509,7 @@ shinyServer(function(input, output, session) {
   
   # Highest daily
   output$highestDaily <- DT::renderDataTable({
-    DT::datatable(ecdc_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`)),
+    DT::datatable(global_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`)),
                   options = list(
                     pageLength = 10,
                     #scrollY='calc((100vh - 290px)/1.0)',
@@ -523,7 +523,7 @@ shinyServer(function(input, output, session) {
   
   # HighestH total
   output$highestTotal <- DT::renderDataTable({
-    DT::datatable(ecdc_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`)),
+    DT::datatable(global_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`)),
                   options = list(
                     pageLength = 10,
                     #scrollY='calc((100vh - 290px)/1.0)',
@@ -536,7 +536,7 @@ shinyServer(function(input, output, session) {
   
   # Biggest change
   output$biggestChange <- DT::renderDataTable({
-    biggest_change = ecdc_change %>% 
+    biggest_change = global_change %>% 
       filter(deaths != 0) %>% 
       arrange(desc(deaths)) %>% 
       rename(Country = countriesAndTerritories) %>% 
@@ -611,7 +611,7 @@ shinyServer(function(input, output, session) {
 
   observe({
     # Find the max and min dates for these countries
-    ecdc_use = ecdc %>% 
+    global_use = global %>% 
       filter(countriesAndTerritories %in% input$sel_ctry2) %>% 
       group_by(countriesAndTerritories) %>% 
       arrange(dateRep) %>% 
@@ -624,7 +624,7 @@ shinyServer(function(input, output, session) {
       ungroup() %>% 
       filter(cum_cases >0)
     
-    country_colours2 <<- ecdc_use %>%
+    country_colours2 <<- global_use %>%
       arrange(desc(popData2018)) %>% 
       select(countriesAndTerritories) %>% 
       distinct() %>%
@@ -633,7 +633,7 @@ shinyServer(function(input, output, session) {
     
     if(str_detect(input$sel_horiz,'death') | 
        str_detect(input$sel_vert,'death')) {
-      ecdc_use = ecdc_use %>% 
+      global_use = global_use %>% 
         filter(cum_deaths > 0)
     }
     
@@ -641,7 +641,7 @@ shinyServer(function(input, output, session) {
        str_detect(input$sel_horiz,'Daily cases') | 
        str_detect(input$sel_vert,'daily cases') | 
        str_detect(input$sel_vert,'daily cases')) {
-      ecdc_use = ecdc_use %>% 
+      global_use = global_use %>% 
         filter(daily_cases > 0)
     }
     
@@ -649,24 +649,24 @@ shinyServer(function(input, output, session) {
        str_detect(input$sel_vert,'daily deaths') |
        str_detect(input$sel_horiz,'Daily deaths') | 
        str_detect(input$sel_vert,'Daily deaths')) {
-      ecdc_use = ecdc_use %>% 
+      global_use = global_use %>% 
         filter(daily_deaths > 0)
     }
     
     shiny::validate(
-      shiny::need(nrow(ecdc_use) > 0, "Please select some countries. Use Global for worldwide values.")
+      shiny::need(nrow(global_use) > 0, "Please select some countries. Use Global for worldwide values.")
     )
     
     # Control the value, min, max, and step.
     # Step size is 2 when input value is even; 1 when value is odd.
     updateSliderInput(session, "theDate", 
-                      min = min(ecdc_use$dateRep),
+                      min = min(global_use$dateRep),
                       timeFormat = "%d/%b")
   })
   
   ani_graph = reactive({
     
-    ecdc_agg = ecdc %>%
+    global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry2) %>%
       select(dateRep, cases, deaths, countriesAndTerritories, popData2018, day, month) %>% 
       group_by(countriesAndTerritories) %>% 
@@ -680,7 +680,7 @@ shinyServer(function(input, output, session) {
       ungroup()
     
     
-    # country_colours = ecdc %>% arrange(desc(popData2018)) %>% 
+    # country_colours = global %>% arrange(desc(popData2018)) %>% 
     #   select(countriesAndTerritories) %>% 
     #   distinct() %>%
     #   #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
@@ -693,7 +693,7 @@ shinyServer(function(input, output, session) {
     #   deframe()
     
     shiny::validate(
-      shiny::need(nrow(ecdc_agg) > 0, "Please select some countries. Use Global for worldwide values.")
+      shiny::need(nrow(global_agg) > 0, "Please select some countries. Use Global for worldwide values.")
     )
     
     x_pick = switch(input$sel_horiz,
@@ -727,31 +727,31 @@ shinyServer(function(input, output, session) {
                     'Cumulative cases per million population' = 'cases_per_million',
                     'Cumulative deaths per million population' = 'deaths_per_million')
     
-    ecdc_agg = ecdc_agg %>%
+    global_agg = global_agg %>%
       mutate(countriesAndTerritories = parse_factor(countriesAndTerritories),
              month_day = format(dateRep, format = "%b-%d")) %>% 
              #day_month = paste0(day,'/', month)) %>% 
       select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'month_day')
     
       if(str_detect(input$sel_horiz,'cases') | str_detect(input$sel_horiz,'death')) {
-        ecdc_agg = ecdc_agg %>% 
+        global_agg = global_agg %>% 
           filter(get(x_pick) > 0)
       }
       if(str_detect(input$sel_vert,'cases') | str_detect(input$sel_vert,'death') ) {
-      ecdc_agg = ecdc_agg %>% 
+      global_agg = global_agg %>% 
         filter(get(y_pick) > 0)
       }
     
     # Find the median values of the biggest country
-    ggplot(ecdc_agg %>% filter(dateRep == input$theDate), 
+    ggplot(global_agg %>% filter(dateRep == input$theDate), 
            aes_string(x_pick, y_pick, colour = "countriesAndTerritories", 
                       size = y_pick)) +
       scale_color_manual(values = country_colours2) +
-      annotation_custom(grid::textGrob(ecdc_agg$month_day[match(input$theDate, ecdc_agg$dateRep)],
+      annotation_custom(grid::textGrob(global_agg$month_day[match(input$theDate, global_agg$dateRep)],
                                        gp=gpar(fontsize=200, col="grey")), 
                         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
-      geom_point(data = ecdc_agg %>% filter(dateRep <= input$theDate)) + 
-      geom_line(data = ecdc_agg %>% filter(dateRep <= input$theDate), alpha = 0.4) +
+      geom_point(data = global_agg %>% filter(dateRep <= input$theDate)) + 
+      geom_line(data = global_agg %>% filter(dateRep <= input$theDate), alpha = 0.4) +
       geom_label(aes(label = countriesAndTerritories)) +
       labs(x = str_to_sentence(str_remove(str_remove(input$sel_horiz, "Sqrt "), 'Log ')),
            y = str_to_sentence(str_remove(str_remove(input$sel_vert, "Sqrt "), 'Log '))) +
@@ -761,30 +761,30 @@ shinyServer(function(input, output, session) {
            input$sel_horiz == 'Sqrt daily cases' | 
            input$sel_horiz == 'Sqrt daily deaths') {
         scale_x_sqrt(breaks = scales::breaks_pretty(n = 7),
-                     limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
+                     limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       } else if(input$sel_horiz == 'Log cumulative cases' | 
                 input$sel_horiz == 'Log cumulative deaths' | 
                 input$sel_horiz == 'Log daily cases' | 
                 input$sel_horiz == 'Log daily deaths') {
         scale_x_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
-                           limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
+                           limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       } else {
-        scale_x_continuous(limits = c(min(ecdc_agg[[x_pick]]), max(ecdc_agg[[x_pick]])))
+        scale_x_continuous(limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       }} +
       { if(input$sel_vert == 'Sqrt cumulative cases' | 
            input$sel_vert == 'Sqrt cumulative deaths' |
            input$sel_vert == 'Sqrt daily cases' | 
            input$sel_vert == 'Sqrt daily deaths') {
         scale_y_sqrt(breaks = scales::breaks_pretty(n = 7),
-                     limits = c(-10, max(ecdc_agg[[y_pick]])))#c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
+                     limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       } else if(input$sel_vert == 'Log cumulative cases' | 
                 input$sel_vert == 'Log cumulative deaths' |
                 input$sel_vert == 'Log daily cases' | 
                 input$sel_vert == 'Log daily deaths') {
         scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
-                           limits = c(-10, max(ecdc_agg[[y_pick]])))#c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
+                           limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       } else {
-        scale_y_continuous(limits = c(-10, max(ecdc_agg[[y_pick]])))#c(min(ecdc_agg[[y_pick]]), max(ecdc_agg[[y_pick]])))
+        scale_y_continuous(limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       }} +
       theme_shiny_dashboard() +
       theme(legend.position = 'None',

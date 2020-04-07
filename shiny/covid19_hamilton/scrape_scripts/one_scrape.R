@@ -11,6 +11,8 @@ rm(list = ls())
 library(tidyverse)
 library(readxl)
 library(writexl)
+library(tidycovid19)
+library(wbstats)
 
 # Create a holder to determine when the data were updated
 # last_updated = tibble(
@@ -19,23 +21,74 @@ library(writexl)
 # )
 last_updated = read_csv('last_updated.csv')
 
-# ECDC Scrape -------------------------------------------------------------
+type = "ECDC" #"JH"
 
-cat('Scraping ECDC...\n')
-source("scrape_scripts/ECDC_scrape.R")
+# JH scrape ---------------------------------------------------------------
 
-# See if it failed - if not keep going
-if(any(class(ecdc_data) != "try-error")) {
-  ecdc_old = readRDS(file = 'latest_ECDC_data.rds')
+if(type == 'JH') {
+  cat('Scraping JH...\n')
+  
+  # Get population data
+  pop_data = wb(indicator = "SP.POP.TOTL", startdate = 2018, enddate = 2018) %>% 
+    select(iso3c, value)
+  
+  jh_data = download_jhu_csse_covid19_data(silent = TRUE, cached = TRUE) %>% 
+    left_join(pop_data, by = 'iso3c') %>% 
+    drop_na() %>% 
+    rename(dateRep = date,
+           cum_cases = confirmed,
+           cum_deaths = deaths,
+           cum_recovered = recovered,
+           countriesAndTerritories = country,
+           geoId = iso3c,
+           popData2018 = value
+    ) %>% 
+    mutate(day = day(dateRep),
+           month = month(dateRep),
+           year = year(dateRep)) %>% 
+    group_by(countriesAndTerritories) %>% 
+    arrange(countriesAndTerritories, dateRep) %>% 
+    mutate(cases = c(cum_cases[1], diff(cum_cases)),
+           deaths = c(cum_deaths[1], diff(cum_deaths)),
+           recovered = c(cum_recovered[1], diff(cum_recovered))) %>% 
+    ungroup() %>% 
+    mutate_at(c("cases", "deaths"), function(x) ifelse(x<0,NA,x))
+  
+  jh_old = readRDS(file = 'latest_jh_data.rds')
   
   # If not identical update the saved file and update the latest data set
-  if(!identical(ecdc_data, ecdc_old)) {
+  if(!identical(jh_data, jh_old)) {
     # Update scraped data
     last_updated$dates[1] = as_datetime(Sys.time(), tz = "Europe/Dublin")
     # Output to the scrape folder
-    saveRDS(ecdc_data, file = paste0('latest_ECDC_data.rds'))
+    saveRDS(jh_data, file = paste0('latest_jh_data.rds'))
+    saveRDS(jh_data, file = paste0('latest_global_data.rds'))
     # Keep an old record in case things braek
-    saveRDS(ecdc_data, file = paste0('old_data/old_ECDC_data.rds'))
+    saveRDS(jh_data, file = paste0('old_data/old_jh_data.rds'))
+  }
+  
+}
+
+# ECDC Scrape -------------------------------------------------------------
+
+if(type == 'ECDC') {
+  cat('Scraping ECDC...\n')
+  source("scrape_scripts/ECDC_scrape.R")
+  
+  # See if it failed - if not keep going
+  if(any(class(ecdc_data) != "try-error")) {
+    ecdc_old = readRDS(file = 'latest_ECDC_data.rds')
+    
+    # If not identical update the saved file and update the latest data set
+    if(!identical(ecdc_data, ecdc_old)) {
+      # Update scraped data
+      last_updated$dates[1] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+      # Output to the scrape folder
+      saveRDS(ecdc_data, file = paste0('latest_ECDC_data.rds'))
+      saveRDS(ecdc_data, file = paste0('latest_global_data.rds'))
+      # Keep an old record in case things braek
+      saveRDS(ecdc_data, file = paste0('old_data/old_ECDC_data.rds'))
+    }
   }
 }
 

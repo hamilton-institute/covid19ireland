@@ -23,7 +23,7 @@ library(shinyWidgets)
 # Get the latest update data
 last_updated = read_csv(file = 'last_updated.csv') %>% deframe
 
-ecdc_raw <- readRDS('latest_ECDC_data.rds') %>% 
+global_raw <- readRDS('latest_global_data.rds') %>% 
   mutate(countriesAndTerritories = 
            recode(countriesAndTerritories, 
                   'Cases_on_an_international_conveyance_Japan' = 'Cruise_ship',
@@ -31,14 +31,14 @@ ecdc_raw <- readRDS('latest_ECDC_data.rds') %>%
                   'United_Kingdom' = 'UK'
            ))
 
-ecdc_world = ecdc_raw %>% 
+global_world = global_raw %>% 
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths),
             cases = sum(cases),
             popData2018 = sum(popData2018)) %>% 
   mutate(countriesAndTerritories = 'Global')
 
-ecdc = bind_rows(ecdc_world, ecdc_raw)
+global = bind_rows(global_world, global_raw)
 
 
 # Header and sidebar ------------------------------------------------------
@@ -90,8 +90,8 @@ body <- dashboardBody(
     
     tabItem(tabName = 'summary',
             # column(width = 12,
-            #        helpText(HTML(paste0("<h4><em>ECDC data updated ",
-            #                             format(last_updated['ECDC'],
+            #        helpText(HTML(paste0("<h4><em>global data updated ",
+            #                             format(last_updated['global'],
             #                                    "%d-%b-%Y %H:%M"), 
             #                             ". Irish data updated ",
             #                             format(last_updated['GOV_IE'],
@@ -126,7 +126,7 @@ body <- dashboardBody(
                      # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
                      width = 4,
                      title=HTML(fa(name = "calendar-day", fill = "#3d9970"),
-                                paste0("Daily deaths: ", format(max(ecdc$dateRep), '%d-%b-%Y'))),
+                                paste0("Daily deaths: ", format(max(global$dateRep), '%d-%b-%Y'))),
                      DT::dataTableOutput("highestDaily")
                    ),
                    box(
@@ -152,7 +152,7 @@ body <- dashboardBody(
               column(width = 3,
                      pickerInput("sel_ctry",
                                  "Select countries", 
-                                 choices= unique(ecdc$countriesAndTerritories),
+                                 choices= unique(global$countriesAndTerritories),
                                  selected = c('Global', 'Ireland', 'UK', 'USA'),
                                  options = list(`actions-box` = TRUE,
                                                 `live-search` = TRUE),
@@ -215,7 +215,7 @@ body <- dashboardBody(
               column(width = 3,
                      pickerInput("sel_ctry2",
                                  "Select countries", 
-                                 choices=unique(ecdc$countriesAndTerritories),
+                                 choices=unique(global$countriesAndTerritories),
                                  selected = c('Ireland', 'UK', 'Italy', 'USA',
                                               'Spain', 'China'),
                                  options = list(`actions-box` = TRUE,
@@ -251,8 +251,8 @@ body <- dashboardBody(
             ),
             fluidRow(
               column(width = 9,
-                     sliderInput("theDate", "Date (click play or move slider)", min = min(ecdc$dateRep), 
-                                 max = max(ecdc$dateRep), value = min(ecdc$dateRep),
+                     sliderInput("theDate", "Date (click play or move slider)", min = min(global$dateRep), 
+                                 max = max(global$dateRep), value = min(global$dateRep),
                                  width = "75%",
                                  timeFormat = "%d/%b",
                                  animate=animationOptions(interval=1000, 
