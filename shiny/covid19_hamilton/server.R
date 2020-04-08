@@ -106,8 +106,8 @@ latest_county_table = latest_county_table %>%
 
 # Get all the county data in numeric format
 all_county_table = latest_irish_data$by_county %>% 
-  mutate(`Number of Cases` = as.numeric(`Number of Cases`))
-
+  mutate(`Number of Cases` = as.numeric(`Number of Cases`)) %>% group_by(County) %>% arrange(desc(Date)) # The arrrange is necessary to inform the right date value
+                                                                                                         #at county map 
 #Create the plots for county cumulatie
 county_cumulative_cases = 
   map(cs2$NAME_TAG,
@@ -116,15 +116,16 @@ county_cumulative_cases =
               aes(x=as.Date(Date),y=`Number of Cases`,group=County))+
         geom_point()+geom_line()+
         theme_bw() + 
-        scale_x_date(breaks = scales::breaks_pretty(n = 10)) +
-        scale_y_continuous(breaks = scales::breaks_pretty(n = 10)) +
+        scale_x_date(breaks = scales::pretty_breaks(n = 10)) +
+        scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
         ggtitle(label = paste0("Total cases in ",.x, 
                                " at ",all_county_table$Date[[1]],": ",
                                all_county_table$`Number of Cases`[all_county_table$Date==all_county_table$Date[[1]] & all_county_table$County==.x]))+
                                xlab('Date')+
                                ylab('Number of individuals')+
                                #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
-                               theme_bw())
+                               theme_bw()+
+                               theme(axis.text.x = element_text(angle = 90)))
 
 #Defining the trend icon to the county map
 trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awesome/1792/line-chart-512.png",
@@ -559,7 +560,8 @@ shinyServer(function(input, output, session) {
   
   #Counties table in Counties tab
   output$countyCasesTable <- DT::renderDataTable({
-    DT::datatable(latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
+    DT::datatable(caption = paste0("Updated: ",all_county_table$Date[[1]]),
+                  latest_county_table[order(latest_county_table$Cases, decreasing=TRUE), c('County', 'Number of Cases')],
                   options = list(
                     pageLength = 20,
                     scrollY='calc((100vh - 290px)/1.0)',
