@@ -17,6 +17,7 @@ library(grid)
 library(RColorBrewer)
 library(wesanderson)
 library(rlist)
+library(readxl)
 
 # Create a ggplot theme to match the background
 theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
