@@ -22,11 +22,11 @@ library(lubridate)
 # )
 last_updated = read_csv('last_updated.csv')
 
-type = "ECDC" #"JH"
+type = c("NI", "ECDC", "GOV_IE") #"JH"
 
 # JH scrape ---------------------------------------------------------------
 
-if(type == 'JH') {
+if('JH' %in% type) {
   cat('Scraping JH...\n')
   
   # Get population data
@@ -72,7 +72,7 @@ if(type == 'JH') {
 
 # ECDC Scrape -------------------------------------------------------------
 
-if(type == 'ECDC') {
+if('ECDC' %in% type) {
   cat('Scraping ECDC...\n')
   source("scrape_scripts/ECDC_scrape.R")
   
@@ -96,6 +96,8 @@ if(type == 'ECDC') {
 
 # GOV_IE ------------------------------------------------------------------
 
+if('GOV_IE' %in% type) {
+
 cat('Scraping Irish government data...\n')
 #source("scrape_scripts/gov_ie_data.R")
 
@@ -110,6 +112,29 @@ read_excel_allsheets <- function(filename) {
 latest_irish_data <- read_excel_allsheets("latest_irish_data.xlsx")
 
 last_updated$dates[2] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+
+}
+
+
+# NI data -----------------------------------------------------------------
+
+if('NI' %in% type) {
+  cat('Scraping NI...\n')
+  source("scrape_scripts/NI_scrape.R")
+  
+  # See if it failed - if not keep going
+  NI_old = readRDS(file = 'latest_NI_data.rds')
+    
+    # If not identical update the saved file and update the latest data set
+    if(!identical(latest_NI_data, NI_old)) {
+      # Update scraped data
+      last_updated$dates[3] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+      # Output to the scrape folder
+      saveRDS(latest_NI_data, file = paste0('latest_NI_data.rds'))
+      # Keep an old record in case things braek
+      saveRDS(latest_NI_data, file = paste0('old_data/old_NI_data.rds'))
+    }
+}
 
 # Save last_updated -------------------------------------------------------
 
@@ -258,3 +283,5 @@ cat('Completed!\n')
 
 # Compare this data file to the one that's already there
 #old_irish_data = read_excel_allsheets("latest_irish_data.xlsx")
+
+
