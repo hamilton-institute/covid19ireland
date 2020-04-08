@@ -13,6 +13,7 @@ library(readxl)
 library(writexl)
 library(tidycovid19)
 library(wbstats)
+library(lubridate)
 
 # Create a holder to determine when the data were updated
 # last_updated = tibble(
