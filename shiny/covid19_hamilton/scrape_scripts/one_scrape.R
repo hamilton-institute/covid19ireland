@@ -125,13 +125,16 @@ if('NI' %in% type) {
   # See if it failed - if not keep going
   NI_old = readRDS(file = 'latest_NI_data.rds')
     
+  # Get the NI county look up table
+  
+  
     # If not identical update the saved file and update the latest data set
     if(!identical(latest_NI_data, NI_old)) {
       # Update scraped data
       last_updated$dates[3] = as_datetime(Sys.time(), tz = "Europe/Dublin")
       # Output to the scrape folder
       saveRDS(latest_NI_data, file = paste0('latest_NI_data.rds'))
-      # Keep an old record in case things braek
+      # Keep an old record in case things break
       saveRDS(latest_NI_data, file = paste0('old_data/old_NI_data.rds'))
     }
 }

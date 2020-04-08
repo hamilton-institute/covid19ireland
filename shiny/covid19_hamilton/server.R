@@ -86,18 +86,35 @@ latest_county_table = latest_irish_data$by_county %>%
   filter(Date == max(Date)) %>% 
   mutate(Cases = strtoi(gsub("[^0-9.-]", "", `Number of Cases`)))
 
+# Read in NI data
+latest_NI_data = readRDS("latest_NI_data.rds")
+NI_county_lookup = read_excel("latest_irish_data.xlsx", 
+                              sheet = "NI_county_lookup",
+                              na = "NA")
+latest_NI_county = latest_NI_data$totals_district %>% 
+  mutate(Date = as_datetime(Date)) %>% 
+  filter(Date == latest_county_table$Date[1]) %>% 
+  left_join(NI_county_lookup, by = c("District")) %>%
+  group_by(County) %>% 
+  summarise(Date = max(Date),
+            `Number of Cases` = as.character(sum(Value)),
+            Cases = sum(Value)) %>% 
+  select(Date, County, `Number of Cases`, Cases)
+  
+latest_county_table = bind_rows(latest_county_table, latest_NI_county)
+
 #Read in the county shapes file and join it with county case info
 cs2 <- rgdal::readOGR("counties_simple.geojson")
-#browser()
 cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
+
 #Color the counties by number of cases
 pal2 <- colorNumeric("Blues", log2(cs2$Cases))
 #pal2 <- colorNumeric(scales::viridis_pal(), log2(cs2$Cases))
 
 #Since we don't have data on a county by county basis for
 #Nor Ire, we fill it with data for the whole region
-nor_ire_counties = c('Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry','Tyrone')
-cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
+#nor_ire_counties = c('Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry','Tyrone')
+#cs2 = cs2[!(cs2$NAME_TAG %in% nor_ire_counties), ]
 
 #Aproximate to 5 the "<= 5 cases" - SHOULD IT BE 5? - I"m going to leave as NA
 latest_county_table = latest_county_table %>% 
@@ -106,8 +123,18 @@ latest_county_table = latest_county_table %>%
 #county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.numeric %>% ifelse(is.na(.),5,.) 
 
 # Get all the county data in numeric format
+all_NI_county = latest_NI_data$totals_district %>% 
+  left_join(NI_county_lookup, by = c("District")) %>%
+  mutate(Date = as_datetime(Date)) %>% 
+  group_by(County, Date) %>% 
+  summarise(`Number of Cases` = sum(Value),
+            Cases = sum(Value)) %>% 
+  select(Date, County, `Number of Cases`, Cases)
+
 all_county_table = latest_irish_data$by_county %>% 
-  mutate(`Number of Cases` = as.numeric(`Number of Cases`)) %>% group_by(County) %>% arrange(desc(Date)) # The arrrange is necessary to inform the right date value
+  mutate(`Number of Cases` = as.numeric(`Number of Cases`)) %>% 
+  bind_rows(all_NI_county) %>% 
+  group_by(County) %>% arrange(desc(Date)) # The arrrange is necessary to inform the right date value
                                                                                                          #at county map 
 #Create the plots for county cumulatie
 county_cumulative_cases = 

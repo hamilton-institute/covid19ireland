@@ -38,8 +38,8 @@ store_sex = tibble(
   Sex = character(0),
   Value = numeric(0)
 )
-store_county = tibble(
-  County = character(0),
+store_district = tibble(
+  District = character(0),
   Value = numeric(0)
 )
 
@@ -101,19 +101,19 @@ for(i in 1:length(pdf_links)) {
   }
   
   
-  # By county
-  which_county = which(!is.na(str_match(text, "Antrim")))
-  if(length(which_county) > 0) {
-    county_raw = str_split(text[which_county], pattern = "\\n")[[1]]
-    county = map(county_raw, ~str_split(str_trim(.x), "\\s{2,}"))
-    counties = map(county, function(x) x[[1]][1]) %>% unlist
-    values = map(county, function(x) x[[1]][2]) %>% unlist
-    curr_county = tibble(
+  # By district
+  which_district = which(!is.na(str_match(text, "Antrim")))
+  if(length(which_district) > 0) {
+    district_raw = str_split(text[which_district], pattern = "\\n")[[1]]
+    district = map(district_raw, ~str_split(str_trim(.x), "\\s{2,}"))
+    counties = map(district, function(x) x[[1]][1]) %>% unlist
+    values = map(district, function(x) x[[1]][2]) %>% unlist
+    curr_district = tibble(
       "Date" = store$Date[i],
-      "County" = counties[3:13],
+      "District" = sapply(counties[3:13], str_to_title),
       "Value" = as.numeric(values[3:13])
     )
-    store_county = bind_rows(store_county, curr_county)
+    store_district = bind_rows(store_district, curr_district)
   }
 
 }
@@ -121,4 +121,4 @@ for(i in 1:length(pdf_links)) {
 latest_NI_data = list(totals = store %>% filter(Cases > 0),
                       totals_age = store_age,
                       totals_sex = store_sex,
-                      totals_county = store_county)
+                      totals_district = store_district)
