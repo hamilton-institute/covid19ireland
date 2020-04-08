@@ -88,6 +88,7 @@ latest_county_table = latest_irish_data$by_county %>%
 
 #Read in the county shapes file and join it with county case info
 cs2 <- rgdal::readOGR("counties_simple.geojson")
+#browser()
 cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='County')
 #Color the counties by number of cases
 pal2 <- colorNumeric("Blues", log2(cs2$Cases))
