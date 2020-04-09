@@ -60,13 +60,17 @@ server = function(input, output, session) {
     mtcars[, c("mpg", input$variable), drop = FALSE]
   }, rownames = TRUE)
   
+  output$data2 <- renderTable({
+    mtcars[, c("mpg", input$variable), drop = FALSE]
+  }, rownames = TRUE)
+  
   
   # send the theme to javascript
-  observe({
-    session$sendCustomMessage(
-      type = "ui-tweak",
-      message = list(os = input$theme, skin = input$color)
-    )
-  })
+  # observe({
+  #   session$sendCustomMessage(
+  #     type = "ui-tweak",
+  #     message = list(os = input$theme, skin = input$color)
+  #   )
+  # })
   
 }
