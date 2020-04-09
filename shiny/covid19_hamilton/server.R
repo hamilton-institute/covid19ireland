@@ -317,12 +317,14 @@ shinyServer(function(input, output, session) {
   output$ireCasesBox <- renderValueBox({
     if(!is.na(latest_irish_totals$`Total number of cases`)) {
       latest_val = latest_irish_totals$`Total number of cases`
-      latest_date = format(latest_irish_totals$Date, "%d-%b")
+      latest_date = as_datetime(latest_irish_data$updated[2] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_totals$Date, "%d-%b")
       previous_val = previous_irish_totals$`Total number of cases`
       previous_date = format(previous_irish_totals$Date, "%d-%b")
     } else {
       latest_val = latest_irish_complete$`Total number of cases`
-      latest_date = format(latest_irish_complete$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[1] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_complete$Date, "%d-%b")
       previous_val = previous_irish_complete$`Total number of cases`
       previous_date = format(previous_irish_complete$Date, "%d-%b")
     }
@@ -344,12 +346,14 @@ shinyServer(function(input, output, session) {
   output$ireDeathsBox <- renderValueBox({
     if(!is.na(latest_irish_totals$`Total number of deaths`)) {
       latest_val = latest_irish_totals$`Total number of deaths`
-      latest_date = format(latest_irish_totals$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[2] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_totals$Date, "%d-%b")
       previous_val = previous_irish_totals$`Total number of deaths`
       previous_date = format(previous_irish_totals$Date, "%d-%b")
     } else {
       latest_val = latest_irish_complete$`Total number of deaths`
-      latest_date = format(latest_irish_complete$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[1] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_complete$Date, "%d-%b")
       previous_val = previous_irish_complete$`Total number of deaths`
       previous_date = format(previous_irish_complete$Date, "%d-%b")
     }
@@ -371,12 +375,14 @@ shinyServer(function(input, output, session) {
   output$ireHospBox <- renderValueBox({
     if(!is.na(latest_irish_totals$`Total number hospitalised`)) {
       latest_val = latest_irish_totals$`Total number hospitalised`
-      latest_date = format(latest_irish_totals$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[2] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_totals$Date, "%d-%b")
       previous_val = previous_irish_totals$`Total number hospitalised`
       previous_date = format(previous_irish_totals$Date, "%d-%b")
     } else {
       latest_val = latest_irish_complete$`Total number hospitalised`
-      latest_date = format(latest_irish_complete$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[1] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_complete$Date, "%d-%b")
       previous_val = previous_irish_complete$`Total number hospitalised`
       previous_date = format(previous_irish_complete$Date, "%d-%b")
     }
@@ -398,12 +404,14 @@ shinyServer(function(input, output, session) {
   output$ireICUBox <- renderValueBox({
     if(!is.na(latest_irish_totals$`Total number admitted to ICU`)) {
       latest_val = latest_irish_totals$`Total number admitted to ICU`
-      latest_date = format(latest_irish_totals$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[2] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_totals$Date, "%d-%b")
       previous_val = previous_irish_totals$`Total number admitted to ICU`
       previous_date = format(previous_irish_totals$Date, "%d-%b")
     } else {
       latest_val = latest_irish_complete$`Total number admitted to ICU`
-      latest_date = format(latest_irish_complete$Date, "%d-%b")
+      latest_date = format(latest_irish_data$updated[1] %>% pull, "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_complete$Date, "%d-%b")
       previous_val = previous_irish_complete$`Total number admitted to ICU`
       previous_date = format(previous_irish_complete$Date, "%d-%b")
     }
@@ -423,6 +431,7 @@ shinyServer(function(input, output, session) {
   
   #Worldwide cases infobox in summary tab
   output$wCasesBox <- renderValueBox({
+    updated_data = format(last_updated$dates[2], "%d-%b, %H:%M")
     latest_date = format(max(global_world$dateRep), "%d-%b")
     pc_change = round(100*(global_world %>% select(cases) %>% sum/global_world %>% select(cases) %>% slice(-n()) %>% sum - 1))
     html_message = get_html_message(pc_change)
@@ -431,7 +440,7 @@ shinyServer(function(input, output, session) {
     text = paste0("Global: Diagnoses",
                   br(),html_message,' ', 
                   pc_change,'% since previous day',
-                  br(),em("Updated: ",latest_date))
+                  br(),em("Updated: ",updated_data))
     valueBox(value = tags$p(val, style = "font-size: 6vh;"), 
              subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'maroon',
@@ -441,6 +450,7 @@ shinyServer(function(input, output, session) {
   #Worldwide deaths infobox in summary tab
   output$wDeathsBox <- renderValueBox({  
     latest_date = format(max(global_world$dateRep), "%d-%b")
+    updated_data = format(last_updated$dates[2], "%d-%b, %H:%M")
     pc_change = round(100*(global_world %>% select(deaths) %>% sum/global_world %>% select(deaths) %>% slice(-n()) %>% sum - 1))
     html_message = get_html_message(pc_change)
     val = str_pad(format(global_world %>% select(deaths) %>% sum, 
@@ -448,7 +458,7 @@ shinyServer(function(input, output, session) {
     text = paste0("Global: Deaths",
                   br(),html_message,' ', 
                   pc_change,'% since previous day',
-                  br(),em("Updated: ",latest_date))
+                  br(),em("Updated: ",updated_data))
     valueBox(value = tags$p(val, style = "font-size: 6vh;"),
              subtitle = tags$p(HTML(text), style = "font-size: 1.2vh;"),
              color = 'maroon',
