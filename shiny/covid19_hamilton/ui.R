@@ -64,8 +64,8 @@ sidebar <- dashboardSidebar(
     menuItem("Hospitals", tabName = "patientprofile", 
              icon = icon("hospital")),
     menuItem("Graphs", tabName = "country", icon = icon("bar-chart-o")),
-    menuItem("Animations", icon = icon("chart-line"), tabName = "animation")
-    #menuItem("Sources", icon = icon("list-alt"), tabName = "sources")
+    menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
+    menuItem("Sources", icon = icon("list-alt"), tabName = "sources")
   )
 )
 
@@ -83,7 +83,18 @@ body <- dashboardBody(
   
   tabItems(
     tabItem(tabName = 'sources',
-            helpText("Hello")
+            helpText(h4("Data sources:"),
+                     h4(fa(name = "hospital", fill = "#FFFFFF", height = 20),
+                        a("ECDC", href= "https://www.ecdc.europa.eu/en")),
+                     h4(fa(name = "landmark", fill = "#FFFFFF", height = 20),
+                        a("Irish government data", href= "https://www.gov.ie/en/news/7e0924-latest-updates-on-covid-19-coronavirus/")),
+                     br(),
+                     h4(fa(name = "users", fill = "#FFFFFF", height = 20),
+                        'Contributors:', a("GitHub contributors page", href= "https://github.com/hamilton-institute/covid19ireland/graphs/contributors")),
+                     h4(fa(name = "bug", fill = "#FFFFFF", height = 20),
+                        'Report bugs and suggest features at the', a("Github issues page", href= "https://github.com/hamilton-institute/covid19ireland/issues")),
+                     h4(fa(name = "github", fill = "#FFFFFF", height = 20),
+                        'See the code on ', a("Github", href= "https://github.com/hamilton-institute/covid19ireland")))
     ),
     
     # Summary tab -------------------------------------------------------------
