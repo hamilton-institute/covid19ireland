@@ -71,32 +71,40 @@ f7Page(
         #       '
         #   )
         # ),
-        
-        f7Shadow(
-          intensity = 5,
-          hover = TRUE,
+        f7Card(
           f7ExpandableCard(
             id = "card1",
             title = "Expandable Card 1",
             color = "blue",
             subtitle = "Click on me pleaaaaase",
             "Hello"
+          ),
+          f7ExpandableCard(
+            id = "card1",
+            title = "Expandable Card 2",
+            color = "red",
+            subtitle = "Click on me pleaaaaase",
+            "Hello"
           )
-          # f7Card(
-          #   title = "Latest updates",
-          #   sliderTextInput(
-          #     inputId = "by",
-          #     label = "Date Selector:",
-          #     choices = c("day", "week", "month"),
-          #     selected = "day"
-          #   ),
-          #   # br(),
-          #   # echarts4rOutput("river"),
-          #   footer = tagList(
-          #     f7Button(color = "blue", label = "My button", src = "https://www.google.com"),
-          #     f7Badge("Badge", color = "green")
-          #   )
-          # )
+        ),
+        f7Shadow(
+          intensity = 5,
+          hover = TRUE,
+          f7Card(
+            title = "Latest updates",
+            sliderTextInput(
+              inputId = "by",
+              label = "Date Selector:",
+              choices = c("day", "week", "month"),
+              selected = "day"
+            ),
+            # br(),
+            # echarts4rOutput("river"),
+            footer = tagList(
+              f7Button(color = "blue", label = "My button", src = "https://www.google.com"),
+              f7Badge("Badge", color = "green")
+            )
+          )
         )
       ),
       f7Tab(
