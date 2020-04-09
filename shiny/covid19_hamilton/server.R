@@ -443,7 +443,7 @@ shinyServer(function(input, output, session) {
                   br(),html_message,' ', 
                   pc_change,'% since previous day',
                   br(),em("Updated: ",updated_data))
-    valueBox(value = tags$p(val, style = "font-size: 5vw;"), 
+    valueBox(value = tags$p(val, style = "font-size: 4.5vw;"), 
              subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
              color = 'maroon',
              icon = icon("globe"))
@@ -461,7 +461,7 @@ shinyServer(function(input, output, session) {
                   br(),html_message,' ', 
                   pc_change,'% since previous day',
                   br(),em("Updated: ",updated_data))
-    valueBox(value = tags$p(val, style = "font-size: 5vw;"),
+    valueBox(value = tags$p(val, style = "font-size: 4.5vw;"),
              subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
              color = 'maroon',
              icon = icon("cross"))
