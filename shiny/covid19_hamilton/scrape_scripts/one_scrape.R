@@ -119,25 +119,44 @@ last_updated$dates[2] = as_datetime(Sys.time(), tz = "Europe/Dublin")
 # NI data -----------------------------------------------------------------
 
 if('NI' %in% type) {
-  cat('Scraping NI...\n')
-  source("scrape_scripts/NI_scrape.R")
   
-  # See if it failed - if not keep going
-  NI_old = readRDS(file = 'latest_NI_data.rds')
-    
-  # Get the NI county look up table
+  cat('Scraping NI government data...\n')
+  #source("scrape_scripts/gov_ie_data.R")
   
+  read_excel_allsheets <- function(filename) {
+    sheets <- readxl::excel_sheets(filename)
+    x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X,
+                                                       na = "NA"))
+    names(x) <- sheets
+    return(x)
+  }
   
-    # If not identical update the saved file and update the latest data set
-    if(!identical(latest_NI_data, NI_old)) {
-      # Update scraped data
-      last_updated$dates[3] = as_datetime(Sys.time(), tz = "Europe/Dublin")
-      # Output to the scrape folder
-      saveRDS(latest_NI_data, file = paste0('latest_NI_data.rds'))
-      # Keep an old record in case things break
-      saveRDS(latest_NI_data, file = paste0('old_data/old_NI_data.rds'))
-    }
+  latest_ni_data <- read_excel_allsheets("latest_irish_data.xlsx")
+  
+  last_updated$dates[3] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+  
 }
+
+# if('NI' %in% type) {
+#   cat('Scraping NI...\n')
+#   source("scrape_scripts/NI_scrape.R")
+#   
+#   # See if it failed - if not keep going
+#   NI_old = readRDS(file = 'latest_NI_data.rds')
+#     
+#   # Get the NI county look up table
+#   
+#   
+#     # If not identical update the saved file and update the latest data set
+#     if(!identical(latest_NI_data, NI_old)) {
+#       # Update scraped data
+#       last_updated$dates[3] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+#       # Output to the scrape folder
+#       saveRDS(latest_NI_data, file = paste0('latest_NI_data.rds'))
+#       # Keep an old record in case things break
+#       saveRDS(latest_NI_data, file = paste0('old_data/old_NI_data.rds'))
+#     }
+# }
 
 # Save last_updated -------------------------------------------------------
 

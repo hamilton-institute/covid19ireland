@@ -88,11 +88,9 @@ latest_county_table = latest_irish_data$by_county %>%
   mutate(Cases = strtoi(gsub("[^0-9.-]", "", `Number of Cases`)))
 
 # Read in NI data
-latest_NI_data = readRDS("latest_NI_data.rds")
-NI_county_lookup = read_excel("latest_irish_data.xlsx", 
-                              sheet = "NI_county_lookup",
-                              na = "NA")
-latest_NI_county = latest_NI_data$totals_district %>% 
+#latest_NI_data = readRDS("latest_NI_data.rds")
+NI_county_lookup = latest_irish_data$NI_county_lookup
+latest_NI_county = latest_irish_data$NI_district %>% 
   mutate(Date = as_datetime(Date)) %>% 
   filter(Date == latest_county_table$Date[1]) %>% 
   left_join(NI_county_lookup, by = c("District")) %>%
@@ -124,7 +122,7 @@ latest_county_table = latest_county_table %>%
 #county_total_date$`Number of Cases`<-county_total_date$`Number of Cases` %>% as.numeric %>% ifelse(is.na(.),5,.) 
 
 # Get all the county data in numeric format
-all_NI_county = latest_NI_data$totals_district %>% 
+all_NI_county = latest_irish_data$NI_district %>% 
   left_join(NI_county_lookup, by = c("District")) %>%
   mutate(Date = as_datetime(Date)) %>% 
   group_by(County, Date) %>% 
