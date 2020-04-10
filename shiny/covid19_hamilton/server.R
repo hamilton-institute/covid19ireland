@@ -338,8 +338,8 @@ shinyServer(function(input, output, session) {
                   html_message,' ', 
                   pc_change,'% since previous day',
                   br(),em("Updated: ",latest_date))
-    valueBox(value = tags$p(val, style = "font-size: 4vw;"), 
-             subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
+    valueBox(value = tags$p(val, style = "font-size: 3.5vw;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 0.6vw;"),
              color = 'olive',
              icon = icon("thermometer-three-quarters"))
   })
@@ -367,8 +367,8 @@ shinyServer(function(input, output, session) {
                   html_message,' ', 
                   pc_change,'% since previous day',
                   br(),em("Updated: ",latest_date))
-    valueBox(value = tags$p(val, style = "font-size: 4vw;"), 
-             subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
+    valueBox(value = tags$p(val, style = "font-size: 3.5vw;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 0.6vw;"),
              color = 'olive',
              icon = icon("exclamation-triangle"))
   })
@@ -396,8 +396,8 @@ shinyServer(function(input, output, session) {
                   html_message,' ', 
                   pc_change,'% since previous day',
                   br(),em("Updated: ",latest_date))
-    valueBox(value = tags$p(val, style = "font-size: 4vw;"), 
-             subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
+    valueBox(value = tags$p(val, style = "font-size: 3.5vw;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 0.6vw;"),
              color = 'olive',
              icon = icon("hospital"))
   })
@@ -425,8 +425,8 @@ shinyServer(function(input, output, session) {
                   html_message,' ', 
                   pc_change,'% since previous day',
                   br(),em("Updated: ",latest_date))
-    valueBox(value = tags$p(val, style = "font-size: 4vw;"), 
-             subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
+    valueBox(value = tags$p(val, style = "font-size: 3.5vw;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 0.6vw;"),
              color = 'olive',
              icon = icon("briefcase-medical"))
   })
@@ -441,10 +441,10 @@ shinyServer(function(input, output, session) {
                          big.mark=','), 9, side = 'right')
     text = paste0("Global: Diagnoses",
                   br(),html_message,' ', 
-                  pc_change,'% since previous day',
-                  br(),em("Updated: ",updated_data))
-    valueBox(value = tags$p(val, style = "font-size: 4.5vw;"), 
-             subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
+                  pc_change,'% since previous day. ',
+                  em("Updated: ",updated_data))
+    valueBox(value = tags$p(val, style = "font-size: 4vw;"), 
+             subtitle = tags$p(HTML(text), style = "font-size: 0.6vw;"),
              color = 'maroon',
              icon = icon("globe"))
   })
@@ -459,10 +459,10 @@ shinyServer(function(input, output, session) {
                          big.mark=','), 9, side = 'right')
     text = paste0("Global: Deaths",
                   br(),html_message,' ', 
-                  pc_change,'% since previous day',
-                  br(),em("Updated: ",updated_data))
-    valueBox(value = tags$p(val, style = "font-size: 4.5vw;"),
-             subtitle = tags$p(HTML(text), style = "font-size: 1vw;"),
+                  pc_change,'% since previous day. ',
+                  em("Updated: ",updated_data))
+    valueBox(value = tags$p(val, style = "font-size: 4vw;"),
+             subtitle = tags$p(HTML(text), style = "font-size: 0.6vw;"),
              color = 'maroon',
              icon = icon("cross"))
   })
