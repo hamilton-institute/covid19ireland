@@ -90,7 +90,7 @@ body <- dashboardBody(
                         a("Irish government data", href= "https://www.gov.ie/en/news/7e0924-latest-updates-on-covid-19-coronavirus/")),
                      h4(fa(name = "landmark", fill = "#FFFFFF", height = 20),
                         a("Northern Ireland government data", href= "https://www.publichealth.hscni.net/publications/covid-19-surveillance-reports")),
-                     h5("ECDC data are updated daily usually around 12pm. Irish goverment provisional figures are updated daily at around 6pm with confirmed figures given for two days previous."), 
+                     h5("ECDC data are updated for the next day usually around 12pm, with sporadic updates occuring at other times. Irish goverment provisional figures are updated daily at around 6pm with confirmed figures given for two days previous."), 
                      h5("Irish hospitalistion statistics are only given in the confirmed figures so are slightly older than the provisional data."),
                      h5("The Irish confirmed figures are significantly higher than the corresponding estimates given for those days by the ECDC."),
                      h5("The Nothern Ireland figures are given by district which does not match precisely into counties. We have made an arbitrary decision as to which district are allocated to which counties. Details are provided in the GitHub repository in the Irish data spreadsheet"),
