@@ -22,7 +22,7 @@ library(lubridate)
 # )
 last_updated = read_csv('last_updated.csv')
 
-type = c("NI", "ECDC", "GOV_IE") #"JH"
+type = c("NI", "ECDC", "GOV_IE", "JH")
 
 # JH scrape ---------------------------------------------------------------
 
@@ -63,8 +63,8 @@ if('JH' %in% type) {
     last_updated$dates[1] = as_datetime(Sys.time(), tz = "Europe/Dublin")
     # Output to the scrape folder
     saveRDS(jh_data, file = paste0('latest_jh_data.rds'))
-    saveRDS(jh_data, file = paste0('latest_global_data.rds'))
-    # Keep an old record in case things braek
+    #saveRDS(jh_data, file = paste0('latest_global_data.rds'))
+    # Keep an old record in case things break
     saveRDS(jh_data, file = paste0('old_data/old_jh_data.rds'))
   }
   
