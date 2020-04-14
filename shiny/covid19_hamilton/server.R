@@ -91,8 +91,8 @@ latest_county_table = latest_irish_data$by_county %>%
 #latest_NI_data = readRDS("latest_NI_data.rds")
 NI_county_lookup = latest_irish_data$NI_county_lookup
 latest_NI_county = latest_irish_data$NI_district %>% 
-  mutate(Date = as_datetime(Date)) %>% 
-  filter(Date == latest_county_table$Date[1]) %>% 
+  #mutate(Date = as_datetime(Date)) %>% 
+  filter(Date == max(Date)) %>% 
   left_join(NI_county_lookup, by = c("District")) %>%
   group_by(County) %>% 
   summarise(Date = max(Date),
