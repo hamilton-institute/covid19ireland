@@ -135,6 +135,11 @@ all_county_table = latest_irish_data$by_county %>%
   bind_rows(all_NI_county) %>% 
   group_by(County) %>% arrange(desc(Date)) # The arrrange is necessary to inform the right date value
                                                                                                          #at county map 
+              
+ 
+#Correcting the number of cases in Dublin on day 2020-04-09, the scrapped that recover the value of 34156 instead 4156                                                                                                         
+all_county_table$`Number of Cases`[all_county_table$Date==date("2020-04-09") & all_county_table$County=="Dublin"]<-4156  
+              
 #Create the plots for county cumulatie
 county_cumulative_cases = 
   map(cs2$NAME_TAG,
