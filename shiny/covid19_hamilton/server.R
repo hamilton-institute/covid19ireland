@@ -212,7 +212,7 @@ global_table3 = left_join(global_table1, global_table2, by = 'Country') %>%
   arrange(desc(`Total deaths`))
 
 # Get interventions data
-latest_interventions_data = read_excel('latest_intervention_data.xlsx',
+latest_interventions_data = read_excel('latest_interventions_data.xlsx',
                                        sheet = "Database") %>% 
   mutate(COUNTRY = 
            recode(COUNTRY, 
