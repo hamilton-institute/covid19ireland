@@ -211,8 +211,178 @@ global_table3 = left_join(global_table1, global_table2, by = 'Country') %>%
   filter(Country != 'Global') %>% 
   arrange(desc(`Total deaths`))
 
+# Get interventions data
+latest_interventions_data = read_excel('latest_intervention_data.xlsx',
+                                       sheet = "Database") %>% 
+  mutate(COUNTRY = 
+           recode(COUNTRY, 
+                  'United States of America' = 'USA',
+                  'United Kingdom' = 'UK',
+                  "Czech Republic" = 'Czechia'
+           ))
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
+  
+  # Interventions tab --------------------------------------------------------------
+  
+  output$InterventionsPlot <- renderPlotly({
+    global_agg = global %>%
+      filter(countriesAndTerritories %in% input$sel_ctry3) %>%
+      select(dateRep, cases, deaths, countriesAndTerritories, popData2018) %>% 
+      group_by(countriesAndTerritories) %>% 
+      arrange(dateRep) %>% 
+      mutate(cum_cases = cumsum(cases),
+             cum_deaths = cumsum(deaths),
+             log_cases = log(cum_cases),
+             log_deaths = log(cum_deaths),
+             cases_per_million = 1e6*cumsum(cases)/popData2018,
+             deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
+      ungroup()
+    
+    country_colours = global_agg %>%
+      arrange(desc(popData2018)) %>%
+      select(countriesAndTerritories) %>%
+      distinct() %>%
+      mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
+      deframe()
+    
+    # Add in intervention data
+    use_interventions = latest_interventions_data %>% 
+      filter(COUNTRY %in% input$sel_ctry3) %>% 
+      select(COUNTRY, DATE_IMPLEMENTED, MEASURE, COMMENTS) %>% 
+      mutate(MEASURE = str_squish(str_to_sentence(MEASURE))) %>% 
+      filter(MEASURE %in% input$sel_measure) %>% 
+      arrange(DATE_IMPLEMENTED, MEASURE) %>% 
+      distinct(DATE_IMPLEMENTED, COUNTRY, MEASURE, .keep_all = TRUE) %>% 
+      group_by(DATE_IMPLEMENTED, COUNTRY) %>% 
+      summarise(MEASURE2 = paste0(COUNTRY, ": ", unique(MEASURE), collapse = '; '),
+                COMMENTS2 = paste0(COUNTRY, ": ", unique(COMMENTS), collapse = '; '),
+                dateRep = max(DATE_IMPLEMENTED),
+                countriesAndTerritories = COUNTRY[1]) %>% 
+      ungroup() %>% 
+      na.omit() %>% 
+      mutate(days_since = as.integer(as.Date(DATE_IMPLEMENTED) - 
+                                       as.Date(min(DATE_IMPLEMENTED))),
+             date_end = dateRep + days(14),
+             days_end = days_since + 14,
+             data_point = MEASURE2,
+             Number = 0) %>% 
+      filter(days_since >= 0) %>% 
+      ungroup()
+    
+    # Duplicate to enable different labels
+    use_interventions2 = use_interventions %>% 
+      mutate(data_point = str_wrap(COMMENTS2))
+    
+    shiny::validate(
+      shiny::need(nrow(global_agg) > 0, "Please select some countries. Use Global for worldwide values.")
+    )
+    shiny::validate(
+      shiny::need(nrow(use_interventions) > 0, "Measure not found for this country")
+    )
+    
+    x_pick = switch(input$sel_axis3,
+                    'Date' = 'dateRep',
+                    'days_since')
+    x_pick2 = switch(input$sel_axis3,
+                    'Date' = 'date_end',
+                    'days_end')
+    
+    # if(input$sel_axis3 == 'Days since 1st case' | input$sel_axis3 == 'Date') {
+    #   global_agg = global_agg %>% filter(cum_cases > 0) 
+    # } else if(input$sel_axis3 == 'Days since 1st death') {
+    #   global_agg = global_agg %>% filter(cum_deaths > 0)
+    # } else if(input$sel_axis3 == 'Days since 10th death') {
+    #   global_agg = global_agg %>% filter(cum_deaths >= 10) 
+    # } else if(input$sel_axis3 == 'Days since 10th case') {
+    #   global_agg = global_agg %>% filter(cum_cases >= 10) 
+    # }
+    
+    global_agg = global_agg %>% 
+      group_by(countriesAndTerritories) %>% 
+      mutate(days_since = as.integer(as.Date(dateRep) - 
+                                       as.Date(min(use_interventions$DATE_IMPLEMENTED)))) %>%
+      ungroup() %>% 
+      pivot_longer(names_to = 'Type', values_to = 'Number', 
+                   -c(dateRep, countriesAndTerritories, popData2018, 
+                      days_since))
+    if(x_pick == 'days_since') global_agg = global_agg %>% filter(days_since >= 0)
+      
+    y_pick <- sapply(seq_along(input$sel_var3), 
+                     function(x) switch(input$sel_var3[x],
+                                        'Cumulative cases' = 'cum_cases',
+                                        'Cumulative deaths' = 'cum_deaths',
+                                        'Daily cases' = 'cases',
+                                        'Daily deaths' = 'deaths',
+                                        'Log cumulative cases' = 'cum_cases',
+                                        'Log cumulative deaths' = 'cum_deaths',
+                                        'Cases per million population' = 'cases_per_million',
+                                        'Deaths per million population' = 'deaths_per_million'))
+    
+    global_agg = global_agg %>% 
+      filter(Type %in% y_pick)
+    global_agg = global_agg %>% 
+      mutate(data_point = paste0("\ncountry: ",
+                                 global_agg$countriesAndTerritories,
+                                 "\nx_axis: ", global_agg[[x_pick]], 
+                                 "\n","y_axis: ", 
+                                 formatC(signif(Number,digits=3), 
+                                         digits=3, format="fg", 
+                                         flag="#")))
+    
+    # Find the number of countries and the number of variables picked and remove the legend if bigger than 10
+    n_countries = global_agg %>% select(countriesAndTerritories) %>% table %>% length
+    n_vars = length(input$sel_var3)
+    
+    p = ggplot(global_agg, aes_string(x = x_pick, y = 'Number', 
+                                      colour = 'countriesAndTerritories',
+                                      label = "data_point")) + 
+      { if(input$sel_window) {
+        geom_rect(data = use_interventions2,
+                  aes_string(xmin = x_pick,
+                             xmax = x_pick2,
+                             ymin = 0,
+                             fill = "countriesAndTerritories",
+                             ymax = max(global_agg[["Number"]])
+                             ),
+                  colour = NA,
+                  alpha = 0.3)
+      }} +
+      geom_line(aes(linetype = Type)) + 
+      geom_rug(data = use_interventions,
+               aes_string(x = x_pick, 
+                          colour = "countriesAndTerritories",
+                          label = "data_point"), 
+               inherit.aes = FALSE) +
+      #geom_point(show.legend = FALSE) +
+      labs(x = input$sel_axis3,
+           y = paste(input$sel_var3, collapse = ',')) + 
+      scale_color_manual(values = country_colours) +
+      scale_fill_manual(values = country_colours) +
+      #scale_colour_brewer(palette = "Set1") + 
+      { if(x_pick == 'dateRep') {
+        scale_x_datetime(breaks = '1 week', labels = scales::label_date("%d%b"))
+      } else {
+        scale_x_continuous(breaks =  breaks_pretty(n = 10))
+      }} +
+      theme_shiny_dashboard() +
+      { if(x_pick == 'dateRep') theme(axis.text.x = element_text(angle = 45, hjust = 1)) } +
+      theme(legend.title = element_blank()) +
+      {if ('Log cumulative cases' %in% input$sel_var | 
+           'Log cumulative deaths' %in% input$sel_var)  {
+        scale_y_continuous(trans = log1p_trans(), breaks = scales::breaks_log(n = 5))
+      } else {
+        scale_y_continuous(breaks = scales::breaks_pretty(n = 5))
+      }} + 
+      theme(legend.position = "none") + 
+      { if(input$sel_smooth) geom_smooth(se = FALSE) }
+    
+    ggplotly(p, tooltip=c("label")) %>% 
+      layout(margin = list(l = 75))
+    #ggplotly(p) %>% layout(margin = list(l = 75))
+    
+  })
   
 
 # Graphs tab --------------------------------------------------------------
@@ -295,16 +465,19 @@ shinyServer(function(input, output, session) {
       { if(x_pick == 'dateRep') {
         scale_x_datetime(breaks = '1 week', labels = scales::label_date("%d%b"))
       } else {
-        scale_x_continuous(breaks =  breaks_pretty(n = 10))
+        scale_x_continuous(breaks =  breaks_pretty(n = 10), labels = comma)
       }} +
       theme_shiny_dashboard() +
       { if(x_pick == 'dateRep') theme(axis.text.x = element_text(angle = 45, hjust = 1)) } +
       theme(legend.title = element_blank()) +
       {if ('Log cumulative cases' %in% input$sel_var | 
            'Log cumulative deaths' %in% input$sel_var)  {
-        scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 5))
+        scale_y_continuous(trans = log1p_trans(), 
+                           labels = comma,
+                           breaks = scales::breaks_log(n = 5))
       } else {
-        scale_y_continuous(breaks = scales::breaks_pretty(n = 5))
+        scale_y_continuous(labels = comma,
+                           breaks = scales::breaks_pretty(n = 5))
       }} + 
       {if(n_countries * n_vars > 10) theme(legend.position = "none")}
     
@@ -807,30 +980,36 @@ shinyServer(function(input, output, session) {
            input$sel_horiz == 'Sqrt daily cases' | 
            input$sel_horiz == 'Sqrt daily deaths') {
         scale_x_sqrt(breaks = scales::breaks_pretty(n = 7),
+                     labels = comma,
                      limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       } else if(input$sel_horiz == 'Log cumulative cases' | 
                 input$sel_horiz == 'Log cumulative deaths' | 
                 input$sel_horiz == 'Log daily cases' | 
                 input$sel_horiz == 'Log daily deaths') {
-        scale_x_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
+        scale_x_continuous(trans = log1p_trans(), labels = comma,
+                           breaks = scales::breaks_log(n = 10),
                            limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       } else {
-        scale_x_continuous(limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
+        scale_x_continuous(labels = comma,
+                           limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       }} +
       { if(input$sel_vert == 'Sqrt cumulative cases' | 
            input$sel_vert == 'Sqrt cumulative deaths' |
            input$sel_vert == 'Sqrt daily cases' | 
            input$sel_vert == 'Sqrt daily deaths') {
-        scale_y_sqrt(breaks = scales::breaks_pretty(n = 7),
+        scale_y_sqrt(labels = comma,
+                     breaks = scales::breaks_pretty(n = 7),
                      limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       } else if(input$sel_vert == 'Log cumulative cases' | 
                 input$sel_vert == 'Log cumulative deaths' |
                 input$sel_vert == 'Log daily cases' | 
                 input$sel_vert == 'Log daily deaths') {
-        scale_y_continuous(trans = log_trans(), breaks = scales::breaks_log(n = 10),
+        scale_y_continuous(labels = comma,
+                           trans = log1p_trans(), breaks = scales::breaks_log(n = 10),
                            limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       } else {
-        scale_y_continuous(limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
+        scale_y_continuous(labels = comma,
+                           limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       }} +
       theme_shiny_dashboard() +
       theme(legend.position = 'None',

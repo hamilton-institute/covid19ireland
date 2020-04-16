@@ -63,8 +63,9 @@ sidebar <- dashboardSidebar(
     menuItem("Map", tabName = "county", icon = icon("map")),
     menuItem("Hospitals", tabName = "patientprofile", 
              icon = icon("hospital")),
-    menuItem("Graphs", tabName = "country", icon = icon("bar-chart-o")),
+    menuItem("Graphs", tabName = "graphs", icon = icon("bar-chart-o")),
     menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
+    menuItem("Interventions", tabName = "interventions", icon = icon("user-plus")),
     menuItem("Sources", icon = icon("list-alt"), tabName = "sources")
   )
 )
@@ -88,8 +89,10 @@ body <- dashboardBody(
                         a("ECDC", href= "https://www.ecdc.europa.eu/en")),
                      h4(fa(name = "landmark", fill = "#FFFFFF", height = 20),
                         a("Irish government data", href= "https://www.gov.ie/en/news/7e0924-latest-updates-on-covid-19-coronavirus/")),
-                     h4(fa(name = "landmark", fill = "#FFFFFF", height = 20),
+                     h4(fa(name = "university", fill = "#FFFFFF", height = 20),
                         a("Northern Ireland government data", href= "https://www.publichealth.hscni.net/publications/covid-19-surveillance-reports")),
+                     h4(fa(name = "user-plus", fill = "#FFFFFF", height = 20),
+                        a("Interventions data", href= "https://data.humdata.org/dataset/e1a91ae0-292d-4434-bc75-bf863d4608ba/resource/d10c6864-b017-45f7-b0e7-3deb5f2a3a68/download/20200414-acaps-covid-19-goverment-measures-dataset-v7.xlsx")),
                      h5("ECDC data are updated for the next day usually around 12pm, with sporadic updates occuring at other times. Irish goverment provisional figures are updated daily at around 6pm with confirmed figures given for two days previous."), 
                      h5("Irish hospitalistion statistics are only given in the confirmed figures so are slightly older than the provisional data."),
                      h5("The Irish confirmed figures are significantly higher than the corresponding estimates given for those days by the ECDC."),
@@ -160,11 +163,73 @@ body <- dashboardBody(
             )
     ),
     
+    # interventions tab -------------------------------------------------------------
     
-    # country tab -------------------------------------------------------------
+    tabItem(tabName = 'interventions',
+            fluidRow(
+              column(width = 3,
+                     pickerInput("sel_ctry3",
+                                 "Select countries", 
+                                 choices= unique(global$countriesAndTerritories),
+                                 selected = c('Ireland'),
+                                 options = list(`actions-box` = TRUE,
+                                                `live-search` = TRUE),
+                                 multiple = TRUE)
+              ),
+              column(width = 3,
+                     pickerInput("sel_var3",
+                                 "Select a variable", 
+                                 choices=c('Cumulative cases', 'Cumulative deaths', 
+                                           'Daily cases', 'Daily deaths', 
+                                           'Log cumulative cases', 'Log cumulative deaths', 
+                                           'Cases per million population',
+                                           'Deaths per million population'),
+                                 selected = c('Daily deaths'),
+                                 multiple = FALSE)
+              ),
+              column(width = 3,
+                     pickerInput("sel_axis3",
+                                 "Select horizontal axis", 
+                                 choices=c('Date', 'Days since measure introduced'),
+                                 selected = c('Days since measure introduced'),
+                                 multiple = FALSE)
+              )
+            ),
+            fluidRow( 
+              column(width = 3,
+                     pickerInput("sel_measure",
+                                 "Select intervention measure", 
+                                 choices = latest_interventions_data$MEASURE %>% 
+                                   unique() %>% sort() %>% str_to_sentence() %>% 
+                                   str_squish(),
+                                 selected = "Schools closure",
+                                 options = list(`actions-box` = TRUE,
+                                                `live-search` = TRUE),
+                                 multiple = TRUE)
+              ),
+              column(width = 3,
+                     checkboxInput("sel_smooth",
+                                 label = "Include smooth", 
+                                 value = FALSE),
+              ),
+              column(width = 3,
+                     checkboxInput("sel_window",
+                                   label = "Include 2-week window\n (mouse-over for detail)", 
+                                   value = TRUE),
+              )
+            ),
+            fluidRow(
+              column(width = 9,
+                     plotlyOutput("InterventionsPlot", height = "500px")
+              )
+            )        
+    ),
     
     
-    tabItem(tabName = 'country',
+    
+    # graphs tab -------------------------------------------------------------
+    
+    tabItem(tabName = 'graphs',
             fluidRow(
               column(width = 3,
                      pickerInput("sel_ctry",

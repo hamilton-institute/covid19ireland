@@ -22,7 +22,7 @@ library(lubridate)
 # )
 last_updated = read_csv('last_updated.csv')
 
-type = c("NI", "ECDC", "GOV_IE", "JH")
+type = c("NI", "ECDC", "GOV_IE", "JH", "Interventions")
 
 # JH scrape ---------------------------------------------------------------
 
@@ -136,6 +136,22 @@ if('NI' %in% type) {
   last_updated$dates[3] = as_datetime(Sys.time(), tz = "Europe/Dublin")
   
 }
+
+
+# Interventions -----------------------------------------------------------
+
+if('Interventions' %in% type) {
+  
+  cat('Scraping Interventions data...\n')
+  #source("scrape_scripts/gov_ie_data.R")
+  
+  download.file("https://data.humdata.org/dataset/e1a91ae0-292d-4434-bc75-bf863d4608ba/resource/d10c6864-b017-45f7-b0e7-3deb5f2a3a68/download/20200414-acaps-covid-19-goverment-measures-dataset-v7.xlsx", "latest_intervention_data.xlsx",
+                quite = TRUE)
+  
+  last_updated$dates[4] = as_datetime(Sys.time(), tz = "Europe/Dublin")
+  
+}
+
 
 # if('NI' %in% type) {
 #   cat('Scraping NI...\n')
