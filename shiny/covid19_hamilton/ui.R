@@ -40,6 +40,15 @@ global_world = global_raw %>%
 
 global = bind_rows(global_world, global_raw)
 
+# Get interventions data
+latest_interventions_data = read_excel('latest_interventions_data.xlsx',
+                                       sheet = "Database") %>% 
+  mutate(COUNTRY = 
+           recode(COUNTRY, 
+                  'United States of America' = 'USA',
+                  'United Kingdom' = 'UK',
+                  "Czech Republic" = 'Czechia'
+           ))
 
 # Header and sidebar ------------------------------------------------------
 
