@@ -16,7 +16,7 @@ library(DT)
 library(dashboardthemes)
 library(fontawesome) # remotes::install_github('rstudio/fontawesome')
 library(shinyWidgets)
-
+library(readxl)
 
 # Data wrangling ----------------------------------------------------------
 
