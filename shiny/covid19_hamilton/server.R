@@ -884,7 +884,6 @@ shinyServer(function(input, output, session) {
   })
   
   ani_graph = reactive({
-    
     global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry2) %>%
       select(dateRep, cases, deaths, countriesAndTerritories, popData2018, day, month) %>% 

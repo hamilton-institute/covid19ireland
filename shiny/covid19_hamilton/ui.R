@@ -343,7 +343,7 @@ body <- dashboardBody(
             fluidRow(
               column(width = 9,
                      sliderInput("theDate", "Date (click play or move slider)", min = min(global$dateRep), 
-                                 max = max(global$dateRep), value = min(global$dateRep),
+                                 max = max(global$dateRep), value = max(min(global$dateRep), as.POSIXct("2020-03-01")),
                                  width = "75%",
                                  timeFormat = "%d/%b",
                                  animate=animationOptions(interval=1000, 
