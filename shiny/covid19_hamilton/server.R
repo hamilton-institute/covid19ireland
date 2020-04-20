@@ -395,8 +395,8 @@ shinyServer(function(input, output, session) {
       arrange(dateRep) %>% 
       mutate(cum_cases = cumsum(cases),
              cum_deaths = cumsum(deaths),
-             log_cases = log(cum_cases),
-             log_deaths = log(cum_deaths),
+             #log_cases = log(cum_cases),
+             #log_deaths = log(cum_deaths),
              cases_per_million = 1e6*cumsum(cases)/popData2018,
              deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
       ungroup()
@@ -426,6 +426,28 @@ shinyServer(function(input, output, session) {
       global_agg = global_agg %>% filter(cum_cases >= 10) 
     }
     
+    y_pick <- sapply(seq_along(input$sel_var), 
+                     function(x) switch(input$sel_var[x],
+                                        'Cumulative cases' = 'cum_cases',
+                                        'Cumulative deaths' = 'cum_deaths',
+                                        'Daily cases' = 'cases',
+                                        'Daily deaths' = 'deaths',
+                                        'Logp1 cumulative cases' = 'cum_cases',
+                                        'Logp1 cumulative deaths' = 'cum_deaths',
+                                        'Logp1 daily cases' = 'cases',
+                                        'Logp1 daily deaths' = 'deaths',
+                                        'Cases per million population' = 'cases_per_million',
+                                        'Deaths per million population' = 'deaths_per_million'))
+    
+    # Correct for if log is in the title
+    if(any(str_detect(input$sel_var,'Logp1'))) {
+      change = which(str_detect(input$sel_var,'Logp1'))
+      for(i in 1:length(change)) {
+        global_agg = global_agg %>% 
+          mutate(!!y_pick[change[i]] := get(y_pick[change[i]]) + 1)  
+      }
+    }
+    
     global_agg = global_agg %>% 
       group_by(countriesAndTerritories) %>% 
       mutate(days_since = 1:n()) %>% 
@@ -434,17 +456,7 @@ shinyServer(function(input, output, session) {
                    -c(dateRep, countriesAndTerritories, popData2018, 
                       days_since))
     
-    y_pick <- sapply(seq_along(input$sel_var), 
-                     function(x) switch(input$sel_var[x],
-                                        'Cumulative cases' = 'cum_cases',
-                                        'Cumulative deaths' = 'cum_deaths',
-                                        'Daily cases' = 'cases',
-                                        'Daily deaths' = 'deaths',
-                                        'Log cumulative cases' = 'cum_cases',
-                                        'Log cumulative deaths' = 'cum_deaths',
-                                        'Cases per million population' = 'cases_per_million',
-                                        'Deaths per million population' = 'deaths_per_million'))
-    
+
     global_agg = global_agg %>% 
       filter(Type %in% y_pick)
     global_agg = global_agg %>% 
@@ -470,8 +482,7 @@ shinyServer(function(input, output, session) {
       theme_shiny_dashboard() +
       { if(x_pick == 'dateRep') theme(axis.text.x = element_text(angle = 45, hjust = 1)) } +
       theme(legend.title = element_blank()) +
-      {if ('Log cumulative cases' %in% input$sel_var | 
-           'Log cumulative deaths' %in% input$sel_var)  {
+      {if (all(str_detect(input$sel_var,'Logp1')))  {
         scale_y_continuous(trans = log1p_trans(), 
                            labels = comma,
                            breaks = scales::breaks_log(n = 5))
