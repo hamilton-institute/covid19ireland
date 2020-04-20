@@ -308,7 +308,7 @@ body <- dashboardBody(
                                  "Select countries", 
                                  choices=unique(global$countriesAndTerritories),
                                  selected = c('Ireland', 'UK', 'Italy', 'USA',
-                                              'Spain', 'China'),
+                                              'Spain', 'France', 'Belgium'),
                                  options = list(`actions-box` = TRUE,
                                                 `live-search` = TRUE),
                                  multiple = TRUE)
