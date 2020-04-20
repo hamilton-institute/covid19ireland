@@ -884,7 +884,6 @@ shinyServer(function(input, output, session) {
   })
   
   ani_graph = reactive({
-    
     global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry2) %>%
       select(dateRep, cases, deaths, countriesAndTerritories, popData2018, day, month) %>% 
@@ -920,14 +919,14 @@ shinyServer(function(input, output, session) {
                     'Cumulative deaths' = 'cum_deaths',
                     'Daily cases' = 'daily_cases',
                     'Daily deaths' = 'daily_deaths',
-                    'Log daily cases' = 'daily_cases',
-                    'Log daily deaths' = 'daily_deaths',
+                    'Logp1 daily cases' = 'daily_cases',
+                    'Logp1 daily deaths' = 'daily_deaths',
                     'Sqrt daily cases' = 'daily_cases',
                     'Sqrt daily deaths' = 'daily_deaths',
                     'Sqrt cumulative cases' = 'cum_cases',
                     'Sqrt cumulative deaths' = 'cum_deaths',
-                    'Log cumulative cases' = 'cum_cases',
-                    'Log cumulative deaths' = 'cum_deaths',
+                    'Logp1 cumulative cases' = 'cum_cases',
+                    'Logp1 cumulative deaths' = 'cum_deaths',
                     'Cumulative cases per million population' = 'cases_per_million',
                     'Cumulative deaths per million population' = 'deaths_per_million')
     y_pick = switch(input$sel_vert,
@@ -935,12 +934,12 @@ shinyServer(function(input, output, session) {
                     'Cumulative deaths' = 'cum_deaths',
                     'Sqrt cumulative cases' = 'cum_cases',
                     'Sqrt cumulative deaths' = 'cum_deaths',
-                    'Log cumulative cases' = 'cum_cases',
-                    'Log cumulative deaths' = 'cum_deaths',
+                    'Logp1 cumulative cases' = 'cum_cases',
+                    'Logp1 cumulative deaths' = 'cum_deaths',
                     'Daily cases' = 'daily_cases',
                     'Daily deaths' = 'daily_deaths',
-                    'Log daily cases' = 'daily_cases',
-                    'Log daily deaths' = 'daily_deaths',
+                    'Logp1 daily cases' = 'daily_cases',
+                    'Logp1 daily deaths' = 'daily_deaths',
                     'Sqrt daily cases' = 'daily_cases',
                     'Sqrt daily deaths' = 'daily_deaths',
                     'Cumulative cases per million population' = 'cases_per_million',
@@ -952,14 +951,13 @@ shinyServer(function(input, output, session) {
              #day_month = paste0(day,'/', month)) %>% 
       select("dateRep", x_pick, y_pick, "countriesAndTerritories", 'month_day')
     
-      if(str_detect(input$sel_horiz,'cases') | str_detect(input$sel_horiz,'death')) {
-        global_agg = global_agg %>% 
-          filter(get(x_pick) > 0)
-      }
-      if(str_detect(input$sel_vert,'cases') | str_detect(input$sel_vert,'death') ) {
-      global_agg = global_agg %>% 
-        filter(get(y_pick) > 0)
-      }
+    # Correct for if log is in the title
+    if(str_detect(input$sel_horiz,'Logp1')) {
+      global_agg = global_agg %>% mutate(!!x_pick := get(x_pick) + 1)
+    }
+    if(str_detect(input$sel_vert,'Logp1')) {
+      global_agg = global_agg %>% mutate(!!y_pick := get(y_pick) + 1)
+    }
     
     # Find the median values of the biggest country
     ggplot(global_agg %>% filter(dateRep == input$theDate), 
@@ -975,40 +973,31 @@ shinyServer(function(input, output, session) {
       labs(x = str_to_sentence(str_remove(str_remove(input$sel_horiz, "Sqrt "), 'Log ')),
            y = str_to_sentence(str_remove(str_remove(input$sel_vert, "Sqrt "), 'Log '))) +
       scale_size(range = c(2, 12)) +
-      { if(input$sel_horiz == 'Sqrt cumulative cases' | 
-           input$sel_horiz == 'Sqrt cumulative deaths' | 
-           input$sel_horiz == 'Sqrt daily cases' | 
-           input$sel_horiz == 'Sqrt daily deaths') {
+      { if(str_detect(input$sel_horiz,'Sqrt')) {
         scale_x_sqrt(breaks = scales::breaks_pretty(n = 7),
                      labels = comma,
                      limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
-      } else if(input$sel_horiz == 'Log cumulative cases' | 
-                input$sel_horiz == 'Log cumulative deaths' | 
-                input$sel_horiz == 'Log daily cases' | 
-                input$sel_horiz == 'Log daily deaths') {
+      } else if(str_detect(input$sel_horiz,'Logp1')) {
         scale_x_continuous(trans = log1p_trans(), labels = comma,
-                           breaks = scales::breaks_log(n = 10),
+                           breaks = scales::breaks_log(n = 7),
                            limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       } else {
         scale_x_continuous(labels = comma,
+                           breaks = scales::breaks_pretty(n = 7),
                            limits = c(min(global_agg[[x_pick]]), max(global_agg[[x_pick]])))
       }} +
-      { if(input$sel_vert == 'Sqrt cumulative cases' | 
-           input$sel_vert == 'Sqrt cumulative deaths' |
-           input$sel_vert == 'Sqrt daily cases' | 
-           input$sel_vert == 'Sqrt daily deaths') {
+      { if(str_detect(input$sel_vert,'Sqrt')) {
         scale_y_sqrt(labels = comma,
                      breaks = scales::breaks_pretty(n = 7),
                      limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
-      } else if(input$sel_vert == 'Log cumulative cases' | 
-                input$sel_vert == 'Log cumulative deaths' |
-                input$sel_vert == 'Log daily cases' | 
-                input$sel_vert == 'Log daily deaths') {
+      } else if(str_detect(input$sel_vert,'Logp1')) {
         scale_y_continuous(labels = comma,
-                           trans = log1p_trans(), breaks = scales::breaks_log(n = 10),
+                           trans = log1p_trans(), 
+                           breaks = scales::breaks_log(n = 7),
                            limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       } else {
         scale_y_continuous(labels = comma,
+                           breaks = scales::breaks_pretty(n = 7),
                            limits = c(min(global_agg[[y_pick]]), max(global_agg[[y_pick]])))
       }} +
       theme_shiny_dashboard() +
