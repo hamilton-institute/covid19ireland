@@ -105,7 +105,7 @@ body <- dashboardBody(
                      h5("ECDC data are updated for the next day usually around 12pm, with sporadic updates occuring at other times. Irish goverment provisional figures are updated daily at around 6pm with confirmed figures given for two days previous."), 
                      h5("Irish hospitalistion statistics are only given in the confirmed figures so are slightly older than the provisional data."),
                      h5("The Irish confirmed figures are significantly higher than the corresponding estimates given for those days by the ECDC."),
-                     h5("The Nothern Ireland figures are given by district which does not match precisely into counties. We have made an arbitrary decision as to which district are allocated to which counties. Details are provided in the GitHub repository in the Irish data spreadsheet"),
+                     h5("The Northern Ireland figures are given by district which does not match precisely into counties. We have made an arbitrary decision as to which district are allocated to which counties. Details are provided in the GitHub repository in the Irish data spreadsheet"),
                      br(),
                      h4(fa(name = "users", fill = "#FFFFFF", height = 20),
                         'Contributors:', a("GitHub contributors page", href= "https://github.com/hamilton-institute/covid19ireland/graphs/contributors")),
