@@ -23,6 +23,7 @@ library(readxl)
 # Get the latest update data
 last_updated = read_csv(file = 'last_updated.csv') %>% deframe
 
+# Get the raw global data
 global_raw <- readRDS('latest_global_data.rds') %>% 
   mutate(countriesAndTerritories = 
            recode(countriesAndTerritories, 
@@ -52,8 +53,6 @@ latest_interventions_data = read_excel('latest_interventions_data.xlsx',
 
 # Header and sidebar ------------------------------------------------------
 
-
-
 header <- dashboardHeader(
   title = "Hamilton Institute Covid-19 Dashboard",
   titleWidth = 380,
@@ -68,8 +67,8 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   width = 150,
   sidebarMenu(
-    menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
-    menuItem("Map", tabName = "county", icon = icon("map")),
+    menuItem("Ireland", tabName = "ireland", icon = icon("home")),
+    #menuItem("Map", tabName = "county", icon = icon("map")),
     menuItem("Hospitals", tabName = "patientprofile", 
              icon = icon("hospital")),
     menuItem("Graphs", tabName = "graphs", icon = icon("bar-chart-o")),
@@ -88,6 +87,36 @@ body <- dashboardBody(
   ),
   
 
+
+# Ireland tab -------------------------------------------------------------
+
+tabItem(tabName = 'ireland',
+        fluidRow(column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
+                 column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
+                 column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
+                 column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
+        ),
+        fluidRow(column(width = 3, valueBoxOutput("ireCasesRankBox", width = NULL)),
+                 #column(width = 3, valueBoxOutput("ireDeathsRankBox", width = NULL)),
+                 #column(width = 3, valueBoxOutput("NICasesBox", width = NULL)),
+                 #column(width = 3, valueBoxOutput("NIDeathsBox", width = NULL))
+        ),
+        column(width = 6, 
+               leafletOutput('covidMap')
+        )
+        # column(width = 6, 
+        #        leafletOutput('covidMap2')
+        # )
+        # fluidRow(
+        #          column(width = 4, valueBoxOutput("ireCasesBox", width = NULL)),
+        #          column(width = 4, valueBoxOutput("ireDeathsBox", width = NULL)),
+        #          column(width = 4, valueBoxOutput("ireHospBox", width = NULL)),
+        #          column(width = 4, valueBoxOutput("ireICUBox", width = NULL))
+        # ),
+),
+
+  
+  
 # Sources -----------------------------------------------------------------
 
   
@@ -117,60 +146,60 @@ body <- dashboardBody(
     
     # Summary tab -------------------------------------------------------------
     
-    tabItem(tabName = 'summary',
-            # column(width = 12,
-            #        helpText(HTML(paste0("<h4><em>global data updated ",
-            #                             format(last_updated['global'],
-            #                                    "%d-%b-%Y %H:%M"), 
-            #                             ". Irish data updated ",
-            #                             format(last_updated['GOV_IE'],
-            #                                    "%d-%b-%Y %H:%M"), "</em></h3>")))),
-            column(width = 9,
-                   fluidRow(
-                     column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
-                   ),
-                   fluidRow(
-                     column(width = 6, valueBoxOutput("wCasesBox", width = NULL)),
-                     column(width = 6, valueBoxOutput("wDeathsBox", width = NULL)),
-                     #scolumn(width = 4, valueBoxOutput("wRecovBox", width = NULL)),
-                   ),
-                   tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
-                   fluidRow(
-                     column(width = 3, valueBoxOutput("bigDailyBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
-                   )),
-            column(width = 3, 
-                   leafletOutput('covidMap2')
-            ),
-            
-            column(width = 12,
-                   box(
-                     # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
-                     # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
-                     # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
-                     width = 4,
-                     title=HTML(fa(name = "calendar-day", fill = "#3d9970"),
-                                paste0("Daily deaths: ", format(max(global$dateRep), '%d-%b-%Y'))),
-                     DT::dataTableOutput("highestDaily")
-                   ),
-                   box(
-                     width = 4,
-                     title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
-                     DT::dataTableOutput("highestTotal")
-                   ),
-                   box(
-                     width = 4,
-                     title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
-                     DT::dataTableOutput("biggestChange")
-                   )
-                   
-            )
-    ),
+    # tabItem(tabName = 'summary',
+    #         # column(width = 12,
+    #         #        helpText(HTML(paste0("<h4><em>global data updated ",
+    #         #                             format(last_updated['global'],
+    #         #                                    "%d-%b-%Y %H:%M"), 
+    #         #                             ". Irish data updated ",
+    #         #                             format(last_updated['GOV_IE'],
+    #         #                                    "%d-%b-%Y %H:%M"), "</em></h3>")))),
+    #         column(width = 9,
+    #                fluidRow(
+    #                  column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
+    #                  column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
+    #                  column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
+    #                  column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
+    #                ),
+    #                fluidRow(
+    #                  column(width = 6, valueBoxOutput("wCasesBox", width = NULL)),
+    #                  column(width = 6, valueBoxOutput("wDeathsBox", width = NULL)),
+    #                  #scolumn(width = 4, valueBoxOutput("wRecovBox", width = NULL)),
+    #                ),
+    #                tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
+    #                fluidRow(
+    #                  column(width = 3, valueBoxOutput("bigDailyBox", width = NULL)),
+    #                  column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
+    #                  column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
+    #                  column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
+    #                )),
+    #         column(width = 3, 
+    #                leafletOutput('covidMap2')
+    #         ),
+    #         
+    #         column(width = 12,
+    #                box(
+    #                  # tags$style(HTML('table.dataTable tr:nth-child(even) {background-color: #3c8dbc !important;}')),
+    #                  # tags$style(HTML('table.dataTable tr:nth-child(odd) {background-color: #3c8dbc !important;}')),
+    #                  # tags$style(HTML('table.dataTable th {background-color: #3c8dbc !important;}')),
+    #                  width = 4,
+    #                  title=HTML(fa(name = "calendar-day", fill = "#3d9970"),
+    #                             paste0("Daily deaths: ", format(max(global$dateRep), '%d-%b-%Y'))),
+    #                  DT::dataTableOutput("highestDaily")
+    #                ),
+    #                box(
+    #                  width = 4,
+    #                  title=HTML(fa(name = "exclamation-triangle", fill = "#d81b60"), "Total deaths"),
+    #                  DT::dataTableOutput("highestTotal")
+    #                ),
+    #                box(
+    #                  width = 4,
+    #                  title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
+    #                  DT::dataTableOutput("biggestChange")
+    #                )
+    #                
+    #         )
+    # ),
     
     # interventions tab -------------------------------------------------------------
     
@@ -280,25 +309,25 @@ body <- dashboardBody(
     
     # County tab --------------------------------------------------------------
     
-    tabItem(tabName = "county",
-            fluidRow(
-              column(width=3,
-                     box(
-                       title='Cases by County',
-                       width=12,
-                       DT::dataTableOutput("countyCasesTable")
-                     )
-              ),
-              column(width=9, 
-                     box(
-                       title = "COVID-19 in Ireland",
-                       width=12,
-                       leafletOutput('covidMap')
-                     )
-              )
-            )
-            
-    ),
+    # tabItem(tabName = "county",
+    #         fluidRow(
+    #           column(width=3,
+    #                  box(
+    #                    title='Cases by County',
+    #                    width=12,
+    #                    DT::dataTableOutput("countyCasesTable")
+    #                  )
+    #           ),
+    #           column(width=9, 
+    #                  box(
+    #                    title = "COVID-19 in Ireland",
+    #                    width=12,
+    #                    leafletOutput('covidMap')
+    #                  )
+    #           )
+    #         )
+    #         
+    # ),
     
     
     # Animation tab -----------------------------------------------------------

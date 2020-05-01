@@ -618,6 +618,45 @@ shinyServer(function(input, output, session) {
              icon = icon("briefcase-medical"))
   })
   
+  #Ireland cases infobox in summary tab
+  output$ireCasesRankBox <- renderValueBox({
+    browser()
+    # Get the latest world data and find where Ireland ranks in it
+    latest_rank = global %>% 
+      filter(dateRep == max(dateRep)) %>% 
+      select(cases, countriesAndTerritories) %>% 
+      arrange(desc(cases))
+    
+    if(!is.na(latest_irish_totals$`Total number of cases`)) {
+      latest_val = latest_irish_totals$`Total number of cases`
+      latest_date = format(latest_irish_data$updated[2] %>% pull, 
+                           format = "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_totals$Date, "%d-%b")
+      previous_val = previous_irish_totals$`Total number of cases`
+      previous_date = format(previous_irish_totals$Date, "%d-%b")
+    } else {
+      latest_val = latest_irish_complete$`Total number of cases`
+      latest_date = format(latest_irish_data$updated[1] %>% pull, 
+                           "%d-%b, %H:%M")
+      #latest_date = format(latest_irish_complete$Date, "%d-%b")
+      previous_val = previous_irish_complete$`Total number of cases`
+      previous_date = format(previous_irish_complete$Date, "%d-%b")
+    }
+    pc_change = round(100*(latest_val/previous_val - 1))
+    html_message = get_html_message(pc_change)
+    val = str_pad(format(latest_val, 
+                         big.mark=','), 9, side = 'right')
+    text = paste0("Ireland: Diagnoses",br(),
+                  html_message,' ', 
+                  pc_change,'% since previous day',
+                  br(),em("Updated: ",latest_date))
+    valueBox(value = tags$p(val, style = "font-size: 2vmax;"), 
+             subtitle = tags$p(HTML(text)),#, style = "font-size: 0.6vw;"),
+             color = 'olive',
+             icon = icon("thermometer-three-quarters"))
+  })
+  
+  
   #Worldwide cases infobox in summary tab
   output$wCasesBox <- renderValueBox({
     updated_data = format(last_updated$dates[2], "%d-%b, %H:%M")
