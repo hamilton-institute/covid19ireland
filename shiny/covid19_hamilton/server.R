@@ -1013,7 +1013,7 @@ shinyServer(function(input, output, session) {
       global_agg = global_agg %>% mutate(!!y_pick := get(y_pick) + 1)
     }
     
-    # Find the median values of the biggest country
+    # Create the animation plot
     ggplot(global_agg %>% filter(dateRep == input$theDate), 
            aes_string(x_pick, y_pick, colour = "countriesAndTerritories", 
                       size = y_pick)) +
