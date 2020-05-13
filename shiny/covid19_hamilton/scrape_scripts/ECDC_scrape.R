@@ -23,3 +23,4 @@ library(utils)
 ecdc_data <- try(read.csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", 
                           na.strings = "", fileEncoding = "UTF-8-BOM"),
                  silent = TRUE)
+ecdc_data$dateRep = as.Date(ecdc_data$dateRep, tryFormats = "%d/%m/%Y")
