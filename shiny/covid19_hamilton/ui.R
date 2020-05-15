@@ -35,7 +35,7 @@ global_world = global_raw %>%
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths),
             cases = sum(cases),
-            popData2018 = sum(popData2018)) %>% 
+            popData2018 = sum(as.numeric(popData2018))) %>% 
   mutate(countriesAndTerritories = 'Global')
 
 global = bind_rows(global_world, global_raw)
