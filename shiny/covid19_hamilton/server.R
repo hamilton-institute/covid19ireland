@@ -50,7 +50,7 @@ global_world = global_raw %>%
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE),
             cases = sum(cases, na.rm = TRUE),
-            popData2018 = sum(popData2018, na.rm = TRUE),
+            popData2018 = sum(as.numeric(popData2018), na.rm = TRUE),
             day = min(day),
             month = min(month)) %>% 
   mutate(countriesAndTerritories = 'Global')
