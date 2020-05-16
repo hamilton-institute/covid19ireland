@@ -787,7 +787,7 @@ shinyServer(function(input, output, session) {
                     searching = TRUE,
                     paging=TRUE,
                     autoWidth = TRUE,
-                    rownames=TRUE
+                    rowNames=TRUE
                     #rowCallback = JS("function(r,d) {$(r).attr('height', '100px')}")
                   ))
   })  

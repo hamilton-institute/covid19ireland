@@ -84,7 +84,7 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   tags$head(tags$style(type='text/css', ".slider-animate-button { font-size: 20pt !important; }")),
   shinyDashboardThemes(
-    theme = "grey_light"
+    theme = "grey_dark"
   ),
   
 
