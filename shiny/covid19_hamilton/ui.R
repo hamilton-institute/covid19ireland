@@ -13,7 +13,7 @@ library(plotly)
 library(leaflet)
 library(shinydashboard)
 library(DT)
-library(dashboardthemes)
+library(dashboardthemes) # remotes::install_github("nik01010/dashboardthemes")
 library(fontawesome) # remotes::install_github('rstudio/fontawesome')
 library(shinyWidgets)
 library(readxl)
@@ -35,7 +35,7 @@ global_world = global_raw %>%
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths),
             cases = sum(cases),
-            popData2018 = sum(as.numeric(popData2018))) %>% 
+            popData2019 = sum(as.numeric(popData2019))) %>% 
   mutate(countriesAndTerritories = 'Global')
 
 global = bind_rows(global_world, global_raw)
