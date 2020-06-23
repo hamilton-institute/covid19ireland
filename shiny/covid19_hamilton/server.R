@@ -49,7 +49,7 @@ global_world = global_raw %>%
   group_by(dateRep) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE),
             cases = sum(cases, na.rm = TRUE),
-            popData2018 = sum(as.numeric(popData2018), na.rm = TRUE),
+            popData2019 = sum(as.numeric(popData2019), na.rm = TRUE),
             day = min(day),
             month = min(month)) %>% 
   mutate(countriesAndTerritories = 'Global')
@@ -228,19 +228,19 @@ shinyServer(function(input, output, session) {
   output$InterventionsPlot <- renderPlotly({
     global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry3) %>%
-      select(dateRep, cases, deaths, countriesAndTerritories, popData2018) %>% 
+      select(dateRep, cases, deaths, countriesAndTerritories, popData2019) %>% 
       group_by(countriesAndTerritories) %>% 
       arrange(dateRep) %>% 
       mutate(cum_cases = cumsum(cases),
              cum_deaths = cumsum(deaths),
              log_cases = log(cum_cases),
              log_deaths = log(cum_deaths),
-             cases_per_million = 1e6*cumsum(cases)/popData2018,
-             deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
+             cases_per_million = 1e6*cumsum(cases)/popData2019,
+             deaths_per_million = 1e6*cumsum(deaths)/popData2019) %>% 
       ungroup()
     
     country_colours = global_agg %>%
-      arrange(desc(popData2018)) %>%
+      arrange(desc(popData2019)) %>%
       select(countriesAndTerritories) %>%
       distinct() %>%
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
@@ -304,7 +304,7 @@ shinyServer(function(input, output, session) {
                                        as.Date(min(use_interventions$DATE_IMPLEMENTED)))) %>%
       ungroup() %>% 
       pivot_longer(names_to = 'Type', values_to = 'Number', 
-                   -c(dateRep, countriesAndTerritories, popData2018, 
+                   -c(dateRep, countriesAndTerritories, popData2019, 
                       days_since))
     if(x_pick == 'days_since') global_agg = global_agg %>% filter(days_since >= 0)
       
@@ -389,19 +389,19 @@ shinyServer(function(input, output, session) {
   output$CountryPlot <- renderPlotly({
     global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry) %>%
-      select(dateRep, cases, deaths, countriesAndTerritories, popData2018) %>% 
+      select(dateRep, cases, deaths, countriesAndTerritories, popData2019) %>% 
       group_by(countriesAndTerritories) %>% 
       arrange(dateRep) %>% 
       mutate(cum_cases = cumsum(cases),
              cum_deaths = cumsum(deaths),
              #log_cases = log(cum_cases),
              #log_deaths = log(cum_deaths),
-             cases_per_million = 1e6*cumsum(cases)/popData2018,
-             deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
+             cases_per_million = 1e6*cumsum(cases)/popData2019,
+             deaths_per_million = 1e6*cumsum(deaths)/popData2019) %>% 
       ungroup()
     
     country_colours = global_agg %>%
-      arrange(desc(popData2018)) %>%
+      arrange(desc(popData2019)) %>%
       select(countriesAndTerritories) %>%
       distinct() %>%
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
@@ -452,7 +452,7 @@ shinyServer(function(input, output, session) {
       mutate(days_since = 1:n()) %>% 
       ungroup() %>% 
       pivot_longer(names_to = 'Type', values_to = 'Number', 
-                   -c(dateRep, countriesAndTerritories, popData2018, 
+                   -c(dateRep, countriesAndTerritories, popData2019, 
                       days_since))
     
 
@@ -891,13 +891,13 @@ shinyServer(function(input, output, session) {
              cum_deaths = cumsum(deaths),
              daily_cases = cases,
              daily_deaths = deaths,
-             cases_per_million = 1e6*cumsum(cases)/popData2018,
-             deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
+             cases_per_million = 1e6*cumsum(cases)/popData2019,
+             deaths_per_million = 1e6*cumsum(deaths)/popData2019) %>% 
       ungroup() %>% 
       filter(cum_cases >0)
     
     country_colours2 <<- global_use %>%
-      arrange(desc(popData2018)) %>% 
+      arrange(desc(popData2019)) %>% 
       select(countriesAndTerritories) %>% 
       distinct() %>%
       mutate(Colours = colorRampPalette(brewer.pal(8, "Set1"))(n())) %>%
@@ -939,19 +939,19 @@ shinyServer(function(input, output, session) {
   ani_graph = reactive({
     global_agg = global %>%
       filter(countriesAndTerritories %in% input$sel_ctry2) %>%
-      select(dateRep, cases, deaths, countriesAndTerritories, popData2018, day, month) %>% 
+      select(dateRep, cases, deaths, countriesAndTerritories, popData2019, day, month) %>% 
       group_by(countriesAndTerritories) %>% 
       arrange(dateRep) %>% 
       mutate(cum_cases = cumsum(cases),
              cum_deaths = cumsum(deaths),
              daily_cases = cases,
              daily_deaths = deaths,
-             cases_per_million = 1e6*cumsum(cases)/popData2018,
-             deaths_per_million = 1e6*cumsum(deaths)/popData2018) %>% 
+             cases_per_million = 1e6*cumsum(cases)/popData2019,
+             deaths_per_million = 1e6*cumsum(deaths)/popData2019) %>% 
       ungroup()
     
     
-    # country_colours = global %>% arrange(desc(popData2018)) %>% 
+    # country_colours = global %>% arrange(desc(popData2019)) %>% 
     #   select(countriesAndTerritories) %>% 
     #   distinct() %>%
     #   #mutate(Colours = div_gradient_pal()(seq(0, 1, length.out = n()))) %>%
