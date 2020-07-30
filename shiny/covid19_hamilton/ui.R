@@ -70,8 +70,8 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("Map", tabName = "county", icon = icon("map")),
-    menuItem("Hospitals", tabName = "patientprofile", 
-             icon = icon("hospital")),
+    # menuItem("Hospitals", tabName = "patientprofile", 
+    #          icon = icon("hospital")),
     menuItem("Graphs", tabName = "graphs", icon = icon("bar-chart-o")),
     menuItem("Animations", icon = icon("chart-line"), tabName = "animation"),
     menuItem("Interventions", tabName = "interventions", icon = icon("user-plus")),

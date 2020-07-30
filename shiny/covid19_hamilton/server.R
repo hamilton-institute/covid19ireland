@@ -361,7 +361,7 @@ shinyServer(function(input, output, session) {
       scale_fill_manual(values = country_colours) +
       #scale_colour_brewer(palette = "Set1") + 
       { if(x_pick == 'dateRep') {
-        scale_x_datetime(breaks = '1 week', labels = scales::label_date("%d%b"))
+        scale_x_date(breaks = '1 week', labels = scales::label_date("%d%b"))
       } else {
         scale_x_continuous(breaks =  breaks_pretty(n = 10))
       }} +
@@ -474,7 +474,7 @@ shinyServer(function(input, output, session) {
       scale_color_manual(values = country_colours) +
       #scale_colour_brewer(palette = "Set1") + 
       { if(x_pick == 'dateRep') {
-        scale_x_datetime(breaks = '1 week', labels = scales::label_date("%d%b"))
+        scale_x_date(breaks = '1 week', labels = scales::label_date("%d%b"))
       } else {
         scale_x_continuous(breaks =  breaks_pretty(n = 10), labels = comma)
       }} +
@@ -780,7 +780,8 @@ shinyServer(function(input, output, session) {
   
   # Highest daily
   output$highestDaily <- DT::renderDataTable({
-    DT::datatable(global_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`)),
+    df = global_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`))
+    DT::datatable(df,
                   options = list(
                     pageLength = 10,
                     #scrollY='calc((100vh - 290px)/1.0)',
@@ -789,12 +790,14 @@ shinyServer(function(input, output, session) {
                     autoWidth = TRUE,
                     rowNames=TRUE
                     #rowCallback = JS("function(r,d) {$(r).attr('height', '100px')}")
-                  ))
+                  )) %>%
+      formatStyle(1, color = "#c8c8c8", target = "row")
   })  
   
   # HighestH total
   output$highestTotal <- DT::renderDataTable({
-    DT::datatable(global_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`)),
+    df = global_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`))
+    DT::datatable(df,
                   options = list(
                     pageLength = 10,
                     #scrollY='calc((100vh - 290px)/1.0)',
@@ -802,7 +805,8 @@ shinyServer(function(input, output, session) {
                     paging=TRUE,
                     autoWidth = TRUE,
                     rownames=TRUE
-                  ))
+                  )) %>%
+      formatStyle(1, color = "#c8c8c8", target = "row")
   })  
   
   # Biggest change
@@ -822,7 +826,8 @@ shinyServer(function(input, output, session) {
                     paging=TRUE,
                     autoWidth = TRUE,
                     rownames=TRUE
-                  ))
+                  )) %>%
+      formatStyle(1, color = "#c8c8c8", target = "row")
   })  
   
 
