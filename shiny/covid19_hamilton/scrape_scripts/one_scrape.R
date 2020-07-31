@@ -101,18 +101,21 @@ if('GOV_IE' %in% type) {
 cat('Scraping Irish government data...\n')
 #source("scrape_scripts/gov_ie_data.R")
 
-read_excel_allsheets <- function(filename) {
-  sheets <- readxl::excel_sheets(filename)
-  x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X,
-                                                     na = "NA"))
-  names(x) <- sheets
-  return(x)
-}
+  irl_file_link = "https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.geojson"
+  latest_irish_data = jsonlite::fromJSON(RCurl::getURL(irl_file_link))$features$properties
+  latest_irish_data = latest_irish_data %>% 
+    mutate(Date = as.Date(Date))
+  saveRDS(latest_irish_data, file = 'latest_irish_data.rds')
+  
+  last_updated$dates[2] = as_datetime(Sys.time(), tz = "Europe/Dublin")
 
-latest_irish_data <- read_excel_allsheets("latest_irish_data.xlsx")
-
-last_updated$dates[2] = as_datetime(Sys.time(), tz = "Europe/Dublin")
-
+  # County data
+  irl_county_file_link = "https://opendata.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.geojson"
+  latest_irish_county_data = jsonlite::fromJSON(RCurl::getURL(irl_county_file_link))$features$properties
+  latest_irish_county_data = latest_irish_county_data %>% 
+    mutate(Date = as.Date(TimeStamp))
+  saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')
+  
 }
 
 
