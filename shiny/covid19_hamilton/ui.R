@@ -17,6 +17,7 @@ library(dashboardthemes) # remotes::install_github("nik01010/dashboardthemes")
 library(fontawesome) # remotes::install_github('rstudio/fontawesome')
 library(shinyWidgets)
 library(readxl)
+library(shinycssloaders)
 
 # Data wrangling ----------------------------------------------------------
 
@@ -127,22 +128,22 @@ body <- dashboardBody(
             #                                    "%d-%b-%Y %H:%M"), "</em></h3>")))),
             column(width = 9,
                    fluidRow(
-                     column(width = 3, valueBoxOutput("ireCasesBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("ireHospBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("ireICUBox", width = NULL))
+                     column(width = 3, valueBoxOutput("ireCasesBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("ireDeathsBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("ireHospBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("ireICUBox", width = NULL) %>% withSpinner(color="#1E90FF"))
                    ),
                    fluidRow(
-                     column(width = 6, valueBoxOutput("wCasesBox", width = NULL)),
-                     column(width = 6, valueBoxOutput("wDeathsBox", width = NULL)),
+                     column(width = 6, valueBoxOutput("wCasesBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 6, valueBoxOutput("wDeathsBox", width = NULL) %>% withSpinner(color="#1E90FF")),
                      #scolumn(width = 4, valueBoxOutput("wRecovBox", width = NULL)),
                    ),
                    tags$head(tags$style(HTML(".small-box {height: 150px;}"))),
                    fluidRow(
-                     column(width = 3, valueBoxOutput("bigDailyBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL)),
-                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL))
+                     column(width = 3, valueBoxOutput("bigDailyBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL) %>% withSpinner(color="#1E90FF"))
                    )),
             column(width = 3, 
                    leafletOutput('covidMap2')
@@ -229,7 +230,7 @@ body <- dashboardBody(
             ),
             fluidRow(
               column(width = 9,
-                     plotlyOutput("InterventionsPlot", height = "500px")
+                     plotlyOutput("InterventionsPlot", height = "500px") %>% withSpinner(color="#1E90FF")
               )
             )        
     ),
@@ -272,7 +273,7 @@ body <- dashboardBody(
                                  multiple = FALSE)
               ),
               column(width = 9,
-                     plotlyOutput("CountryPlot", height = "500px")
+                     plotlyOutput("CountryPlot", height = "500px") %>% withSpinner(color="#1E90FF")
               )
             )        
     ),
@@ -286,14 +287,14 @@ body <- dashboardBody(
                      box(
                        title='Cases by County',
                        width=12,
-                       DT::dataTableOutput("countyCasesTable")
+                       DT::dataTableOutput("countyCasesTable") %>% withSpinner(color="#1E90FF")
                      )
               ),
               column(width=9, 
                      box(
                        title = "COVID-19 in Ireland",
                        width=12,
-                       leafletOutput('covidMap')
+                       leafletOutput('covidMap') %>% withSpinner(color="#1E90FF")
                      )
               )
             )
@@ -355,7 +356,7 @@ body <- dashboardBody(
                      )
               ),
               column(width = 9,
-                     plotOutput("AnimPlot", height = "500px")
+                     plotOutput("AnimPlot", height = "500px") %>% withSpinner(color="#1E90FF")
               )
             )
     ),

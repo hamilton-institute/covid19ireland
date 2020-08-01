@@ -808,7 +808,8 @@ shinyServer(function(input, output, session) {
                     paging=FALSE
                   ),
                   rownames=FALSE
-    )
+    ) %>%
+      formatStyle(1, color = "#c8c8c8", target = "row")
   })  
   
   #Map in Counties tab
