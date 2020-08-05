@@ -7,6 +7,7 @@ library(tidyverse)
 library(tidycovid19)
 library(readxl)
 library(plotly)
+library(htmltab)
 
 # Load in the tidy covid data
 #data = download_jhu_csse_covid19_data(silent = TRUE)
@@ -14,7 +15,9 @@ library(plotly)
 data = download_merged_data(silent = TRUE, cached = TRUE)
 
 # Load in the CPI data
-cpi_data = read_excel('data/CPI2019.xlsx', skip = 2)
+cpi_data = read_excel('data/CPI2019.xlsx', skip = 2) %>% 
+  mutate(Country=recode(Country, 
+                        "United States of America"="United States"))
 
 # Just get the latest cumulative totals
 data_use = data %>% 
@@ -31,10 +34,46 @@ p = ggplot(data_use, aes(x = CFR, y = `CPI score 2019`, label = country,
   scale_x_log10() + 
   labs(y = 'Corruption Perception Index 2019 (higher = less corrupt)',
        x = 'Case fatality rate %',
-       title = 'All countries with more than 10k cases') + 
+       title = 'Corruption vs CFR: All countries with more than 10k cases') + 
   theme_bw()
 ggplotly(p)
 
 cor(data_use$CFR, data_use$`CPI score 2019`, use = 'pairwise.complete.obs')
 cor(data_use$CFR[-c(67,73)], data_use$`CPI score 2019`[-c(67,73)], use = 'pairwise.complete.obs') # remove Singapore and Qatar
   
+# try it with Health system performance - THESE ARE RANKINGS - BROKEN PLOTS
+data_hc = htmltab("https://en.wikipedia.org/wiki/World_Health_Organization_ranking_of_health_systems_in_2000",1)
+
+data_use2 = data_use %>% 
+  left_join(data_hc %>% select(Country, `Performance / Overall health system performance`,
+                               `Health expenditure per capita in international dollars`),
+            by = c("country" = "Country")) %>% 
+  mutate("Health system score" = parse_number(`Performance / Overall health system performance`),
+         "Health expenditure ($)" = parse_numsber(`Health expenditure per capita in international dollars`))
+p2 = ggplot(data_use2, aes(x = CFR, y = `Health expenditure ($)`, label = country,
+                         colour = region)) + 
+  geom_text() + 
+  scale_x_log10() + 
+  labs(x = 'Case fatality rate %',
+       title = 'Health expenditure vs CFR: All countries with more than 10k cases',
+       y = 'Health expenditure per capita (rank)') + 
+  theme_bw()
+ggplotly(p2)
+
+# Now try plotting the CFR against the (estimated) proportion of the population who have been tested
+data_use3 = data %>% 
+  drop_na(total_tests) %>% 
+  group_by(country) %>% 
+  filter(confirmed > 10000,
+         region == 'Europe & Central Asia') %>% 
+  ungroup() %>% 
+  mutate(CFR = round(100*deaths / confirmed, 1),
+         pop_tested = total_tests / population,
+         `Deaths/confirmed` = paste(deaths, '/',confirmed))
+p3 = ggplot(data_use3, aes(x = date, y = CFR, colour = country, label = `Deaths/confirmed`)) +
+  geom_line() + 
+  labs(title = "Case fatality rate over time in Europe & Central Asia",
+       y = "CFR (%)") + 
+  theme_bw()
+ggplotly(p3)
+
