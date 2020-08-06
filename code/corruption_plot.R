@@ -4,6 +4,8 @@
 # Clear workspace and load in packages
 rm(list = ls())
 library(tidyverse)
+library(remotes)
+remotes::install_github('joachim-gassen/tidycovid19')
 library(tidycovid19)
 library(readxl)
 library(plotly)
@@ -12,7 +14,7 @@ library(htmltab)
 # Load in the tidy covid data
 #data = download_jhu_csse_covid19_data(silent = TRUE)
 #data = download_ecdc_covid19_data(silent = TRUE)
-data = download_merged_data(silent = TRUE, cached = TRUE)
+data = download_merged_data()
 
 # Load in the CPI data
 cpi_data = read_excel('data/CPI2019.xlsx', skip = 2) %>% 
@@ -24,13 +26,14 @@ data_use = data %>%
   filter(date == max(date)) %>% 
   left_join(cpi_data %>% select(Country, `CPI score 2019`),
             by = c("country" = "Country")) %>% 
-  mutate(CFR = round(100*ecdc_deaths/ecdc_cases,1)) %>% 
+  mutate(CFR = round(100*ecdc_deaths/ecdc_cases,1),
+         `Deaths/confirmed` = paste(ecdc_deaths, '/',ecdc_cases)) %>% 
   filter(ecdc_cases > 10000)
 
 # Now create a plot
-p = ggplot(data_use, aes(x = CFR, y = `CPI score 2019`, label = country,
-                         colour = region)) + 
-  geom_text() + 
+p = ggplot(data_use, aes(x = CFR, y = `CPI score 2019`,
+                         colour = region, label2 = `Deaths/confirmed`)) + 
+  geom_text(aes(label = country)) + 
   scale_x_log10() + 
   labs(y = 'Corruption Perception Index 2019 (higher = less corrupt)',
        x = 'Case fatality rate %',
@@ -39,7 +42,7 @@ p = ggplot(data_use, aes(x = CFR, y = `CPI score 2019`, label = country,
 ggplotly(p)
 
 cor(data_use$CFR, data_use$`CPI score 2019`, use = 'pairwise.complete.obs')
-cor(data_use$CFR[-c(67,73)], data_use$`CPI score 2019`[-c(67,73)], use = 'pairwise.complete.obs') # remove Singapore and Qatar
+cor(data_use$CFR[-c(68,74)], data_use$`CPI score 2019`[-c(68,74)], use = 'pairwise.complete.obs') # remove Singapore and Qatar
   
 # try it with Health system performance - THESE ARE RANKINGS - BROKEN PLOTS
 data_hc = htmltab("https://en.wikipedia.org/wiki/World_Health_Organization_ranking_of_health_systems_in_2000",1)
