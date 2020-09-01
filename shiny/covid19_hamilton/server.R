@@ -17,6 +17,8 @@ library(RColorBrewer)
 library(wesanderson)
 library(rlist)
 library(readxl)
+library(RcppRoll)
+
 
 # Create a ggplot theme to match the background
 theme_shiny_dashboard <- function (base_size = 12, base_family = "") {
@@ -56,6 +58,17 @@ global_world = global_raw %>%
 
 # Bind together and add colours - specify some that are required
 global = bind_rows(global_raw, global_world) 
+
+# Get the 14 day totals per 100k
+last14 = global_raw %>% 
+  filter(dateRep > max(dateRep) - 14,
+         popData2019 > 1e6) %>% 
+  mutate(Country = countriesAndTerritories) %>% 
+  group_by(Country) %>% 
+  summarise(totalCasesPer100k_raw = 100000*sum(cases)/popData2019[1],
+            Continent = continentExp[1]) %>% 
+  ungroup() %>% 
+  arrange(desc(totalCasesPer100k_raw))
 
 # Read in the latest Irish data
 latest_irish_data = readRDS('latest_irish_data.rds') %>% arrange(desc(Date))
@@ -185,9 +198,10 @@ global_table1 = global %>%
   arrange(desc(deaths)) %>% 
   mutate(Date = as.Date(dateRep),
          Country = countriesAndTerritories,
+         Continent = continentExp,
          `Daily cases` = cases,
          `Daily deaths` = deaths) %>% 
-  select(Date, Country, `Daily cases`, `Daily deaths`)
+  select(Date, Country, Continent, `Daily cases`, `Daily deaths`)
 global_table2 = global %>% 
   group_by(countriesAndTerritories) %>% 
   summarise(Date = as.Date(max(dateRep)),
@@ -388,7 +402,9 @@ shinyServer(function(input, output, session) {
              #log_cases = log(cum_cases),
              #log_deaths = log(cum_deaths),
              cases_per_million = 1e6*cumsum(cases)/popData2019,
-             deaths_per_million = 1e6*cumsum(deaths)/popData2019) %>% 
+             deaths_per_million = 1e6*cumsum(deaths)/popData2019,
+             last14per100k = 1e5*roll_sum(cases, 14, align = "right", 
+                                          fill = 0)/popData2019) %>% 
       ungroup()
     
     country_colours = global_agg %>%
@@ -427,7 +443,8 @@ shinyServer(function(input, output, session) {
                                         'Logp1 daily cases' = 'cases',
                                         'Logp1 daily deaths' = 'deaths',
                                         'Cases per million population' = 'cases_per_million',
-                                        'Deaths per million population' = 'deaths_per_million'))
+                                        'Deaths per million population' = 'deaths_per_million',
+                                        '14-day cases per 100k' = 'last14per100k'))
     
     # Correct for if log is in the title
     if(any(str_detect(input$sel_var,'Logp1'))) {
@@ -681,6 +698,31 @@ shinyServer(function(input, output, session) {
              icon = icon("arrow-up"))
   })
   
+  # Highest 14-day rate
+  output$big14Box <- renderValueBox({  
+    name = str_replace(last14$Country[1], '_', ' ')
+    val = str_pad(format(round(last14$totalCasesPer100k_raw[1],1), 
+                         big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(name, 
+                            style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vmax;")),
+             subtitle = HTML(paste0("Highest 14-day cases per 100k: ", val)),
+             color = 'light-blue',
+             icon = icon("arrow-up"))
+  })
+  
+  # Highest 14-day rate in Europe
+  output$big14BoxEU <- renderValueBox({  
+    last14_europe = last14 %>% filter(Continent == 'Europe')
+    name = str_replace(last14_europe$Country[1], '_', ' ')
+    val = str_pad(format(round(last14_europe$totalCasesPer100k_raw[1],1), 
+                         big.mark=','), 9, side = 'right')
+    valueBox(value = tags$p(name, 
+                            style = paste0("font-size: ",ifelse(nchar(name)<10, 3, 3*9/nchar(name)),"vmax;")),
+             subtitle = HTML(paste0("Highest 14-day cases per 100k in Europe: ", val)),
+             color = 'light-blue',
+             icon = icon("arrow-up"))
+  })
+  
   # Biggest Increase in Deaths Country
   output$increaseDeathBox <- renderValueBox({  
     latest_date = format(max(global_world$dateRep), "%d-%b")
@@ -744,7 +786,9 @@ shinyServer(function(input, output, session) {
   
   # Highest daily
   output$highestDaily <- DT::renderDataTable({
-    df = global_table3 %>% select(Country, `Daily deaths`) %>% arrange(desc(`Daily deaths`))
+    df = global_table3 %>% 
+      select(Country, Continent, `Daily deaths`) %>% 
+      arrange(desc(`Daily deaths`))
     DT::datatable(df,
                   options = list(
                     pageLength = 10,
@@ -760,7 +804,9 @@ shinyServer(function(input, output, session) {
   
   # HighestH total
   output$highestTotal <- DT::renderDataTable({
-    df = global_table3 %>% select(Country, `Total deaths`) %>% arrange(desc(`Total deaths`))
+    df = global_table3 %>% 
+      select(Country, Continent, `Total deaths`) %>% 
+      arrange(desc(`Total deaths`))
     DT::datatable(df,
                   options = list(
                     pageLength = 10,
@@ -794,6 +840,24 @@ shinyServer(function(input, output, session) {
       formatStyle(1, color = "#c8c8c8", target = "row")
   })  
   
+  # Biggest change
+  output$last14 <- DT::renderDataTable({
+    last14_use = last14 %>% 
+      mutate(Value = formatC(signif(totalCasesPer100k_raw,digits=3), 
+                         digits=3, format="fg", 
+                         flag="#")) %>% 
+      select(-totalCasesPer100k_raw)
+    DT::datatable(last14_use,
+                  options = list(
+                    pageLength = 10,
+                    #scrollY='calc((100vh - 290px)/1.0)',
+                    searching = TRUE,
+                    paging=TRUE,
+                    autoWidth = TRUE,
+                    rownames=TRUE
+                  )) %>%
+      formatStyle(1, color = "#c8c8c8", target = "row")
+  }) 
 
 # Counties tab ------------------------------------------------------------
   

@@ -142,8 +142,8 @@ body <- dashboardBody(
                    fluidRow(
                      column(width = 3, valueBoxOutput("bigDailyBox", width = NULL) %>% withSpinner(color="#1E90FF")),
                      column(width = 3, valueBoxOutput("worstHitCountryBox", width = NULL) %>% withSpinner(color="#1E90FF")),
-                     column(width = 3, valueBoxOutput("increaseDeathBox", width = NULL) %>% withSpinner(color="#1E90FF")),
-                     column(width = 3, valueBoxOutput("bigDecreaseBox", width = NULL) %>% withSpinner(color="#1E90FF"))
+                     column(width = 3, valueBoxOutput("big14Box", width = NULL) %>% withSpinner(color="#1E90FF")),
+                     column(width = 3, valueBoxOutput("big14BoxEU", width = NULL) %>% withSpinner(color="#1E90FF"))
                    )),
             column(width = 3, 
                    leafletOutput('covidMap2')
@@ -166,8 +166,8 @@ body <- dashboardBody(
                    ),
                    box(
                      width = 4,
-                     title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "Deaths increase from yesterday"),
-                     DT::dataTableOutput("biggestChange")
+                     title=HTML(fa(name = "chart-line", fill = "#3c8dbc"), "14-day cases per 100k residents"),
+                     DT::dataTableOutput("last14")
                    )
                    
             )
@@ -260,8 +260,9 @@ body <- dashboardBody(
                                            'Logp1 daily cases', 
                                            'Logp1 daily deaths', 
                                            'Cases per million population',
-                                           'Deaths per million population'),
-                                 selected = c('Deaths per million population'),
+                                           'Deaths per million population',
+                                           '14-day cases per 100k'),
+                                 selected = c('14-day cases per 100k'),
                                  multiple = TRUE)
               ),
               column(width = 3,
@@ -269,7 +270,7 @@ body <- dashboardBody(
                                  "Select horizontal axis", 
                                  choices=c('Date', 'Days since 1st case', 'Days since 10th case',
                                            'Days since 1st death', 'Days since 10th death'),
-                                 selected = c('Days since 1st death'),
+                                 selected = c('Date'),
                                  multiple = FALSE)
               ),
               column(width = 9,
