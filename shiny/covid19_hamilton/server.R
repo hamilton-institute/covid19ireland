@@ -89,6 +89,21 @@ previous_irish_complete = latest_irish_data %>%
 latest_irish_county_data = readRDS('latest_irish_county_data.rds')
 latest_county_table = latest_irish_county_data %>%
   filter(Date == max(Date))
+daily_county_cases = latest_irish_county_data %>% 
+  group_by(CountyName) %>% 
+  mutate(DailyCases = c(0, diff(ConfirmedCovidCases))) %>% 
+  mutate(last14per100k_raw = 1e5*roll_sum(DailyCases, 14, align = "right", 
+                                      fill = 0)/PopulationCensus16) %>% 
+  ungroup() %>% 
+  arrange(desc(Date))
+latest_daily_county_cases = daily_county_cases %>% 
+  filter(Date == max(Date)) %>% 
+  mutate(Value = as.numeric(formatC(signif(last14per100k_raw,digits=3), 
+                         digits=3, format="fg", 
+                         flag="#"))) %>% 
+  select(CountyName, Date, Value) %>% 
+  arrange(desc(Value))
+
 
 # Read in NI data
 # #latest_NI_data = readRDS("latest_NI_data.rds")
@@ -107,10 +122,10 @@ latest_county_table = latest_irish_county_data %>%
 
 #Read in the county shapes file and join it with county case info
 cs2 <- rgdal::readOGR("counties_simple.geojson")
-cs2 <- merge(cs2, latest_county_table, by.x='NAME_TAG', by.y='CountyName')
+cs2 <- merge(cs2, latest_daily_county_cases, by.x='NAME_TAG', by.y='CountyName')
 
 #Color the counties by number of cases
-pal2 <- colorNumeric("Blues", log2(cs2$ConfirmedCovidCases))
+pal2 <- colorNumeric("Blues", log2(cs2$Value))
 #pal2 <- colorNumeric(scales::viridis_pal(), log2(cs2$ConfirmedCovidCases))
 
 #Since we don't have data on a county by county basis for
@@ -143,23 +158,40 @@ all_county_table = latest_irish_county_data %>%
 #all_county_table$`Number of Cases`[all_county_table$Date==date("2020-04-09") & all_county_table$County=="Dublin"]<-4156  
               
 #Create the plots for county cumulative
-county_cumulative_cases = 
+# county_cumulative_cases = 
+#   map(cs2$NAME_TAG,
+#       ~ggplot(all_county_table 
+#               %>% filter(CountyName==as.character(.x)),
+#               aes(x=as.Date(Date),y=`Number of Cases`,group=CountyName))+
+#         geom_point()+geom_line()+
+#         theme_bw() + 
+#         scale_x_date(breaks = scales::pretty_breaks(n = 10)) +
+#         scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+#         ggtitle(label = paste0("Total cases in ",.x, 
+#                                " at ",all_county_table$Date[[1]],": ",
+#                                all_county_table$`Number of Cases`[all_county_table$Date==all_county_table$Date[[1]] & all_county_table$CountyName==.x]))+
+#                                xlab('Date')+
+#                                ylab('Number of individuals')+
+#                                #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
+#                                theme_bw()+
+#                                theme(axis.text.x = element_text(angle = 90)))
+county_14dayper100k_cases = 
   map(cs2$NAME_TAG,
-      ~ggplot(all_county_table 
+      ~ggplot(daily_county_cases 
               %>% filter(CountyName==as.character(.x)),
-              aes(x=as.Date(Date),y=`Number of Cases`,group=CountyName))+
+              aes(x=as.Date(Date),y=last14per100k_raw,group=CountyName))+
         geom_point()+geom_line()+
         theme_bw() + 
         scale_x_date(breaks = scales::pretty_breaks(n = 10)) +
         scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
-        ggtitle(label = paste0("Total cases in ",.x, 
-                               " at ",all_county_table$Date[[1]],": ",
-                               all_county_table$`Number of Cases`[all_county_table$Date==all_county_table$Date[[1]] & all_county_table$CountyName==.x]))+
-                               xlab('Date')+
-                               ylab('Number of individuals')+
-                               #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
-                               theme_bw()+
-                               theme(axis.text.x = element_text(angle = 90)))
+        ggtitle(label = paste0("14-day cases per 100k in ",.x, 
+                               " at ",daily_county_cases$Date[[1]],": ",
+                               round(daily_county_cases$last14per100k_raw[daily_county_cases$Date==daily_county_cases$Date[[1]] & daily_county_cases$CountyName==.x],1)))+
+        xlab('Date')+
+        ylab('14-day number of cases per 100k residents')+
+        #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
+        theme_bw()+
+        theme(axis.text.x = element_text(angle = 90)))
 
 #Defining the trend icon to the county map
 trend_icon<-makeIcon(iconUrl = "https://cdn2.iconfinder.com/data/icons/font-awesome/1792/line-chart-512.png",
@@ -862,9 +894,11 @@ shinyServer(function(input, output, session) {
 # Counties tab ------------------------------------------------------------
   
   #Counties table in Counties tab
+  
   output$countyCasesTable <- DT::renderDataTable({
-    DT::datatable(caption = paste0("Updated: ",all_county_table$Date[[1]]),
-                  latest_county_table[order(latest_county_table$ConfirmedCovidCases, decreasing=TRUE), c('CountyName', 'Number of Cases')],
+    DT::datatable(caption = paste0("Updated: ",latest_daily_county_cases$Date[[1]]),
+                  latest_daily_county_cases[order(latest_daily_county_cases$Value, decreasing=TRUE), 
+                                     c('CountyName', 'Value')],
                   options = list(
                     pageLength = 20,
                     scrollY='calc((100vh - 290px)/1.0)',
@@ -874,7 +908,7 @@ shinyServer(function(input, output, session) {
                   rownames=FALSE
     ) %>%
       formatStyle(1, color = "#c8c8c8", target = "row")
-  })  
+    })  
   
   #Map in Counties tab
   output$covidMap <- renderLeaflet({
@@ -884,13 +918,13 @@ shinyServer(function(input, output, session) {
       ) %>%
       setView(lng = -7.635498, lat = 53.186288, zoom = 7) %>% 
       addMarkers(lat = ~LATITUDE,lng = ~LONGITUDE,
-                 icon = trend_icon,popup = popupGraph(county_cumulative_cases)) %>% 
+                 icon = trend_icon,popup = popupGraph(county_14dayper100k_cases)) %>% 
       addPolygons(stroke = FALSE, 
                   smoothFactor = 0.3, 
                   fillOpacity = 0.7,
-                  fillColor = ~pal2(log2(ConfirmedCovidCases)),
-                  label = ~paste0(NAME_TAG, ": ", ConfirmedCovidCases, ' cases') ) %>%
-      addLegend(pal = pal2, title='Cases', values = ~log2(ConfirmedCovidCases), opacity = 1.0,
+                  fillColor = ~pal2(log2(Value)),
+                  label = ~paste0(NAME_TAG, ": ", Value, ' 14-day cases per 100k') ) %>%
+      addLegend(pal = pal2, title='14-day cases per 100k', values = ~log2(Value), opacity = 1.0,
                 labFormat = labelFormat(transform = function(x) round(2^x)))
   })
   
@@ -905,9 +939,9 @@ shinyServer(function(input, output, session) {
       addPolygons(stroke = FALSE, 
                   smoothFactor = 0.3, 
                   fillOpacity = 0.7,
-                  fillColor = ~pal2(log2(ConfirmedCovidCases)),
+                  fillColor = ~pal2(log2(Value)),
                   #fillColor = ~viridis_pal(option = "B")(log2(Cases)),
-                  label = ~paste0(NAME_TAG, ": ", ConfirmedCovidCases, ' cases') ) #%>%
+                  label = ~paste0(NAME_TAG, ": ", Value, ' 14-day cases per 100k') ) #%>%
       # addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
       #           labFormat = labelFormat(transform = function(x) round(2^x)))
   })

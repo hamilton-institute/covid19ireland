@@ -11,7 +11,7 @@ rm(list = ls())
 library(tidyverse)
 library(readxl)
 library(writexl)
-library(tidycovid19)
+library(tidycovid19) #remotes::install_github('joachim-gassen/tidycovid19')
 library(wbstats)
 library(lubridate)
 

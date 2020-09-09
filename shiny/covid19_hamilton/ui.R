@@ -286,7 +286,7 @@ body <- dashboardBody(
             fluidRow(
               column(width=3,
                      box(
-                       title='Cases by County',
+                       title='14-day total cases per 100k residents by county',
                        width=12,
                        DT::dataTableOutput("countyCasesTable") %>% withSpinner(color="#1E90FF")
                      )
