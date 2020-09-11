@@ -125,7 +125,7 @@ cs2 <- rgdal::readOGR("counties_simple.geojson")
 cs2 <- merge(cs2, latest_daily_county_cases, by.x='NAME_TAG', by.y='CountyName')
 
 #Color the counties by number of cases
-pal2 <- colorNumeric("Blues", log2(cs2$Value))
+pal2 <- colorNumeric("Blues", cs2$Value)
 #pal2 <- colorNumeric(scales::viridis_pal(), log2(cs2$ConfirmedCovidCases))
 
 #Since we don't have data on a county by county basis for
@@ -922,10 +922,10 @@ shinyServer(function(input, output, session) {
       addPolygons(stroke = FALSE, 
                   smoothFactor = 0.3, 
                   fillOpacity = 0.7,
-                  fillColor = ~pal2(log2(Value)),
+                  fillColor = ~pal2(Value),
                   label = ~paste0(NAME_TAG, ": ", Value, ' 14-day cases per 100k') ) %>%
-      addLegend(pal = pal2, title='14-day cases per 100k', values = ~log2(Value), opacity = 1.0,
-                labFormat = labelFormat(transform = function(x) round(2^x)))
+      addLegend(pal = pal2, title='14-day cases per 100k', values = ~Value, opacity = 1.0)
+                #labFormat = labelFormat(transform = function(x) round(2^x)))
   })
   
   output$covidMap2 <- renderLeaflet({
@@ -939,7 +939,7 @@ shinyServer(function(input, output, session) {
       addPolygons(stroke = FALSE, 
                   smoothFactor = 0.3, 
                   fillOpacity = 0.7,
-                  fillColor = ~pal2(log2(Value)),
+                  fillColor = ~pal2(Value),
                   #fillColor = ~viridis_pal(option = "B")(log2(Cases)),
                   label = ~paste0(NAME_TAG, ": ", Value, ' 14-day cases per 100k') ) #%>%
       # addLegend(pal = pal2, title='Cases', values = ~log2(Cases), opacity = 1.0,
