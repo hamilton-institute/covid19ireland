@@ -274,7 +274,7 @@ body <- dashboardBody(
                                  multiple = FALSE)
               ),
               column(width = 9,
-                     plotlyOutput("CountryPlot", height = "500px") %>% withSpinner(color="#1E90FF")
+                     plotlyOutput("CountryPlot", height = "500px")
               )
             )        
     ),
@@ -357,7 +357,7 @@ body <- dashboardBody(
                      )
               ),
               column(width = 9,
-                     plotOutput("AnimPlot", height = "500px") %>% withSpinner(color="#1E90FF")
+                     plotOutput("AnimPlot", height = "500px")
               )
             )
     ),
