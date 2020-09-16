@@ -293,7 +293,6 @@ body <- dashboardBody(
               ),
               column(width=9, 
                      box(
-                       title = "COVID-19 in Ireland",
                        width=12,
                        leafletOutput('covidMap') %>% withSpinner(color="#1E90FF")
                      )
