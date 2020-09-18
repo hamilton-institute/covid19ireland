@@ -21,5 +21,5 @@ run_emulator = function(R0, E, I, R) {
 # truth = run_simulator(1.1,25,35,300000)
 # pred = run_emulator(1.1,25,35,300000)
 
-# truth = run_simulator(1.2,2000,2000,300000)
-# pred = run_emulator(1.2,2000,2000,300000)
+# truth = run_simulator(2,2000,2000,300000)
+# pred = run_emulator(2,2000,2000,300000)

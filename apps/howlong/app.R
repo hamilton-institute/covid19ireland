@@ -22,32 +22,32 @@ ui <- fluidPage(
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
                # Input: Selector for choosing dataset ----
                
-               sliderInput("R0", "R0 - average number of infected people for each infected person", 0.1, 6, 1.2, step=0.1),
+               sliderInput("R0", "R0 - average number of infected people for each infected person", 0.1, 6, 1.5, step=0.1),
                
-               sliderInput("exp", "Current number of non-symptomatic spreaders", 0, 1e5, 200, step=1),
-               
-               sliderInput("inf", "Current number of symptomatic infected cases", 0, 1e5, 200, step=1),
-               
-               sliderInput("rec", "Current total of immune/recovered/dead", 5000, 1e6, 300000, step=1),
-               
-               # numericInput(inputId = "exp",
-               #              label = "Current number of non-symptomatic spreaders",
-               #              min = 1, 
-               #              max = 500,
-               #              value = 200),
+               # sliderInput("exp", "Current number of non-symptomatic spreaders", 0, 1e5, 2000, step=50),
                # 
-               # numericInput(inputId = "inf",
-               #              label = "Current number of symptomatic infected cases",
-               #              min = 1,
-               #              max = 500,
-               #              value = 200),
+               # sliderInput("inf", "Current number of symptomatic infected cases", 0, 1e5, 2000, step=50),
                # 
-               # numericInput(inputId = "rec",
-               #              label = "Current total of immune/recovered/dead",
-               #              min = 1,
-               #              max = 1e6,
-               #              value = 300000),
+               # sliderInput("rec", "Current total of immune/recovered/dead", 5000, 1e6, 300000, step=1000),
                # 
+               numericInput(inputId = "exp",
+                            label = "Current number of non-symptomatic spreaders",
+                            min = 1,
+                            max = 1e5,
+                            value = 2000),
+
+               numericInput(inputId = "inf",
+                            label = "Current number of symptomatic infected cases",
+                            min = 1,
+                            max = 1e5,
+                            value = 2000),
+
+               numericInput(inputId = "rec",
+                            label = "Current total of immune/recovered/dead",
+                            min = 1,
+                            max = 1e6,
+                            value = 300000),
+
         )), width = 4),
     
 
@@ -79,9 +79,9 @@ server <- function(input, output) {
   re <- reactive({
     validate(
       need(input$exp >= 0, "Make sure the non-symptomatic spreaders value is positive"),
-      need(input$exp < 501, "Current app can only accept non-symptomatic spreaders values less than 500"),
+      need(input$exp < 1e5+1, "Current app can only accept non-symptomatic spreaders values less than 100,000"),
       need(input$inf >= 0, "Make sure the symptomatic case value is positive"),
-      need(input$inf < 501, "Current app can only accept symptomatic case values less than 500"),
+      need(input$inf < 1e5+1, "Current app can only accept symptomatic case values less than 100,000"),
       need(input$rec > 5000, "Make sure the number of recovered/immune/dead is bigger than 5000"),
       need(input$rec < 1000001, "Current app can only accept recovered/immune/dead values less than 1 million")
     )
