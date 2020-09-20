@@ -90,6 +90,7 @@ latest_irish_county_data = readRDS('latest_irish_county_data.rds')
 latest_county_table = latest_irish_county_data %>%
   filter(Date == max(Date))
 daily_county_cases = latest_irish_county_data %>% 
+  arrange(Date, CountyName) %>% 
   group_by(CountyName) %>% 
   mutate(DailyCases = c(0, diff(ConfirmedCovidCases))) %>% 
   mutate(last14per100k_raw = 1e5*roll_sum(DailyCases, 14, align = "right", 
