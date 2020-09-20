@@ -114,10 +114,12 @@ cat('Scraping Irish government data...\n')
   # County data
   #irl_county_file_link = "https://opendata.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.geojson"
   #irl_county_file_link = "http://opendata-geohive.hub.arcgis.com/datasets/4779c505c43c40da9101ce53f34bb923_0.geojson"
-  irl_county_file_link = "http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv?outSR={%22latestWkid%22:3857,%22wkid%22:102100}"
-  #latest_irish_county_data = jsonlite::fromJSON(RCurl::getURL(irl_county_file_link))$features$properties
-  latest_irish_county_data = read_csv(irl_county_file_link) %>% 
-    mutate(Date = as.Date(TimeStamp))
+  #irl_county_file_link = "http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv?outSR={%22latestWkid%22:3857,%22wkid%22:102100}"
+  irl_county_file_link = "https://opendata.arcgis.com/datasets/4779c505c43c40da9101ce53f34bb923_0.geojson"
+  latest_irish_county_data = jsonlite::fromJSON(RCurl::getURL(irl_county_file_link))$features$properties %>% 
+    mutate(Date = as.Date(TimeStampDate))
+  # latest_irish_county_data = read_csv(irl_county_file_link) %>% 
+  #   mutate(Date = as.Date(TimeStamp))
   saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')
   
 }
