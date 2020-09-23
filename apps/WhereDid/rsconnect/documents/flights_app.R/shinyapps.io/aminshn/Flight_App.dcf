@@ -1,0 +1,12 @@
+name: Flight_App
+title: Flight_App
+username:
+account: aminshn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2617719
+bundleId: 3640383
+url: https://aminshn.shinyapps.io/Flight_App/
+when: 1600357477.50746
+asMultiple: FALSE
+asStatic: FALSE
