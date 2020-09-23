@@ -1,0 +1,12 @@
+name: RIP_data
+title: RIP_data
+username:
+account: aminshn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2709664
+bundleId: 3589328
+url: https://aminshn.shinyapps.io/RIP_data/
+when: 1599149468.42633
+asMultiple: FALSE
+asStatic: FALSE
