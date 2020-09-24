@@ -1,0 +1,12 @@
+name: SEIR3
+title: SEIR3
+username:
+account: aminshn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2517915
+bundleId: 3330607
+url: https://aminshn.shinyapps.io/SEIR3/
+when: 1593454702.14359
+asMultiple: FALSE
+asStatic: FALSE
