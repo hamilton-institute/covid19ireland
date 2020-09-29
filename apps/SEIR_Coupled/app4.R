@@ -2,6 +2,7 @@ rm(list = ls(all = TRUE))
 
 source("2b_multi_seir.R")
 source("_utils.R")
+
 library(dplyr)
 library(ggplot2)
 library(cowplot)
@@ -148,14 +149,14 @@ server <- function(input, output) {
    
     
     # https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/638137/Additional_Data_Paper_-_Northern_Ireland_Common_Travel_Area.pdf
-    transport_rate = 1.54E7 # 15.4 million people moving between UK and Ireland annually
-    wS1E1 = 0.99  # 99% of chance that exposed people will be moved to local E compartment
-    wS1E2 = 1 - wS1E1  # (1 - wS1E2)% chance of jumping to the other E compartment
-    wS1S2 = transport_rate * (1/365)  # rate of people leaving Ireland per day
+    transport_rate  <<- 1.54E7 # 15.4 million people moving between UK and Ireland annually
+    wS1E1 <<- 0.99  # 99% of chance that exposed people will be moved to local E compartment
+    wS1E2 <<- 1 - wS1E1  # (1 - wS1E2)% chance of jumping to the other E compartment
+    wS1S2 <<- transport_rate * (1/365)  # rate of people leaving Ireland per day
     
-    wS2E2 = 0.99
-    wS2E1 = 1 - wS2E2
-    wS2S1 = transport_rate * (1/365)  # rate of people leaving (arriving) UK (Ireland) per day
+    wS2E2 <<- 0.99
+    wS2E1 <<- 1 - wS2E2
+    wS2S1 <<- transport_rate * (1/365)  # rate of people leaving (arriving) UK (Ireland) per day
     
     
     ##### Run simulation
@@ -168,6 +169,7 @@ server <- function(input, output) {
     for (r in 1:real) {
       for(i in 1:N_phases){
         if (i == 1) { # for first phase of the epidemic
+          
           res = coupled_seir_model(t_phase, t, dt, N1, gamma1, beta1, N2, gamma2, beta2)
         }
         else {
@@ -215,7 +217,7 @@ server <- function(input, output) {
     )
     #############################
     ##### Plot number of people in each compartment
-    title1 = paste0("#S_IR = ", N1[1,1], ", #E_IR = ", N1[1,2], ", #I_IR = ", N1[1,3], ", R0_IR = ", R0_1,  "\n#S_UK = ", N2[1,1], ", #E_UK = ", N2[1,2], ", #I_UK = ", N2[1,3], ", R0_UK = ", R0_2)
+    title1 = paste0("#S_IR = ", N1[1,1], ", #E_IR = ", N1[1,2], ", #I_IR = ", N1[1,3], ", R0_IR = ", input$R0,  "\n#S_UK = ", N2[1,1], ", #E_UK = ", N2[1,2], ", #I_UK = ", N2[1,3], ", R0_UK = ", R0_2)
     # title2 = paste0("#S_UK = ", N2[1,1], ", #E_UK = ", N2[1,2], ", #I_UK = ", N2[1,3])
     plt1 = ggplot(final, aes(Time)) +
       geom_ribbon(aes(ymin = quantileCIs$S1$lower, ymax = quantileCIs$S1$upper), alpha = 0.3, fill = "black") +
