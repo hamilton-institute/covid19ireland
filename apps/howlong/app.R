@@ -5,6 +5,7 @@ library(ggpubr)
 library(png)
 library(ggplot2)
 library(RcppRoll)
+library(tidyverse)
 
 source('run_emulator.R')
 
