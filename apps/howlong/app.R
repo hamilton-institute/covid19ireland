@@ -4,8 +4,20 @@ library(shinycssloaders)
 library(ggpubr)
 library(png)
 library(ggplot2)
+library(RcppRoll)
 
 source('run_emulator.R')
+
+# Get latest 14-day cases and use as input 
+latest_irish_data = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(DailyCases = ConfirmedCovidCases) %>% 
+  mutate(last14 = roll_sum(DailyCases, 14, align = "right", 
+                                          fill = 0)) %>% 
+  ungroup() %>% 
+  arrange(desc(Date))
+latest_14 = latest_irish_data$last14[1]
 
 # UI ----------------------------------------------------------------------
 
@@ -34,13 +46,13 @@ ui <- fluidPage(
                             label = "Current number of non-symptomatic spreaders",
                             min = 1,
                             max = 1e5,
-                            value = 2000),
+                            value = latest_14),
 
                numericInput(inputId = "inf",
                             label = "Current number of symptomatic infected cases",
                             min = 1,
                             max = 1e5,
-                            value = 2000),
+                            value = latest_14),
 
                numericInput(inputId = "rec",
                             label = "Current total of immune/recovered/dead",
@@ -77,7 +89,7 @@ server <- function(input, output) {
                   y = seq(0, 1, by = 0.1))
   
   re <- reactive({
-    validate(
+    shiny::validate(
       need(input$exp >= 0, "Make sure the non-symptomatic spreaders value is positive"),
       need(input$exp < 1e5+1, "Current app can only accept non-symptomatic spreaders values less than 100,000"),
       need(input$inf >= 0, "Make sure the symptomatic case value is positive"),
