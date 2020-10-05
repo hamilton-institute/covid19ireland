@@ -112,7 +112,8 @@ cat('Scraping Irish government data...\n')
   
   
   # County data
-  latest_irish_county_data = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv') %>%
+  latest_irish_county_data = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv',
+                                      stringsAsFactors = FALSE) %>%
     mutate(Date = as.Date(TimeStamp)) %>% 
     add_count(CountyName) %>% 
     filter(n == max(n))

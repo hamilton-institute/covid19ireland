@@ -176,6 +176,7 @@ all_county_table = latest_irish_county_data %>%
 #                                #geom_text(mapping = aes(x=date,y=`Number of Cases`,label=`Number of Cases`,vjust=-0.5))+
 #                                theme_bw()+
 #                                theme(axis.text.x = element_text(angle = 90)))
+
 county_14dayper100k_cases = 
   map(cs2$NAME_TAG,
       ~ggplot(daily_county_cases 
