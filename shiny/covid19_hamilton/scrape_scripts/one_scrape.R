@@ -113,15 +113,11 @@ cat('Scraping Irish government data...\n')
   
   # County data
   latest_irish_county_data = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv') %>%
-    mutate(Date = as.Date(TimeStamp))
+    mutate(Date = as.Date(TimeStamp)) %>% 
+    add_count(CountyName) %>% 
+    filter(n == max(n))
   
-  latest_date = max(latest_irish_county_data$Date)
-  today = as.Date(Sys.time())
-  yesterday = today - 1
-  # Only update if the county data is decent
-  if(latest_date == today | latest_date == yesterday) {
-    saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')  
-  }
+  saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')  
 
 }
 
@@ -155,11 +151,11 @@ if('Interventions' %in% type) {
   #source("scrape_scripts/gov_ie_data.R")
   
   # Website here: https://data.humdata.org/dataset/acaps-covid19-government-measures-dataset
-  # download.file("https://data.humdata.org/dataset/e1a91ae0-292d-4434-bc75-bf863d4608ba/resource/93108e8e-8afc-4f26-950b-0c1e587ee5c2/download/20200416-acaps-covid-19-goverment-measures-dataset-v8.xlsx", "latest_intervention_data.xlsx",
+  # download.file("https://data.humdata.org/dataset/e1a91ae0-292d-4434-bc75-bf863d4608ba/resource/fe961c65-5cc2-4cc9-a9cd-937f56e0df0b/download/acaps_covid19_government_measures_dataset.xlsx", "latest_intervention_data.xlsx",
   #               quite = TRUE)
   # 
   # last_updated$dates[4] = as_datetime(Sys.time(), tz = "Europe/Dublin")
-  
+
 }
 
 

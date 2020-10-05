@@ -1,3 +1,6 @@
+load("shiny_data.RData")
+
+
 server <- function(input, output, session) {
   forecast_data <- reactive({
     if (input$log == FALSE) {
