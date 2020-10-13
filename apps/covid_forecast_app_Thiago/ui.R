@@ -112,7 +112,7 @@ body  <- dashboardBody(
                       inputId = "countryA",
                       label = "Country:",
                       choices = levels(shiny_data$Country),
-                      selected = c("Ireland"),
+                      selected = c("Ireland", "United Kingdom", "France", "Spain", "Italy"),
                       multiple = TRUE
                     )
                   ),
