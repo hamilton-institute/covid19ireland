@@ -101,7 +101,7 @@ SEXP twoages(SEXP YS, SEXP YE, SEXP YI, SEXP YR, SEXP OS, SEXP OE, SEXP OI, SEXP
 	/* initialise simulation conditions */
 	double t, dt, t_phase;
 	t = 0;
-	dt = 0.25;
+	dt = 1;
 	t_phase = INFINITY;
 
 	/* Run simulation */
@@ -260,12 +260,10 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 
 			/* First figure out Y group infections */
 			N_infected = poisson(dt * Ytmp[i].S *
-				    (beta[0][0][0] * Ytmp[i].E +
-				     beta[1][0][0] * Ytmp[i].I +
-				     beta[0][1][0] * Otmp[i].E +
-				     beta[1][1][0] * Otmp[i].I)
-				    /
-				    (total_Y+total_O)
+				    ((beta[0][0][0] * Ytmp[i].E +
+				      beta[1][0][0] * Ytmp[i].I) / total_Y +
+				     (beta[0][1][0] * Otmp[i].E +
+				     beta[1][1][0] * Otmp[i].I) / total_O)
 				);
 			if (Ytmp[i].S >= N_infected)
 				Ytotal_infected = N_infected;
@@ -274,12 +272,10 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 
 			/* Now figure out O group infections */
 			N_infected = poisson(dt * Otmp[i].S *
-				    (beta[0][0][1] * Ytmp[i].E +
-				     beta[1][0][1] * Ytmp[i].I +
-				     beta[0][1][1] * Otmp[i].E +
-				     beta[1][1][1] * Otmp[i].I)
-				    /
-				    (total_Y+total_O)
+				    ((beta[0][0][1] * Ytmp[i].E +
+				     beta[1][0][1] * Ytmp[i].I) / total_Y +
+				     (beta[0][1][1] * Otmp[i].E +
+				     beta[1][1][1] * Otmp[i].I) / total_O)
 				);
 			if (Otmp[i].S >= N_infected)
 				Ototal_infected = N_infected;
