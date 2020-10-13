@@ -15,6 +15,9 @@ library(plotly)
 library(shinycssloaders)
 library(shinyjs)
 
+# Load in latest data
+latest = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv")
+
 ui <- fluidPage(
   
   sidebarLayout(
@@ -26,49 +29,50 @@ ui <- fluidPage(
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
                # Input: Selector for choosing dataset ----
                
-               sliderInput("R0", "Average number of infections from each infected person (R0) for under 60s", 0, 10, 3.6, step=0.1),
+               sliderInput("R0", "Average number of infections from each infected person (R0) for under 65s", 0, 10, 1.5, step=0.1),
                
-               sliderInput("R0_1", "Average number of infections from each infected person (R0) for over 60s", 0, 10, 0.8, step=0.1),
+               sliderInput("R0_1", "Average number of infections from each infected person (R0) for over 65s", 0, 10, 0.8, step=0.1),
                
                sliderInput(inputId = "R0_O_Y",
-                           label = "Average number of infections passed between under and over 60s per infected person (Cross R0)",
+                           label = "Average number of infections passed between under and over 65s per infected person (Cross R0)",
                            0, 10, 0.3, step=0.1),
                
-               sliderInput("dead_0", "Case fatality rate (%) for under 60s", 0, 20, 0.5, step = 0.1),
+               sliderInput("dead_0", "Case fatality rate (%) for under 65s", 0, 20, 0.5, step = 0.1),
                
-               sliderInput("dead_1", "Case fatality rate (%) for over 60s", 0, 20, 10, step = 0.1),
+               sliderInput("dead_1", "Case fatality rate (%) for over 65s", 0, 20, 10, step = 0.1),
                
                actionButton(inputId = "button", label = "show extra options"),
                
-               #numericInput("pop","Number of susceptible under 60s",value = 4.0E6),
+               #numericInput("pop","Number of susceptible under 65s",value = 4.0E6),
                
-               #numericInput("pop2","Number of susceptible over 60s",value = 0.9E6),
+               #numericInput("pop2","Number of susceptible over 65s",value = 0.9E6),
                
                numericInput(inputId = "exp",
-                            label = "Current number of asymptomatic spreaders under 60",
-                            value = 2000),
+                            label = "Current number of asymptomatic spreaders under 65",
+                            value = 250),
                
                numericInput(inputId = "inf",
-                            label = "Current number of symptomatic spreaders under 60",
-                            value = 2000),
+                            label = "Current number of symptomatic spreaders under 65",
+                            value = 250),
                
                numericInput(inputId = "exp2",
-                            label = "Current number of asymptomatic spreaders over 60",
-                            value = 200),
+                            label = "Current number of asymptomatic spreaders over 65",
+                            value = 25),
                
                numericInput(inputId = "inf2",
-                            label = "Current number of symptomatic spreaders over 60",
-                            value = 200),
+                            label = "Current number of symptomatic spreaders over 65",
+                            value = 25),
                
                numericInput(inputId = "rec",
-                            label = "Initial number of recovered (i.e. immune) people under 60",
+                            label = "Initial number of recovered (i.e. immune) people under 65",
                             value = 200000),
                
                numericInput(inputId = "rec2",
-                            label = "Initial number of recovered (i.e. immune) people over 60",
-                            value = 100000)
-               
-               
+                            label = "Initial number of recovered (i.e. immune) people over 65",
+                            value = 100000),
+
+               sliderInput("dead_shift", "Gap (days) between cases and deaths", 0, 50, 21, step = 1)
+
         ))),
     
     
@@ -81,7 +85,11 @@ ui <- fluidPage(
         fluidRow(
           plotlyOutput("plot", height = 500,) %>% withSpinner(color="#1E90FF"),
         )
-      )
+      ),
+      checkboxInput("log_scale", "Log scale?", value = FALSE),
+      checkboxInput("show_data", "Show data?", value = FALSE),
+      
+            
       #              ),
       #              
       #              
@@ -114,12 +122,30 @@ server <- function(input, output) {
     shinyjs::toggle("inf2")
     shinyjs::toggle("rec")
     shinyjs::toggle("rec2")
+    shinyjs::toggle("dead_shift")
   }, ignoreNULL = FALSE)
-  
   
   #realisation <- reactive({
   output$plot <- renderPlotly({
-    
+  
+    # Get the most recent data according to the dead shift value
+    dead_shift = input$dead_shift
+    start_date = as.Date(Sys.time()) - input$dead_shift
+    diff2 = function(x) return(c(NA, diff(x)))
+    data_use = latest %>% 
+      mutate(Date = as.Date(Date)) %>% 
+      select(Date, TotalConfirmedCovidCases, Aged1, 
+             Aged1to4, Aged5to14, Aged15to24, Aged25to34, Aged35to44, 
+             Aged45to54, Aged55to64, Aged65up) %>% 
+      mutate(`Under 65s` = Aged1+ 
+               Aged1to4+ Aged5to14+ Aged15to24+ Aged25to34+ Aged35to44+ 
+               Aged45to54+ Aged55to64,
+             `Over 65s` = Aged65up) %>% 
+      select(Date, `Under 65s`, `Over 65s`) %>% 
+      mutate_if(is.numeric, diff2) %>% 
+      filter(Date >= start_date) %>% 
+      pivot_longer(names_to = 'Age group', values_to = 'median', -Date)
+
     ##### General setup
     # Inputs are YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O
     
@@ -127,7 +153,7 @@ server <- function(input, output) {
     num_sim = 200
     store = vector('list', 200)
     for (i in 1:num_sim) {
-      store[[i]] = twoages(YS = 4.0e6, # Under 60s susceptible
+      store[[i]] = twoages(YS = 4.0e6, # Under 65s susceptible
                            YE = input$exp,
                            YI = input$inf,
                            YR = input$rec,
@@ -168,11 +194,15 @@ server <- function(input, output) {
     YI_low = (apply(YI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for YI
-    dates = as.Date(Sys.time())+time_max
-    YI_final = tibble(Time = dates, 
-                      `Under 60sXXXDead - median` = YI_median*input$dead_0/100,
-                      `Under 60sXXXDead - low est` = YI_low*input$dead_0/100,
-                      `Under 60sXXXDead - high est` = YI_high*input$dead_0/100)
+    dead_shift = input$dead_shift # Gap between cases and deaths
+    dates = as.Date(Sys.time())+time_max - dead_shift # Start from 3 weeks ago
+    YI_final = tibble(Date = dates, 
+                      `Under 65sXXXInfected - median` = YI_median,
+                      `Under 65sXXXInfected - low est` = YI_low,
+                      `Under 65sXXXInfected - high est` = YI_high,
+                      `Under 65sXXXDead - median` = c(rep(0, dead_shift), head(YI_median, -dead_shift)*input$dead_0/100),
+                      `Under 65sXXXDead - low est` = c(rep(0, dead_shift), head(YI_low, -dead_shift)*input$dead_0/100),
+                      `Under 65sXXXDead - high est` = c(rep(0, dead_shift), head(YI_high, -dead_shift)*input$dead_0/100))
     
     # Now do the same thing for old infected
     OI_all = lapply(store, "[", "OI")
@@ -192,31 +222,53 @@ server <- function(input, output) {
     OI_low = (apply(OI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for OI
-    OI_final = tibble(Time = dates, 
-                      `Over 60sXXXDead - median` = OI_median*input$dead_1/100,
-                      `Over 60sXXXDead - low est` = OI_low*input$dead_1/100,
-                      `Over 60sXXXDead - high est` = OI_high*input$dead_1/100)
+    OI_final = tibble(Date = dates, 
+                      `Over 65sXXXInfected - median` = OI_median,
+                      `Over 65sXXXInfected - low est` = OI_low,
+                      `Over 65sXXXInfected - high est` = OI_high,
+                      `Over 65sXXXDead - median` = c(rep(0, dead_shift), head(OI_median, -dead_shift)*input$dead_1/100),
+                      `Over 65sXXXDead - low est` = c(rep(0, dead_shift), head(OI_low, -dead_shift)*input$dead_1/100),
+                      `Over 65sXXXDead - high est` = c(rep(0, dead_shift), head(OI_high, -dead_shift)*input$dead_1/100))
     
     # Tidy up into one data frame
-    final = left_join(YI_final, OI_final, by = "Time") %>% 
-      pivot_longer(names_to = 'Type', values_to = 'Count', -Time)
+    final = left_join(YI_final, OI_final, by = "Date") %>% 
+      pivot_longer(names_to = 'Type', values_to = 'Count', -Date)
     final_twocols = as.matrix(str_split(final$Type, 'XXX', simplify = TRUE))    
     final$`Age group` = final_twocols[,1]
     final$Type = final_twocols[,2]
-    final = final %>% 
+    final2 = final %>% 
       pivot_wider(names_from = "Type", values_from = "Count") %>% 
-      mutate(across(where(is.numeric), round, 0))
+      mutate(across(where(is.numeric), round, 0)) %>% 
+      pivot_longer(names_to = "Type", values_to = "Count", -c(Date, `Age group`))
+    final2_twocols = as.matrix(str_split(final2$Type, ' - ', simplify = TRUE))    
+    final2$Type = final2_twocols[,1]
+    final2$Est = final2_twocols[,2]
+    final2 = final2 %>% 
+      pivot_wider(names_from = "Est", values_from = "Count")
+    final2$Type = factor(final2$Type, levels = c('Infected', 'Dead'), ordered = TRUE)
     
     # This caused a load of pain but replaced three of the above lines  
     #   tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
-    
-    plt1 = ggplot(final, aes(x = Time, y = `Dead - median`, fill = `Age group`, colour = `Age group`)) +
-      geom_ribbon(aes(ymin = `Dead - low est`, ymax = `Dead - high est`), alpha = 0.1) +
-      geom_line() +
-      labs(x = "Date", y = "Number of deaths per day") +
+    plt1 = ggplot(final2, aes(x = Date, colour = `Age group`)) +
+      geom_line(aes(y = `median`)) +
+      #geom_ribbon(aes(ymin = `low est`, ymax = `high est`, fill = `Age group`), alpha = 0.1) +
+      labs(x = "Date", title = "Cases/deaths per day", y = NULL) +
       scale_x_date(date_breaks = "4 weeks", date_labels = "%d-%b") + 
       scale_y_continuous(expand = c(0, 0), labels = comma) +
-      theme_bw()
+      theme_bw() + 
+      facet_grid(Type ~ ., scales = 'free_y')
+      # theme(axis.title.y = element_text(angle = 0, vjust = 1, hjust=0))
+    if(input$log_scale) plt1 = plt1 + scale_y_log10(expand = c(0, 0), labels = comma)
+    
+    if(input$show_data) {
+      df_use = tibble(
+        Date = data_use$Date,
+        Type = 'Infected',
+        `Age group` = data_use$`Age group`,
+        median = data_use$median
+      )
+      plt1 = plt1 + geom_point(data = df_use, aes(y = median))
+    }
     ggplotly(plt1)
     
   })
