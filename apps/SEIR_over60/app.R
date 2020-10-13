@@ -5,6 +5,7 @@ source("twoagesR.R")
 
 library(dplyr)
 library(tidyr)
+library(stringr)
 library(ggplot2)
 library(cowplot)
 library(scales)
