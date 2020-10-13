@@ -1,9 +1,9 @@
 rm(list = ls(all = TRUE))
 
-source("2b_multi_seir.R")
-source("_utils.R")
+source("twoagesR.R")
 
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
@@ -14,50 +14,40 @@ library(shinycssloaders)
 
 ui <- fluidPage(
   
-  # titlePanel("SEIR Simulation App"),
-  # hr(),
-  # p(div(HTML("Version: 4.0"))),
-  
-  
   sidebarLayout(
     sidebarPanel(
       fluidRow(
         column(width=12,
                
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
-               #h4(div(HTML("<em>Initial Conditions</em>"))),
                # Input: Selector for choosing dataset ----
                
-               sliderInput("R0", "R0 for under 60s", 0, 10, 3.6, step=0.1),
+               sliderInput("R0", "Average number of infections from each infected person (R0) for under 60s", 0, 10, 3.6, step=0.1),
                
-               sliderInput("R0_1", "R0 for over 60s", 0, 10, 0.5, step=0.1),
+               sliderInput("R0_1", "Average number of infections from each infected person (R0) for over 60s", 0, 10, 0.8, step=0.1),
                
-               # sliderInput("E", "Average time that a newly infected person spends as an asymptomatic spreader before becoming symptomatic", 0, 20, 6.6, step=0.2, post = " days"),
-               
-               # sliderInput("I", "Average time that a symptomatic person spends before recovering", 0, 20, 7.4, step=0.2, post = " days"),
-               
-               # numericInput(inputId = "R0",
-               #              label = "R0 Value",
-               #              value = 3.3),
+               sliderInput(inputId = "R0_O_Y",
+                           label = "Average number of infections passed between under and over 60s per infected person (Cross R0)",
+                           0, 10, 0.3, step=0.1),
                
                #numericInput("pop","Number of susceptible under 60s",value = 4.0E6),
                
                #numericInput("pop2","Number of susceptible over 60s",value = 0.9E6),
                
                numericInput(inputId = "exp",
-                            label = "Number of asymptomatic spreaders under 60",
+                            label = "Current number of asymptomatic spreaders under 60",
                             value = 2000),
                
                numericInput(inputId = "inf",
-                            label = "Number of symptomatic spreaders under 60",
+                            label = "Current number of symptomatic spreaders under 60",
                             value = 2000),
                
                numericInput(inputId = "exp2",
-                            label = "Number of asymptomatic spreaders over 60",
+                            label = "Current number of asymptomatic spreaders over 60",
                             value = 200),
                
                numericInput(inputId = "inf2",
-                            label = "Number of symptomatic spreaders over 60",
+                            label = "Current number of symptomatic spreaders over 60",
                             value = 200),
 
                numericInput(inputId = "rec",
@@ -66,11 +56,8 @@ ui <- fluidPage(
 
                numericInput(inputId = "rec2",
                             label = "Initial number of recovered (i.e. immune) people over 60",
-                            value = 100000),
+                            value = 100000)
                
-               numericInput(inputId = "num_daily_contacts",
-                            label = "Number of daily close contacts between people over and under 60 across Ireland",
-                            value = 500000)
                
         ))),
     
@@ -109,142 +96,98 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  
-  
-
 
   #realisation <- reactive({
   output$plot <- renderPlotly({
     
     ##### General setup
+    # Inputs are YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O
     
-    compt1 = c("S1", "E1", "I1", "R1")  # Under 60s SEIR
-    compt2 = c("S2", "E2", "I2", "R2")  # Over 60s SEIR
-    compt_names = c(compt1, compt2)
-    
-    N1 = matrix(0, nrow = 1, ncol = length(compt1)) # a matrix to store number of people in each compartment
-    N2 = matrix(0, nrow = 1, ncol = length(compt2))
-    real = 100 # number of simulations
-    
-    ##### Epidemic model setup: parameters
-    N_phases = 1 # number of phases (e.g. intervention at t=t*)
-    gamma1 = c(6.6, 7.4)  # mean holding times at compartment E and I 
-    total1 = sum(gamma1)  # assuming beta_E = beta_I => include comments
-    beta1 = input$R0 / c(total1, total1)
-    
-    R0_2 = input$R0_1
-    gamma2 = c(6.6, 7.4)
-    total2 = sum(gamma2)
-    beta2 = R0_2 / c(total2, total2)
-    
-    # equal mean holding times for E and I compartments (mean(E+I) = 14days)
-    ##### Assign initial conditions
-    N1[1,1] = 4.0e6#input$pop  # number of susceptible people (under 60s)
-    N1[1,2] = input$exp   # number of exposed people
-    N1[1,3] = input$inf   # number of infected people
-    N1[1,4] = input$rec
-    
-    N2[1,1] = 0.9e6#input$pop2 # Number of susceptible over 60s
-    N2[1,2] = input$exp2
-    N2[1,3] = input$inf2
-    N2[1,4] = input$rec2
-    
-    t = 0
-    dt = 1  # time increment
-    t_phase = Inf
-   
-    
-    # https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/638137/Additional_Data_Paper_-_Northern_Ireland_Common_Travel_Area.pdf
-    transport_rate  <<- input$num_daily_contacts # Number of contacts between over and under 60s annually?
-    wS1E1 <<- 0.99  # 99% of chance that exposed people will be moved to local E compartment
-    wS1E2 <<- 1 - wS1E1  # (1 - wS1E2)% chance of jumping to the other E compartment
-    wS1S2 <<- transport_rate
-    
-    wS2E2 <<- 0.99
-    wS2E1 <<- 1 - wS2E2
-    wS2S1 <<- transport_rate
-    
-    
-    ##### Run simulation
-    realisation = list( # a list of lists to store realisation results
-      Time = list(), 
-      S1 = list(), E1 = list(), I1 = list(), R1 = list(),
-      S2 = list(), E2 = list(), I2 = list(), R2 = list()
-    ) 
-    
-    for (r in 1:real) {
-      for(i in 1:N_phases){
-        if (i == 1) { # for first phase of the epidemic
-          
-          res = coupled_seir_model(t_phase, t, dt, N1, gamma1, beta1, N2, gamma2, beta2)
-        }
-        else {
-          # TODO: pass results from the first phase with different infection parameters
-        }
-      }
-      res = as.data.frame(res) %>% rename_at(vars(paste0(c(rep("V", length(compt_names))), 2:9)), ~compt_names)
-      
-      # save the results as a list of vectors
-      realisation$Time[[r]] = res$Time
-      for (cname in compt_names) {
-        realisation[[cname]][[r]] = res[[cname]]
-      }
-    }
-    
-    #realisation
-    
- # })
-  
-  #output$plot <- renderPlot({
-    
-    Time = rowMeans(sapply(realisation$Time, `length<-`, max(lengths(realisation$S1))), na.rm = TRUE)
-    extract = NULL
-    mean = NULL
-    quantileCIs = NULL
-    low = 0.025 # lower percentile
-    upp = 0.975 # upper percentile
-    for (cname in compt_names) {
-      # convert to matrix (NB: because each realisation has different length, fill the gap with NAs)
-      extract[[cname]] = sapply(realisation[[cname]], `length<-`, max(lengths(realisation[[cname]])))
-
-      # calculate mean across rows
-      mean[[cname]] = rowMeans(extract[[cname]], na.rm = TRUE)
-
-      # calculate percentile confidence intervals
-      quantileCIs[[cname]][["lower"]] = apply(extract[[cname]], 1, quantile, low, na.rm = TRUE)
-      quantileCIs[[cname]][["upper"]] = apply(extract[[cname]], 1, quantile, upp, na.rm = TRUE)
+    # Number of simulations
+    num_sim = 200
+    store = vector('list', 200)
+    for (i in 1:num_sim) {
+      store[[i]] = twoages(YS = 4.0e6, # Under 60s susceptible
+                       YE = input$exp,
+                       YI = input$inf,
+                       YR = input$rec,
+                       OS = 0.9e6,
+                       OE = input$exp2,
+                       OI = input$inf2,
+                       OR = input$rec2,
+                       YR0Y = input$R0,
+                       YR0O = input$R0_O_Y,
+                       OR0Y = input$R0_O_Y,
+                       OR0O = input$R0_1) %>% 
+        as.data.frame %>% 
+        rename("Time" = 1, "YS" = 2,"YE" = 3,
+               "YI" = 4, "YR" = 5, "OS" = 6,
+               "OE" = 7, "OI" = 8, "OR" = 9)
     }
 
-    # convert the mean values into a data frame
-    final = data.frame(
-      Time = Time,
-      S1 = mean[["S1"]], E1 = mean[["E1"]], I1 = mean[["I1"]], R1 = mean[["R1"]],
-      S2 = mean[["S2"]], E2 = mean[["E2"]], I2 = mean[["I2"]], R2 = mean[["R2"]]
-    )
-    #############################
-    ##### Plot number of people in each compartment
-    # title1 = paste0("#S_IR = ", N1[1,1], ", #E_IR = ", N1[1,2], ", #I_IR = ", N1[1,3], ", R0_IR = ", input$R0,  "\n#S_UK = ", N2[1,1], ", #E_UK = ", N2[1,2], ", #I_UK = ", N2[1,3], ", R0_UK = ", R0_2)
-    #title1 = paste0("#S_IR = ", N1[1,1], ", #E_IR = ", N1[1,2], ", #I_IR = ", N1[1,3], ", R0_IR = ", input$R0,  "\n#S_UK = ", N2[1,1], ", #E_UK = ", N2[1,2], ", #I_UK = ", N2[1,3], ", R0_UK = ", R0_2)
-    # title2 = paste0("#S_UK = ", N2[1,1], ", #E_UK = ", N2[1,2], ", #I_UK = ", N2[1,3])
     
-    plt1 = ggplot(final, aes(Time)) +
-      geom_ribbon(aes(ymin = quantileCIs$I1$lower, ymax = quantileCIs$I1$upper), alpha = 0.3, fill = "red") +
-      geom_ribbon(aes(ymin = quantileCIs$I2$lower, ymax = quantileCIs$I2$upper), alpha = 0.1, fill = "red") +
-      geom_line(aes(y = I1, color = "C_red", linetype = "Infected under 60s")) +    # I1
-      geom_line(aes(y = I2, color = "G_red", linetype = "Infected over 60s")) +    # I2
-      labs(x = "Day", y = "Number of infected people", colour = "") +
-      scale_colour_manual(
-        name = "Comp.",
-        values = c(
-          A_black = "black", B_purple = "purple", C_red = "red", D_blue = "blue",
-          E_black = "black", F_purple = "purple", G_red = "red", H_blue = "blue"
-        ),
-        labels = c(
-          "Infected under 60s", "Infected over 60s"
-        )
-      ) +
+    # Quick plot
+    # plot(result$Time, result$YI, type = 'l')
+    # lines(result$Time, result$OI, col = 'red')
+    
+    # Extract out the infections and quantiles for each group
+    YI_all = lapply(store, "[", "YI")
+    
+    # Add 0s to each vector to make them the same length
+    nrows = lapply(YI_all, 'nrow') %>% unlist
+    max_row = max(nrows)
+    time_max = store[[which.max(nrows)]]$Time
+    YI_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    for(i in 1:length(YI_all)) {
+      YI_padded[,i] = c(YI_all[[i]][,1], rep(0, max_row - nrows[i]))
+    }
+    
+    # Now calculate medians and 90% CI
+    YI_median = apply(YI_padded, 1, 'quantile', 0.5)
+    YI_high = apply(YI_padded, 1, 'quantile', 0.95)
+    YI_low = apply(YI_padded, 1, 'quantile', 0.05)
+    
+    # Final data frame for YI
+    YI_final = tibble(Time = time_max, 
+                          `Under 60sXXXInfected - median` = YI_median,
+                          `Under 60sXXXInfected - low est` = YI_low,
+                          `Under 60sXXXInfected - high est` = YI_high)
+    
+    # Now do the same thing for old infected
+    OI_all = lapply(store, "[", "OI")
+    
+    # Add 0s to each vector to make them the same length
+    nrows = lapply(OI_all, 'nrow') %>% unlist
+    max_row = max(nrows)
+    time_max = store[[which.max(nrows)]]$Time
+    OI_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    for(i in 1:length(OI_all)) {
+      OI_padded[,i] = c(OI_all[[i]][,1], rep(0, max_row - nrows[i]))
+    }
+    
+    # Now calculate medians and 90% CI
+    OI_median = apply(OI_padded, 1, 'quantile', 0.5)
+    OI_high = apply(OI_padded, 1, 'quantile', 0.95)
+    OI_low = apply(OI_padded, 1, 'quantile', 0.05)
+    
+    # Final data frame for OI
+    OI_final = tibble(Time = time_max, 
+                          `Over 60sXXXInfected - median` = OI_median,
+                          `Over 60sXXXInfected - low est` = OI_low,
+                          `Over 60sXXXInfected - high est` = OI_high)
+    
+    # Tidy up into one data frame
+    final = left_join(YI_final, OI_final, by = "Time") %>% 
+      pivot_longer(names_to = 'Type', values_to = 'Count', -Time) %>% 
+      tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
+      pivot_wider(names_from = "Type", values_from = "Count")
+
+    plt1 = ggplot(final, aes(x = Time, y = `Infected - median`, fill = `Age group`, colour = `Age group`)) +
+      geom_ribbon(aes(ymin = `Infected - low est`, ymax = `Infected - high est`), alpha = 0.1) +
+      geom_line() +
+      labs(x = "Day", y = "Number of infected people per day") +
       scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0), labels = comma) +
       theme(plot.title = element_text(size = 10, face = "bold")) + 
       theme_bw()
     ggplotly(plt1)
