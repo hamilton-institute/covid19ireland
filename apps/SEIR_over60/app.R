@@ -30,6 +30,10 @@ ui <- fluidPage(
                            label = "Average number of infections passed between under and over 60s per infected person (Cross R0)",
                            0, 10, 0.3, step=0.1),
                
+               sliderInput("dead_0", "Case fatality rate (%) for under 60s", 0, 20, 0.5, step = 0.1),
+               
+               sliderInput("dead_1", "Case fatality rate (%) for over 60s", 0, 20, 10, step = 0.1),
+               
                #numericInput("pop","Number of susceptible under 60s",value = 4.0E6),
                
                #numericInput("pop2","Number of susceptible over 60s",value = 0.9E6),
@@ -143,15 +147,16 @@ server <- function(input, output) {
     }
     
     # Now calculate medians and 90% CI
-    YI_median = apply(YI_padded, 1, 'quantile', 0.5)
-    YI_high = apply(YI_padded, 1, 'quantile', 0.95)
-    YI_low = apply(YI_padded, 1, 'quantile', 0.05)
+    YI_median = round(apply(YI_padded, 1, 'quantile', 0.5))
+    YI_high = round(apply(YI_padded, 1, 'quantile', 0.95))
+    YI_low = round(apply(YI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for YI
-    YI_final = tibble(Time = time_max, 
-                          `Under 60sXXXInfected - median` = YI_median,
-                          `Under 60sXXXInfected - low est` = YI_low,
-                          `Under 60sXXXInfected - high est` = YI_high)
+    dates = as.Date(Sys.time())+time_max
+    YI_final = tibble(Time = dates, 
+                          `Under 60sXXXDead - median` = YI_median*input$dead_0/100,
+                          `Under 60sXXXDead - low est` = YI_low*input$dead_0/100,
+                          `Under 60sXXXDead - high est` = YI_high*input$dead_0/100)
     
     # Now do the same thing for old infected
     OI_all = lapply(store, "[", "OI")
@@ -166,15 +171,15 @@ server <- function(input, output) {
     }
     
     # Now calculate medians and 90% CI
-    OI_median = apply(OI_padded, 1, 'quantile', 0.5)
-    OI_high = apply(OI_padded, 1, 'quantile', 0.95)
-    OI_low = apply(OI_padded, 1, 'quantile', 0.05)
+    OI_median = round(apply(OI_padded, 1, 'quantile', 0.5))
+    OI_high = round(apply(OI_padded, 1, 'quantile', 0.95))
+    OI_low = round(apply(OI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for OI
-    OI_final = tibble(Time = time_max, 
-                          `Over 60sXXXInfected - median` = OI_median,
-                          `Over 60sXXXInfected - low est` = OI_low,
-                          `Over 60sXXXInfected - high est` = OI_high)
+    OI_final = tibble(Time = dates, 
+                          `Over 60sXXXDead - median` = OI_median*input$dead_1/100,
+                          `Over 60sXXXDead - low est` = OI_low*input$dead_1/100,
+                          `Over 60sXXXDead - high est` = OI_high*input$dead_1/100)
     
     # Tidy up into one data frame
     final = left_join(YI_final, OI_final, by = "Time") %>% 
@@ -182,13 +187,12 @@ server <- function(input, output) {
       tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
       pivot_wider(names_from = "Type", values_from = "Count")
 
-    plt1 = ggplot(final, aes(x = Time, y = `Infected - median`, fill = `Age group`, colour = `Age group`)) +
-      geom_ribbon(aes(ymin = `Infected - low est`, ymax = `Infected - high est`), alpha = 0.1) +
+    plt1 = ggplot(final, aes(x = Time, y = `Dead - median`, fill = `Age group`, colour = `Age group`)) +
+      geom_ribbon(aes(ymin = `Dead - low est`, ymax = `Dead - high est`), alpha = 0.1) +
       geom_line() +
-      labs(x = "Day", y = "Number of infected people per day") +
-      scale_x_continuous(expand = c(0, 0)) +
+      labs(x = "Date", y = "Number of deaths per day") +
+      scale_x_date(date_breaks = "2 weeks", date_labels = "%d-%b") + 
       scale_y_continuous(expand = c(0, 0), labels = comma) +
-      theme(plot.title = element_text(size = 10, face = "bold")) + 
       theme_bw()
     ggplotly(plt1)
 
