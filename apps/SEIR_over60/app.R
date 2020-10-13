@@ -1,3 +1,4 @@
+
 rm(list = ls(all = TRUE))
 
 source("twoagesR.R")
@@ -183,9 +184,15 @@ server <- function(input, output) {
     
     # Tidy up into one data frame
     final = left_join(YI_final, OI_final, by = "Time") %>% 
-      pivot_longer(names_to = 'Type', values_to = 'Count', -Time) %>% 
-      tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
-      pivot_wider(names_from = "Type", values_from = "Count")
+      pivot_longer(names_to = 'Type', values_to = 'Count', -Time)
+    final_twocols = as.matrix(str_split(final$Type, 'XXX', simplify = TRUE))    
+    final$`Age group` = final_twocols[,1]
+    final$Type = final_twocols[,2]
+    final = final %>% 
+        pivot_wider(names_from = "Type", values_from = "Count")
+      
+    # This caused a load of pain but replaced three of the above lines  
+    #   tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
 
     plt1 = ggplot(final, aes(x = Time, y = `Dead - median`, fill = `Age group`, colour = `Age group`)) +
       geom_ribbon(aes(ymin = `Dead - low est`, ymax = `Dead - high est`), alpha = 0.1) +
