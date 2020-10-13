@@ -110,7 +110,6 @@ cat('Scraping Irish government data...\n')
   last_updated$dates[2] = as_datetime(Sys.time(), tz = "Europe/Dublin")
 
   
-  
   # County data
   latest_irish_county_data = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv',
                                       stringsAsFactors = FALSE) %>%
@@ -118,7 +117,12 @@ cat('Scraping Irish government data...\n')
     add_count(CountyName) %>% 
     filter(n == max(n))
   
-  saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')  
+  # If number of rows less than previous then don't save
+  old_irish_county_data = readRDS('latest_irish_county_data.rds')
+  if(nrow(latest_irish_county_data) > nrow(old_irish_county_data)) {
+    saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')  
+  }
+    
 
 }
 
