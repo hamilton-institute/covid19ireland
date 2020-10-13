@@ -13,11 +13,13 @@ library(reshape2)
 library(shinyWidgets)
 library(plotly)
 library(shinycssloaders)
+library(shinyjs)
 
 ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
+      useShinyjs(),
       fluidRow(
         column(width=12,
                
@@ -35,6 +37,8 @@ ui <- fluidPage(
                sliderInput("dead_0", "Case fatality rate (%) for under 60s", 0, 20, 0.5, step = 0.1),
                
                sliderInput("dead_1", "Case fatality rate (%) for over 60s", 0, 20, 10, step = 0.1),
+               
+               actionButton(inputId = "button", label = "show extra options"),
                
                #numericInput("pop","Number of susceptible under 60s",value = 4.0E6),
                
@@ -55,11 +59,11 @@ ui <- fluidPage(
                numericInput(inputId = "inf2",
                             label = "Current number of symptomatic spreaders over 60",
                             value = 200),
-
+               
                numericInput(inputId = "rec",
                             label = "Initial number of recovered (i.e. immune) people under 60",
                             value = 200000),
-
+               
                numericInput(inputId = "rec2",
                             label = "Initial number of recovered (i.e. immune) people over 60",
                             value = 100000)
@@ -67,30 +71,30 @@ ui <- fluidPage(
                
         ))),
     
-
+    
     # Main panel for displaying outputs ----
     mainPanel(
       # navbarPage("Output:",
       #            # Output: HTML table with requested number of observations ----
       #            tabPanel("Spread",  
-                          fluidPage(
-                            fluidRow(
-                              plotlyOutput("plot", height = 1000, width = 1000) %>% withSpinner(color="#1E90FF"),
-                            )
-                          )
-    #              ),
-    #              
-    #              
-    #              tabPanel("About",
-    #                       fluidPage(
-    #                         fluidRow(
-    #                           
-    #                           p(HTML("<p> This visualisation is for a simple, standard stochastic model of an epidemic where individuals can be in one of four states: S, susceptible to infection; E, exposed to the infection, and so infectious, but asymptomatic; I, infectious and symptomatic; R, recovered from the infection and immune to further infection.<p> Exposed and Infectious people are the actors in the system. They interact a random number of times each day with Susceptible, Exposed, Infectious, and Recovered people. The probability that a given interaction is with Susceptible person is the fraction of people in the population that are Susceptible at that time. When they interact with a Susceptible person, the Susceptible person moves to being Exposed. An interaction with an Exposed, Infectious or Recovered person leads to no change in the system.<p> Exposed people stay in that state for an approximately exponentially random time, with an average given by the model parameters, whereupon they become Infectious. Infectious people stay in that state for an approximately exponentially random time, with an average given by the model parameters, whereupon they become Recovered. Once there are no Exposed or Infectious people left, the epidemic has ended.<p> As the system is stochastic, significant heterogeneity occurs when the number of Exposed and Infectious people is small. When started with a small number of Exposed and Infectious people, there is a chance that the epidemic dies out before it can get going, or that it expands into a full-blown epidemic. Towards the end of a full blown epidemic, there is significant heterogeneity in the time until it ends. The closer the effective replicative value is to 1, the greater this variability.")) 
-    #                           
-    #                         )
-    #                       )
-    #              )
-    #   )  
+      fluidPage(
+        fluidRow(
+          plotlyOutput("plot", height = 500,) %>% withSpinner(color="#1E90FF"),
+        )
+      )
+      #              ),
+      #              
+      #              
+      #              tabPanel("About",
+      #                       fluidPage(
+      #                         fluidRow(
+      #                           
+      #                           p(HTML("<p> This visualisation is for a simple, standard stochastic model of an epidemic where individuals can be in one of four states: S, susceptible to infection; E, exposed to the infection, and so infectious, but asymptomatic; I, infectious and symptomatic; R, recovered from the infection and immune to further infection.<p> Exposed and Infectious people are the actors in the system. They interact a random number of times each day with Susceptible, Exposed, Infectious, and Recovered people. The probability that a given interaction is with Susceptible person is the fraction of people in the population that are Susceptible at that time. When they interact with a Susceptible person, the Susceptible person moves to being Exposed. An interaction with an Exposed, Infectious or Recovered person leads to no change in the system.<p> Exposed people stay in that state for an approximately exponentially random time, with an average given by the model parameters, whereupon they become Infectious. Infectious people stay in that state for an approximately exponentially random time, with an average given by the model parameters, whereupon they become Recovered. Once there are no Exposed or Infectious people left, the epidemic has ended.<p> As the system is stochastic, significant heterogeneity occurs when the number of Exposed and Infectious people is small. When started with a small number of Exposed and Infectious people, there is a chance that the epidemic dies out before it can get going, or that it expands into a full-blown epidemic. Towards the end of a full blown epidemic, there is significant heterogeneity in the time until it ends. The closer the effective replicative value is to 1, the greater this variability.")) 
+      #                           
+      #                         )
+      #                       )
+      #              )
+      #   )  
     )
     
     
@@ -102,7 +106,17 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-
+  
+  observeEvent(input$button, {
+    shinyjs::toggle("exp")
+    shinyjs::toggle("exp2")
+    shinyjs::toggle("inf")
+    shinyjs::toggle("inf2")
+    shinyjs::toggle("rec")
+    shinyjs::toggle("rec2")
+  }, ignoreNULL = FALSE)
+  
+  
   #realisation <- reactive({
   output$plot <- renderPlotly({
     
@@ -114,23 +128,23 @@ server <- function(input, output) {
     store = vector('list', 200)
     for (i in 1:num_sim) {
       store[[i]] = twoages(YS = 4.0e6, # Under 60s susceptible
-                       YE = input$exp,
-                       YI = input$inf,
-                       YR = input$rec,
-                       OS = 0.9e6,
-                       OE = input$exp2,
-                       OI = input$inf2,
-                       OR = input$rec2,
-                       YR0Y = input$R0,
-                       YR0O = input$R0_O_Y,
-                       OR0Y = input$R0_O_Y,
-                       OR0O = input$R0_1) %>% 
+                           YE = input$exp,
+                           YI = input$inf,
+                           YR = input$rec,
+                           OS = 0.9e6,
+                           OE = input$exp2,
+                           OI = input$inf2,
+                           OR = input$rec2,
+                           YR0Y = input$R0,
+                           YR0O = input$R0_O_Y,
+                           OR0Y = input$R0_O_Y,
+                           OR0O = input$R0_1) %>% 
         as.data.frame %>% 
         rename("Time" = 1, "YS" = 2,"YE" = 3,
                "YI" = 4, "YR" = 5, "OS" = 6,
                "OE" = 7, "OI" = 8, "OR" = 9)
     }
-
+    
     
     # Quick plot
     # plot(result$Time, result$YI, type = 'l')
@@ -149,16 +163,16 @@ server <- function(input, output) {
     }
     
     # Now calculate medians and 90% CI
-    YI_median = round(apply(YI_padded, 1, 'quantile', 0.5))
-    YI_high = round(apply(YI_padded, 1, 'quantile', 0.95))
-    YI_low = round(apply(YI_padded, 1, 'quantile', 0.05))
+    YI_median = (apply(YI_padded, 1, 'quantile', 0.5))
+    YI_high = (apply(YI_padded, 1, 'quantile', 0.95))
+    YI_low = (apply(YI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for YI
     dates = as.Date(Sys.time())+time_max
     YI_final = tibble(Time = dates, 
-                          `Under 60sXXXDead - median` = YI_median*input$dead_0/100,
-                          `Under 60sXXXDead - low est` = YI_low*input$dead_0/100,
-                          `Under 60sXXXDead - high est` = YI_high*input$dead_0/100)
+                      `Under 60sXXXDead - median` = YI_median*input$dead_0/100,
+                      `Under 60sXXXDead - low est` = YI_low*input$dead_0/100,
+                      `Under 60sXXXDead - high est` = YI_high*input$dead_0/100)
     
     # Now do the same thing for old infected
     OI_all = lapply(store, "[", "OI")
@@ -173,15 +187,15 @@ server <- function(input, output) {
     }
     
     # Now calculate medians and 90% CI
-    OI_median = round(apply(OI_padded, 1, 'quantile', 0.5))
-    OI_high = round(apply(OI_padded, 1, 'quantile', 0.95))
-    OI_low = round(apply(OI_padded, 1, 'quantile', 0.05))
+    OI_median = (apply(OI_padded, 1, 'quantile', 0.5))
+    OI_high = (apply(OI_padded, 1, 'quantile', 0.95))
+    OI_low = (apply(OI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for OI
     OI_final = tibble(Time = dates, 
-                          `Over 60sXXXDead - median` = OI_median*input$dead_1/100,
-                          `Over 60sXXXDead - low est` = OI_low*input$dead_1/100,
-                          `Over 60sXXXDead - high est` = OI_high*input$dead_1/100)
+                      `Over 60sXXXDead - median` = OI_median*input$dead_1/100,
+                      `Over 60sXXXDead - low est` = OI_low*input$dead_1/100,
+                      `Over 60sXXXDead - high est` = OI_high*input$dead_1/100)
     
     # Tidy up into one data frame
     final = left_join(YI_final, OI_final, by = "Time") %>% 
@@ -190,11 +204,12 @@ server <- function(input, output) {
     final$`Age group` = final_twocols[,1]
     final$Type = final_twocols[,2]
     final = final %>% 
-        pivot_wider(names_from = "Type", values_from = "Count")
-      
+      pivot_wider(names_from = "Type", values_from = "Count") %>% 
+      mutate(across(where(is.numeric), round, 0))
+    
     # This caused a load of pain but replaced three of the above lines  
     #   tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
-
+    
     plt1 = ggplot(final, aes(x = Time, y = `Dead - median`, fill = `Age group`, colour = `Age group`)) +
       geom_ribbon(aes(ymin = `Dead - low est`, ymax = `Dead - high est`), alpha = 0.1) +
       geom_line() +
@@ -203,7 +218,7 @@ server <- function(input, output) {
       scale_y_continuous(expand = c(0, 0), labels = comma) +
       theme_bw()
     ggplotly(plt1)
-
+    
   })
   
 }
