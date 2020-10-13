@@ -101,7 +101,7 @@ SEXP twoages(SEXP YS, SEXP YE, SEXP YI, SEXP YR, SEXP OS, SEXP OE, SEXP OI, SEXP
 	/* initialise simulation conditions */
 	double t, dt, t_phase;
 	t = 0;
-	dt = 0.25;
+	dt = 1;
 	t_phase = INFINITY;
 
 	/* Run simulation */
