@@ -73,7 +73,7 @@ ui <- fluidPage(
       #            tabPanel("Spread",  
                           fluidPage(
                             fluidRow(
-                              plotlyOutput("plot") %>% withSpinner(color="#1E90FF"),
+                              plotlyOutput("plot", height = 1000, width = 1000) %>% withSpinner(color="#1E90FF"),
                             )
                           )
     #              ),
@@ -191,7 +191,7 @@ server <- function(input, output) {
       geom_ribbon(aes(ymin = `Dead - low est`, ymax = `Dead - high est`), alpha = 0.1) +
       geom_line() +
       labs(x = "Date", y = "Number of deaths per day") +
-      scale_x_date(date_breaks = "2 weeks", date_labels = "%d-%b") + 
+      scale_x_date(date_breaks = "4 weeks", date_labels = "%d-%b") + 
       scale_y_continuous(expand = c(0, 0), labels = comma) +
       theme_bw()
     ggplotly(plt1)
