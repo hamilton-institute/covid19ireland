@@ -249,14 +249,15 @@ server <- function(input, output) {
     
     # This caused a load of pain but replaced three of the above lines  
     #   tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
+    
     plt1 = ggplot(final2, aes(x = Date, colour = `Age group`)) +
       geom_line(aes(y = `median`)) +
       #geom_ribbon(aes(ymin = `low est`, ymax = `high est`, fill = `Age group`), alpha = 0.1) +
-      labs(x = "Date", title = "Cases/deaths per day", y = NULL) +
+      labs(x = "Date", title = "Infected/dead per day", y = NULL) +
       scale_x_date(date_breaks = "4 weeks", date_labels = "%d-%b") + 
       scale_y_continuous(expand = c(0, 0), labels = comma) +
       theme_bw() + 
-      facet_grid(Type ~ ., scales = 'free_y')
+      facet_wrap(~ Type , nrow = 2, scales = 'free_y')
       # theme(axis.title.y = element_text(angle = 0, vjust = 1, hjust=0))
     if(input$log_scale) plt1 = plt1 + scale_y_log10(expand = c(0, 0), labels = comma)
     
