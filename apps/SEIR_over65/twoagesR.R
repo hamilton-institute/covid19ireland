@@ -18,3 +18,11 @@ twoages <- function(YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O) {
   .Call("twoages", YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O)
 }
 
+# Run it with 
+# result1 = twoages(4000000, 250, 250, 100000, 900000, 50, 50, 100000, 1.5, 0.3, 0.3, 0.6)
+# plot(result1[[1]], result1[[4]], type = 'l')
+# lines(result1[[1]], result1[[8]], col = 'red')
+# result2 = twoages(4000000, 250, 250, 100000, 900000, 50, 50, 100000, 1.5, 0.3, 0.3, 5.0)
+# plot(result2[[1]], result2[[4]], type = 'l')
+# lines(result2[[1]], result2[[8]], col = 'red')
+

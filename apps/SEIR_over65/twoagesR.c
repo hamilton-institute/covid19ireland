@@ -50,7 +50,8 @@ SEXP twoages(SEXP YS, SEXP YE, SEXP YI, SEXP YR, SEXP OS, SEXP OE, SEXP OI, SEXP
 	R0[0][0] = asReal(YR0Y);
 	R0[0][1] = asReal(YR0O);
 	R0[1][0] = asReal(OR0Y);
-	R0[1][1] = asReal(OR0Y);
+	/* R0[1][1] = asReal(OR0Y); */
+	R0[1][1] = asReal(OR0O);
 
 	if (!initialised) {
 		srand48(time(NULL));
