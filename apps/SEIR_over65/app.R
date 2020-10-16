@@ -15,6 +15,9 @@ library(plotly)
 library(shinycssloaders)
 library(shinyjs)
 
+diff2 = function(x) return(c(NA, diff(x)))
+diff3 = function(x) return(c(0, diff(x)))
+
 ui <- fluidPage(
   
   sidebarLayout(
@@ -42,19 +45,19 @@ ui <- fluidPage(
               
                numericInput(inputId = "exp",
                             label = "Number of asymptomatic spreaders under 65 at start date",
-                            value = 250),
+                            value = 3000),
 
                numericInput(inputId = "inf",
                             label = "Number of symptomatic spreaders under 65 at start date",
-                            value = 250),
+                            value = 3000),
                
                numericInput(inputId = "exp2",
                             label = "Number of asymptomatic spreaders over 65 at start date",
-                            value = 25),
+                            value = 400),
                
                numericInput(inputId = "inf2",
                             label = "Number of symptomatic spreaders over 65 at start date",
-                            value = 25),
+                            value = 400),
                
                numericInput(inputId = "rec",
                             label = "Number of recovered (i.e. immune) people under 65 at start date",
@@ -127,7 +130,6 @@ server <- function(input, output) {
   dataInput <- reactive({
     # Load in latest data
     latest = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv")
-    diff2 = function(x) return(c(NA, diff(x)))
     data_use = latest %>% 
       mutate(Date = as.Date(Date)) %>% 
       select(Date, TotalCovidDeaths, Aged1, 
@@ -185,69 +187,70 @@ server <- function(input, output) {
                "OE" = 7, "OI" = 8, "OR" = 9)
     }
     
-    
     # Quick plot
-    # plot(result$Time, result$YI, type = 'l')
-    # lines(result$Time, result$OI, col = 'red')
+    # plot(store[[1]]$Time, store[[1]]$YI, type = 'l')
+    # lines(store[[1]]$Time, store[[1]]$OI, col = 'red')
+    # Should be plotting difference in removed category
+    # plot(store[[1]]$Time, diff2(store[[1]]$YR), type = 'l')
+    # lines(store[[1]]$Time, diff2(store[[1]]$OR), col = 'red')
     
     # Extract out the infections and quantiles for each group
-    YI_all = lapply(store, "[", "YI")
+    YR_all = lapply(store, "[", "YR")
     
     # Add 0s to each vector to make them the same length
-    nrows = lapply(YI_all, 'nrow') %>% unlist
+    nrows = lapply(YR_all, 'nrow') %>% unlist
     max_row = max(nrows)
     time_max = store[[which.max(nrows)]]$Time
-    YI_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
-    for(i in 1:length(YI_all)) {
-      YI_padded[,i] = c(YI_all[[i]][,1], rep(0, max_row - nrows[i]))
+    YR_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    for(i in 1:length(YR_all)) {
+      YR_padded[,i] = c(diff3(YR_all[[i]][,1]), rep(0, max_row - nrows[i]))
     }
     
     # Now calculate medians and 90% CI
-    YI_median = (apply(YI_padded, 1, 'quantile', 0.5))
-    YI_high = (apply(YI_padded, 1, 'quantile', 0.95))
-    YI_low = (apply(YI_padded, 1, 'quantile', 0.05))
+    YR_median = (apply(YR_padded, 1, 'quantile', 0.5))
+    YR_high = (apply(YR_padded, 1, 'quantile', 0.95))
+    YR_low = (apply(YR_padded, 1, 'quantile', 0.05))
     
-    # Final data frame for YI
+    # Final data frame for YR
     dead_shift = input$dead_shift # Gap between cases and deaths
     dates = as.Date(Sys.time())+time_max - dead_shift # Start from 3 weeks ago
-    YI_final = tibble(Date = dates, 
-                      `Under 65sXXXInfected - Value` = YI_median,
-                      `Under 65sXXXInfected - low est` = YI_low,
-                      `Under 65sXXXInfected - high est` = YI_high,
-                      `Under 65sXXXDead - Value` = c(rep(0, dead_shift), head(YI_median, -dead_shift)*input$dead_0/100),
-                      `Under 65sXXXDead - low est` = c(rep(0, dead_shift), head(YI_low, -dead_shift)*input$dead_0/100),
-                      `Under 65sXXXDead - high est` = c(rep(0, dead_shift), head(YI_high, -dead_shift)*input$dead_0/100))
+    YR_final = tibble(Date = dates, 
+                      `Under 65sXXXInfected - Value` = YR_median,
+                      `Under 65sXXXInfected - low est` = YR_low,
+                      `Under 65sXXXInfected - high est` = YR_high,
+                      `Under 65sXXXDead - Value` = c(rep(0, dead_shift), head(YR_median, -dead_shift)*input$dead_0/100),
+                      `Under 65sXXXDead - low est` = c(rep(0, dead_shift), head(YR_low, -dead_shift)*input$dead_0/100),
+                      `Under 65sXXXDead - high est` = c(rep(0, dead_shift), head(YR_high, -dead_shift)*input$dead_0/100))
     
     # Now do the same thing for old infected
-    OI_all = lapply(store, "[", "OI")
+    OR_all = lapply(store, "[", "OR")
     
     # Add 0s to each vector to make them the same length
-    nrows = lapply(OI_all, 'nrow') %>% unlist
+    nrows = lapply(OR_all, 'nrow') %>% unlist
     max_row = max(nrows)
     time_max = store[[which.max(nrows)]]$Time
-    OI_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
-    for(i in 1:length(OI_all)) {
-      OI_padded[,i] = c(OI_all[[i]][,1], rep(0, max_row - nrows[i]))
+    OR_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    for(i in 1:length(OR_all)) {
+      OR_padded[,i] = c(diff3(OR_all[[i]][,1]), rep(0, max_row - nrows[i]))
     }
     
     # Now calculate medians and 90% CI
-    OI_median = (apply(OI_padded, 1, 'quantile', 0.5))
-    OI_high = (apply(OI_padded, 1, 'quantile', 0.95))
-    OI_low = (apply(OI_padded, 1, 'quantile', 0.05))
+    OR_median = (apply(OR_padded, 1, 'quantile', 0.5))
+    OR_high = (apply(OR_padded, 1, 'quantile', 0.95))
+    OR_low = (apply(OR_padded, 1, 'quantile', 0.05))
     
-    # Final data frame for OI
-    OI_final = tibble(Date = dates, 
-                      `Over 65sXXXInfected - Value` = OI_median,
-                      `Over 65sXXXInfected - low est` = OI_low,
-                      `Over 65sXXXInfected - high est` = OI_high,
-                      `Over 65sXXXDead - Value` = c(rep(0, dead_shift), head(OI_median, -dead_shift)*input$dead_1/100),
-                      `Over 65sXXXDead - low est` = c(rep(0, dead_shift), head(OI_low, -dead_shift)*input$dead_1/100),
-                      `Over 65sXXXDead - high est` = c(rep(0, dead_shift), head(OI_high, -dead_shift)*input$dead_1/100),
-                      `TotalXXXDead - Value` = c(rep(0, dead_shift), head(OI_median, -dead_shift)*input$dead_1/100 + 
-                                                       head(YI_median, -dead_shift)*input$dead_0/100))
-    
+    # Final data frame for OR
+    OR_final = tibble(Date = dates, 
+                      `Over 65sXXXInfected - Value` = OR_median,
+                      `Over 65sXXXInfected - low est` = OR_low,
+                      `Over 65sXXXInfected - high est` = OR_high,
+                      `Over 65sXXXDead - Value` = c(rep(0, dead_shift), head(OR_median, -dead_shift)*input$dead_1/100),
+                      `Over 65sXXXDead - low est` = c(rep(0, dead_shift), head(OR_low, -dead_shift)*input$dead_1/100),
+                      `Over 65sXXXDead - high est` = c(rep(0, dead_shift), head(OR_high, -dead_shift)*input$dead_1/100),
+                      `TotalXXXDead - Value` = c(rep(0, dead_shift), head(OR_median, -dead_shift)*input$dead_1/100 + 
+                                                       head(YR_median, -dead_shift)*input$dead_0/100))
     # Tidy up into one data frame
-    final = left_join(YI_final, OI_final, by = "Date") %>% 
+    final = left_join(YR_final, OR_final, by = "Date") %>% 
       pivot_longer(names_to = 'Type', values_to = 'Count', -Date)
     final_twocols = as.matrix(str_split(final$Type, 'XXX', simplify = TRUE))    
     final$`Age group` = final_twocols[,1]

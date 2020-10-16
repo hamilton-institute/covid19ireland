@@ -26,9 +26,9 @@ ui <- fluidPage(
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
                # Input: Selector for choosing dataset ----
                
-               sliderInput("R0", "Average number of infections from each infected person (R0) for the general population", 0, 10, 0.8, step=0.1),
+               sliderInput("R0", "Average number of infections from each infected person (R0) for the general population", 0, 10, 0.3, step=0.1),
                
-               sliderInput("R0_1", "Average number of infections from each infected person (R0) for Covidiots", 0, 10, 2.0, step=0.1),
+               sliderInput("R0_1", "Average number of infections from each infected person (R0) for Covidiots", 0, 10, 3.0, step=0.1),
                
                sliderInput(inputId = "R0_O_Y",
                            label = "Average number of infections passed between general population and Covidiots per infected person (Cross R0)",
@@ -60,8 +60,6 @@ ui <- fluidPage(
                             label = "Number of recovered (i.e. immune) people at start date",
                             value = 200000),
 
-               sliderInput("dead_shift", "Gap (days) between cases and deaths", 0, 50, 21, step = 1),
-
                numericInput(inputId = "pop",
                             label = "Population of Ireland",
                             value = 4900000),
@@ -84,8 +82,7 @@ ui <- fluidPage(
         )
       ),
       checkboxInput("log_scale", "Log scale?", value = FALSE),
-      checkboxInput("show_data", "Show data?", value = FALSE),
-      
+
             
                    ),
 
@@ -113,28 +110,8 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   start_date = reactive({
-    as.Date(Sys.time()) - input$dead_shift
+    as.Date(Sys.time())
   })
-  
-  # dataInput <- reactive({
-  #   # Load in latest data
-  #   latest = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv")
-  #   diff2 = function(x) return(c(NA, diff(x)))
-  #   data_use = latest %>% 
-  #     mutate(Date = as.Date(Date)) %>% 
-  #     select(Date, TotalCovidDeaths, Aged1, 
-  #            Aged1to4, Aged5to14, Aged15to24, Aged25to34, Aged35to44, 
-  #            Aged45to54, Aged55to64, Aged65up) %>% 
-  #     mutate(`Under 65s` = Aged1+ 
-  #              Aged1to4+ Aged5to14+ Aged15to24+ Aged25to34+ Aged35to44+ 
-  #              Aged45to54+ Aged55to64,
-  #            `Over 65s` = Aged65up,
-  #            `Total` = TotalCovidDeaths) %>% 
-  #     select(Date, `Under 65s`, `Over 65s`, `Total`) %>% 
-  #     mutate_if(is.numeric, diff2) %>% 
-  #     filter(Date >= start_date()) %>% 
-  #     pivot_longer(names_to = 'Age group', values_to = 'Value', -Date)
-  # })
 
   observeEvent(input$button, {
     shinyjs::toggle("exp")
@@ -142,7 +119,6 @@ server <- function(input, output) {
     shinyjs::toggle("inf")
     shinyjs::toggle("inf2")
     shinyjs::toggle("rec")
-    shinyjs::toggle("dead_shift")
     shinyjs::toggle("pop")
     shinyjs::toggle("num_sim")
   }, ignoreNULL = FALSE)
@@ -176,7 +152,7 @@ server <- function(input, output) {
                "YI" = 4, "YR" = 5, "OS" = 6,
                "OE" = 7, "OI" = 8, "OR" = 9)
     }
-    
+    browser()
     
     # Quick plot
     # plot(result$Time, result$YI, type = 'l')
@@ -200,15 +176,14 @@ server <- function(input, output) {
     YI_low = (apply(YI_padded, 1, 'quantile', 0.05))
     
     # Final data frame for YI
-    dead_shift = input$dead_shift # Gap between cases and deaths
-    dates = as.Date(Sys.time())+time_max - dead_shift # Start from 3 weeks ago
+    dates = as.Date(Sys.time())+time_max
     YI_final = tibble(Date = dates, 
                       `General popXXXInfected - Value` = YI_median,
                       `General popXXXInfected - low est` = YI_low,
                       `General popXXXInfected - high est` = YI_high,
-                      `General popXXXDead - Value` = c(rep(0, dead_shift), head(YI_median, -dead_shift)*input$dead_0/100),
-                      `General popXXXDead - low est` = c(rep(0, dead_shift), head(YI_low, -dead_shift)*input$dead_0/100),
-                      `General popXXXDead - high est` = c(rep(0, dead_shift), head(YI_high, -dead_shift)*input$dead_0/100))
+                      `General popXXXDead - Value` = YI_median*input$dead_0/100,
+                      `General popXXXDead - low est` = YI_low*input$dead_0/100,
+                      `General popXXXDead - high est` = YI_high*input$dead_0/100)
     
     # Now do the same thing for old infected
     OI_all = lapply(store, "[", "OI")
@@ -232,11 +207,10 @@ server <- function(input, output) {
                       `CovidiotsXXXInfected - Value` = OI_median,
                       `CovidiotsXXXInfected - low est` = OI_low,
                       `CovidiotsXXXInfected - high est` = OI_high,
-                      `CovidiotsXXXDead - Value` = c(rep(0, dead_shift), head(OI_median, -dead_shift)*input$dead_0/100),
-                      `CovidiotsXXXDead - low est` = c(rep(0, dead_shift), head(OI_low, -dead_shift)*input$dead_0/100),
-                      `CovidiotsXXXDead - high est` = c(rep(0, dead_shift), head(OI_high, -dead_shift)*input$dead_0/100),
-                      `TotalXXXDead - Value` = c(rep(0, dead_shift), head(OI_median, -dead_shift)*input$dead_0/100 + 
-                                                       head(YI_median, -dead_shift)*input$dead_0/100))
+                      `CovidiotsXXXDead - Value` = OI_median*input$dead_0/100,
+                      `CovidiotsXXXDead - low est` = OI_low*input$dead_0/100,
+                      `CovidiotsXXXDead - high est` = OI_high*input$dead_0/100,
+                      `TotalXXXDead - Value` = (OI_median + YI_median)*input$dead_0/100)
     
     # Tidy up into one data frame
     final = left_join(YI_final, OI_final, by = "Date") %>% 
@@ -269,18 +243,6 @@ server <- function(input, output) {
       # theme(axis.title.y = element_text(angle = 0, vjust = 1, hjust=0))
     if(input$log_scale) plt1 = plt1 + scale_y_log10(expand = c(0, 0), labels = comma)
     
-    if(input$show_data) {
-      df_use = tibble(
-        Date = dataInput()$Date,
-        `Group` = dataInput()$`Group`,
-        Value = dataInput()$Value
-      ) %>% 
-        mutate(Type = case_when(
-          `Group` == "Total" ~ "Dead",
-          TRUE ~ "Infected"
-        ))
-      plt1 = plt1 + geom_point(data = df_use, aes(y = Value))
-    }
     ggplotly(plt1)
     
   })
