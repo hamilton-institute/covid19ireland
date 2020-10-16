@@ -86,7 +86,7 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      navbarPage("Output:",
+      navbarPage("COVID-19 Over 65s Cocooning effect:",
                  # Output: HTML table with requested number of observations ----
                  tabPanel("Spread",
       fluidPage(
@@ -186,6 +186,7 @@ server <- function(input, output) {
                "YI" = 4, "YR" = 5, "OS" = 6,
                "OE" = 7, "OI" = 8, "OR" = 9)
     }
+    browser()
     
     # Quick plot
     # plot(store[[1]]$Time, store[[1]]$YI, type = 'l')

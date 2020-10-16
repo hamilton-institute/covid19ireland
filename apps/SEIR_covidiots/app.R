@@ -46,19 +46,19 @@ ui <- fluidPage(
               
                numericInput(inputId = "exp",
                             label = "Number of asymptomatic spreaders among general population at start date",
-                            value = 100),
+                            value = 3000),
 
                numericInput(inputId = "inf",
                             label = "Number of symptomatic spreaders among general population at start date",
-                            value = 100),
+                            value = 3000),
                
                numericInput(inputId = "exp2",
                             label = "Number of asymptomatic spreaders among Covidiots at start date",
-                            value = 200),
+                            value = 400),
                
                numericInput(inputId = "inf2",
                             label = "Number of symptomatic spreaders among Covidiots at start date",
-                            value = 200),
+                            value = 400),
                
                numericInput(inputId = "rec",
                             label = "Number of recovered (i.e. immune) people at start date",
@@ -77,7 +77,7 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      navbarPage("COVID-19 Over 65s Cocooning effect:",
+      navbarPage("COVID-19 Covidiots effect:",
                  # Output: HTML table with requested number of observations ----
                  tabPanel("Spread",
       fluidPage(
@@ -156,68 +156,67 @@ server <- function(input, output) {
                "YI" = 4, "YR" = 5, "OS" = 6,
                "OE" = 7, "OI" = 8, "OR" = 9)
     }
-    browser()
     
     # Quick plot
     # plot(result$Time, result$YI, type = 'l')
     # lines(result$Time, result$OI, col = 'red')
     
     # Extract out the infections and quantiles for each group
-    YI_all = lapply(store, "[", "YI")
+    YR_all = lapply(store, "[", "YR")
     
     # Add 0s to each vector to make them the same length
-    nrows = lapply(YI_all, 'nrow') %>% unlist
+    nrows = lapply(YR_all, 'nrow') %>% unlist
     max_row = max(nrows)
     time_max = store[[which.max(nrows)]]$Time
-    YI_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
-    for(i in 1:length(YI_all)) {
-      YI_padded[,i] = c(YI_all[[i]][,1], rep(0, max_row - nrows[i]))
+    YR_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    for(i in 1:length(YR_all)) {
+      YR_padded[,i] = c(diff3(YR_all[[i]][,1]), rep(0, max_row - nrows[i]))
     }
     
     # Now calculate medians and 90% CI
-    YI_median = (apply(YI_padded, 1, 'quantile', 0.5))
-    YI_high = (apply(YI_padded, 1, 'quantile', 0.95))
-    YI_low = (apply(YI_padded, 1, 'quantile', 0.05))
+    YR_median = (apply(YR_padded, 1, 'quantile', 0.5))
+    YR_high = (apply(YR_padded, 1, 'quantile', 0.95))
+    YR_low = (apply(YR_padded, 1, 'quantile', 0.05))
     
-    # Final data frame for YI
+    # Final data frame for YR
     dates = as.Date(Sys.time())+time_max
-    YI_final = tibble(Date = dates, 
-                      `General popXXXInfected - Value` = YI_median,
-                      `General popXXXInfected - low est` = YI_low,
-                      `General popXXXInfected - high est` = YI_high,
-                      `General popXXXDead - Value` = YI_median*input$dead_0/100,
-                      `General popXXXDead - low est` = YI_low*input$dead_0/100,
-                      `General popXXXDead - high est` = YI_high*input$dead_0/100)
+    YR_final = tibble(Date = dates, 
+                      `General popXXXInfected - Value` = YR_median,
+                      `General popXXXInfected - low est` = YR_low,
+                      `General popXXXInfected - high est` = YR_high,
+                      `General popXXXDead - Value` = YR_median*input$dead_0/100,
+                      `General popXXXDead - low est` = YR_low*input$dead_0/100,
+                      `General popXXXDead - high est` = YR_high*input$dead_0/100)
     
     # Now do the same thing for old infected
-    OI_all = lapply(store, "[", "OI")
+    OR_all = lapply(store, "[", "OR")
     
     # Add 0s to each vector to make them the same length
-    nrows = lapply(OI_all, 'nrow') %>% unlist
+    nrows = lapply(OR_all, 'nrow') %>% unlist
     max_row = max(nrows)
     time_max = store[[which.max(nrows)]]$Time
-    OI_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
-    for(i in 1:length(OI_all)) {
-      OI_padded[,i] = c(OI_all[[i]][,1], rep(0, max_row - nrows[i]))
+    OR_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    for(i in 1:length(OR_all)) {
+      OR_padded[,i] = c(diff3(OR_all[[i]][,1]), rep(0, max_row - nrows[i]))
     }
     
     # Now calculate medians and 90% CI
-    OI_median = (apply(OI_padded, 1, 'quantile', 0.5))
-    OI_high = (apply(OI_padded, 1, 'quantile', 0.95))
-    OI_low = (apply(OI_padded, 1, 'quantile', 0.05))
+    OR_median = (apply(OR_padded, 1, 'quantile', 0.5))
+    OR_high = (apply(OR_padded, 1, 'quantile', 0.95))
+    OR_low = (apply(OR_padded, 1, 'quantile', 0.05))
     
-    # Final data frame for OI
-    OI_final = tibble(Date = dates, 
-                      `CovidiotsXXXInfected - Value` = OI_median,
-                      `CovidiotsXXXInfected - low est` = OI_low,
-                      `CovidiotsXXXInfected - high est` = OI_high,
-                      `CovidiotsXXXDead - Value` = OI_median*input$dead_0/100,
-                      `CovidiotsXXXDead - low est` = OI_low*input$dead_0/100,
-                      `CovidiotsXXXDead - high est` = OI_high*input$dead_0/100,
-                      `TotalXXXDead - Value` = (OI_median + YI_median)*input$dead_0/100)
+    # Final data frame for OR
+    OR_final = tibble(Date = dates, 
+                      `CovidiotsXXXInfected - Value` = OR_median,
+                      `CovidiotsXXXInfected - low est` = OR_low,
+                      `CovidiotsXXXInfected - high est` = OR_high,
+                      `CovidiotsXXXDead - Value` = OR_median*input$dead_0/100,
+                      `CovidiotsXXXDead - low est` = OR_low*input$dead_0/100,
+                      `CovidiotsXXXDead - high est` = OR_high*input$dead_0/100,
+                      `TotalXXXDead - Value` = (OR_median + YR_median)*input$dead_0/100)
     
     # Tidy up into one data frame
-    final = left_join(YI_final, OI_final, by = "Date") %>% 
+    final = left_join(YR_final, OR_final, by = "Date") %>% 
       pivot_longer(names_to = 'Type', values_to = 'Count', -Date)
     final_twocols = as.matrix(str_split(final$Type, 'XXX', simplify = TRUE))    
     final$`Group` = final_twocols[,1]

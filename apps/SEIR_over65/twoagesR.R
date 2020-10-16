@@ -26,3 +26,6 @@ twoages <- function(YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O) {
 # plot(result2[[1]], result2[[4]], type = 'l')
 # lines(result2[[1]], result2[[8]], col = 'red')
 
+# Now try running it with differing values
+# result1 = twoages(4000000, 250, 2000000, 100000, 900000, 50, 50, 100000, 8, 0.3, 0.3, 0.6)
+# str(as.data.frame(result1))
