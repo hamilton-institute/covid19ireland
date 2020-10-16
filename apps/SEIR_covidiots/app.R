@@ -15,6 +15,10 @@ library(plotly)
 library(shinycssloaders)
 library(shinyjs)
 
+
+diff2 = function(x) return(c(NA, diff(x)))
+diff3 = function(x) return(c(0, diff(x)))
+
 ui <- fluidPage(
   
   sidebarLayout(
@@ -73,7 +77,7 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      navbarPage("Output:",
+      navbarPage("COVID-19 Over 65s Cocooning effect:",
                  # Output: HTML table with requested number of observations ----
                  tabPanel("Spread",
       fluidPage(
