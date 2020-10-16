@@ -61,20 +61,20 @@ SEXP twoages(SEXP YS, SEXP YE, SEXP YI, SEXP YR, SEXP OS, SEXP OE, SEXP OI, SEXP
 	/* by default, assign initial Exposed and Infectious people in the E_1 and I_1, respectively */
 	struct subcompartments SYS_Y, SYS_O;
 	SYS_Y.S = Y.S;
-	SYS_Y.E[0] = Y.E;
+	SYS_Y.E[0] = Y.E/E_length + Y.E%E_length;
 	for (int j = 1; j < E_length; j++)
-		SYS_Y.E[j] = 0;
-	SYS_Y.I[0] = Y.I;
+		SYS_Y.E[j] = Y.E/E_length;
+	SYS_Y.I[0] = Y.I/I_length + Y.I%I_length;
 	for (int j = 1; j < I_length; j++)
-		SYS_Y.I[j] = 0;
+		SYS_Y.I[j] = Y.I/I_length;
 	SYS_Y.R = Y.R;
 	SYS_O.S = O.S;
-	SYS_O.E[0] = O.E;
+	SYS_O.E[0] = O.E/E_length + O.E%E_length;
 	for (int j = 1; j < E_length; j++)
-		SYS_O.E[j] = 0;
-	SYS_O.I[0] = O.I;
+		SYS_O.E[j] = O.E/E_length;
+	SYS_O.I[0] = O.I/I_length + O.I%I_length;
 	for (int j = 1; j < I_length; j++)
-		SYS_O.I[j] = 0;
+		SYS_O.I[j] = O.I/I_length;
 	SYS_O.R = O.R;
 
 	/* Epidemic model setup: parameters */
