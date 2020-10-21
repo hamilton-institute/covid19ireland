@@ -1,0 +1,12 @@
+name: R_est_country
+title: R_est_country
+username:
+account: apmuhamilton
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3039552
+bundleId: 3753286
+url: https://apmuhamilton.shinyapps.io/R_est_country/
+when: 1602973579.99006
+asMultiple: FALSE
+asStatic: FALSE

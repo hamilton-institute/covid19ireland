@@ -1,0 +1,55 @@
+
+  model {
+    for(country in 1:Ncountry) {
+    #-------------------------------------------------------------------
+    # time t = 1
+    #-------------------------------------------------------------------
+      Y_pred[country,1] <- Y[country,1]
+      ar[country, 1] ~ dnorm(0, tau_ar)
+    #-------------------------------------------------------------------
+    # time t = 2:T
+    #-------------------------------------------------------------------
+      for(t in 2:N[country]) {
+        Y[country,t] ~ dnegbin(p[country,t], r)
+        Y_pred[country,t] ~ dnegbin(p[country,t], r)
+        p[country,t] <- r/(r + mu[country,t])
+        mu[country,t] <- exp(ar[country,t] + Omega[country, t])
+        ar[country, t] ~ dnorm(phi[country, t] * ar[country, t-1], tau_ar)
+        phi[country,t] <- b[country,1] +
+                          b[country,2] * Time[1,t] +
+                          b[country,3] * Time[2,t]
+        Omega[country,t] <- lambda[country,t] * omega[country,t]
+        lambda[country,t] ~ dbern(pi)
+        omega[country,t] ~ dnorm(0, tau_omega)
+      }
+    #-------------------------------------------------------------------
+    # forecast
+    #-------------------------------------------------------------------
+      for(j in 1:n_ahead){
+        Y_forecast[country,j] <- Y_pred[country,
+                                        N[country] - n_ahead + j]
+      }
+
+    #-------------------------------------------------------------------
+    # priors for random effects
+    #-------------------------------------------------------------------
+      for(i in 1:3) {
+        b[country,i] ~ dnorm(beta[i], tau_b[i])
+      }
+    }
+    #-------------------------------------------------------------------
+    # priors
+    #-------------------------------------------------------------------
+    r ~ dgamma(0.001, 0.001)
+    psi <- pow(r, -1)
+    for(i in 1:3) {
+      tau_b[i] ~ dgamma(0.001, 0.001)
+      sd_b[i] <- pow(tau_b[i], -1/2)
+    }
+    beta[1:3] ~ dmnorm(mu_beta[1:3], tau_beta[1:3,1:3])
+    tau_ar ~ dgamma(0.001, 0.001)
+    sd_ar <- pow(tau_ar, -1/2)
+    tau_omega ~ dgamma(0.001, 0.001)
+    sd_omega <- pow(tau_omega, -1/2)
+    pi ~ dunif(0, 1)
+  }

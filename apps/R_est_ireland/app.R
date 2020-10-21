@@ -1,4 +1,4 @@
-# Estimate R0 app for each county individually
+# Estimate R0 app - for entire country using Catherine's layout
 
 rm(list = ls(all = TRUE))
 library(R0)
@@ -8,6 +8,8 @@ library(shinyjs)
 library(shinyWidgets)
 library(shinycssloaders)
 library(plotly)
+library(gridExtra)
+library(geofacet)
 
 latest = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d7748b5b7c09450b8aede63_0.csv',
                   stringsAsFactors = FALSE) %>%
@@ -42,19 +44,12 @@ ui <- fluidPage(
                               format = "dd/mm/yyyy",
                               separator = " - "),
                
-               pickerInput("sel_cty",
-                           "Select county", 
-                           choices = unique(latest$CountyName),
-                           selected = c('Dublin'),
-                           options = list(`actions-box` = TRUE,
-                                          `live-search` = TRUE),
-                           multiple = FALSE),
                actionButton(inputId = "button", label = "show extra options"),
               
                pickerInput("R_method",
                            "Method for computing R", 
                            choices = c("EG", "ML", "TD", "AR"),
-                           selected = c('ML'),
+                           selected = c('EG'),
                            multiple = FALSE),
                
                pickerInput("GD_dist",
@@ -85,7 +80,7 @@ ui <- fluidPage(
                  tabPanel("Estimation",
                           fluidPage(
                             fluidRow(
-                              plotlyOutput("R_estim") %>% withSpinner(color="#1E90FF"),
+                              plotlyOutput("R_estim", height = 1000) %>% withSpinner(color="#1E90FF"),
                             )
                           ),
                           
@@ -124,13 +119,34 @@ server <- function(input, output) {
   }, ignoreNULL = FALSE)
 
   output$R_estim <- renderPlotly({
+
+    g = matrix(NA, nrow = 7, ncol = 4)
+    
+    g[1,] = c("Kerry","Cork", "Waterford","Wexford")
+    g[2,] = c("Limerick","Tipperary", "Kilkenny","Carlow")
+    g[3,] = c("Clare","Offaly", "Laois","Wicklow")
+    g[4,] = c("Galway","Westmeath", "Kildare","Dublin")
+    g[5,] = c("Mayo","Roscommon","Longford", "Meath")
+    g[6,] = c("Sligo","Leitrim", "Cavan", "Louth")
+    g[7,] = c("Donegal",NA, "Monaghan",NA)
+    
+    g[1:7,] = g[7:1,]
+    g[1,2] = "All"
+    ire_grid = data.frame(name = as.vector(g),
+                          row = as.vector(row(g)),
+                          col = as.vector(col(g)))
+    ire_grid$name = as.character(ire_grid$name)
+    ire_grid$code = ire_grid$name
+    ire_grid = ire_grid[!is.na(ire_grid$name),]
+    ire_grid = ire_grid[-8,]
     
     # Get the data
     data_use = latest %>% 
-      filter(CountyName == input$sel_cty) %>% 
+      group_by(CountyName) %>% 
       mutate(cum_cases = ConfirmedCovidCases,
-             cases = c(cum_cases[1], diff(cum_cases))) %>% 
-      dplyr::select(Date, cases, PopulationCensus16) %>% 
+             cases = c(cum_cases[1], pmax(0, diff(cum_cases)))) %>% # NOTE: removing wrong neg values
+      ungroup() %>% 
+      dplyr::select(Date, cases, CountyName, PopulationCensus16) %>% 
       filter(Date >= input$date_range[1], Date <= input$date_range[2]) %>% 
       na.omit()
     
@@ -138,52 +154,46 @@ server <- function(input, output) {
     GT = generation.time(input$GD_dist, c(input$GT_mean, input$GT_sd))
     
     # Now get R0
-    estR0 = try(estimate.R(epid = data_use$cases, 
-                           GT = GT, 
-                           methods = input$R_method, 
-                           pop.size = data_use$PopulationCensus16[1], 
-                           nsim = input$num_sim), silent = TRUE)
+    counties = unique(data_use$CountyName)
+    n_counties = length(counties)
+    estR0 = vector('list', length = n_counties)
+    data_use$CountyName2 = data_use$CountyName
+    for(i in 1:n_counties) {
+      curr_data = data_use %>% filter(CountyName == counties[i])
+      estR0[[i]] = try(estimate.R(epid = curr_data$cases, 
+                                  GT = GT, 
+                                  methods = input$R_method, 
+                                  pop.size = curr_data$PopulationCensus16[1], 
+                                  nsim = input$num_sim), silent = TRUE)
+      if(class(estR0[[i]]) != 'try-error') {
+        # new_county_name = paste0(counties[i],"; R = ", 
+        #                         signif(estR0[[i]]$estimates[[input$R_method]]$R, 3),
+        #                         "\n(95% CI: ", 
+        #                         signif(estR0[[i]]$estimates[[input$R_method]]$conf.int[1], 3),', ',
+        #                         signif(estR0[[i]]$estimates[[input$R_method]]$conf.int[2], 3), ')')
+        new_county_name = paste0(counties[i],"; R = ",
+                                signif(estR0[[i]]$estimates[[input$R_method]]$R, 3))
+      } else {
+        new_county_name = paste0(counties[i],"; R0 not estimated")
+      }
+      data_use$CountyName2[data_use$CountyName == counties[i]] = new_county_name
+      ire_grid$name[ire_grid$name == counties[i]] = new_county_name
+      ire_grid$code[ire_grid$code == counties[i]] = new_county_name
+    }
     
-    
+    # Put the R values into the county titles
     p = ggplot(data = data_use, aes(x = Date, y = cases)) + 
       geom_point() + 
+      facet_geo(~ CountyName2, grid = ire_grid, scales = "free_y") +
       labs(x = 'Date',
            y = 'Cases',
-           title = paste('Cases in',input$sel_cty, 'from', 
-                         format(input$date_range[1], '%d-%b%-%y'), 'to',
-                         format(input$date_range[2], '%d-%b%-%y'))) + 
+           title = paste('Cases from', 
+                         format(input$date_range[1], '%d-%b%-%Y'), 'to',
+                         format(input$date_range[2], '%d-%b%-%Y'))) + 
       theme_bw() + 
       geom_smooth(se = FALSE)
     
-    ggp <- ggplot_build(p)
-    yrange = ggp$layout$panel_params[[1]]$y.range
-    xrange = ggp$layout$panel_params[[1]]$x.range
-    
-    
-    
-    # Add the annotation
-    a <- list(
-      x = ggp$layout$panel_scales_x[[1]]$range$range[1],
-      y = ggp$layout$panel_scales_y[[1]]$range$range[2],
-      xref = "x",
-      yref = "y",
-      xanchor = 'left',
-      showarrow = FALSE,
-      font = list(size = 20)
-    )
-    
-    # shiny::validate(
-    #   shiny::need(class(estR0) != "try-error", "Case values or date range not appropriate for R0 estimation using this method.")
-    # )
-    if(class(estR0) == "try-error") {
-      a$text = "R0 not estimated (bad case values or date range)"
-      a$font = list(size = 14)
-    } else {
-      a$text = paste0("R = ", signif(estR0$estimates[[input$R_method]]$R, 3),
-                    " (95% CI: ", signif(estR0$estimates[[input$R_method]]$conf.int[1], 3),', ',
-                    signif(estR0$estimates[[input$R_method]]$conf.int[2], 3), ')')
-    }
-    ggplotly(p) %>% layout(annotations = a)  
+    ggplotly(p)
     
   })
   

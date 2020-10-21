@@ -1,0 +1,12 @@
+name: R_est_ireland
+title: R_est_ireland
+username:
+account: apmuhamilton
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3039875
+bundleId: 3753346
+url: https://apmuhamilton.shinyapps.io/R_est_ireland/
+when: 1602976394.4686
+asMultiple: FALSE
+asStatic: FALSE

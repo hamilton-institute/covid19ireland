@@ -138,8 +138,8 @@ server <- function(input, output) {
       labs(x = 'Date',
            y = 'Cases',
            title = paste('Cases in',input$sel_cty, 'from', 
-                         format(input$date_range[1], '%d-%b%-%Y'), 'to',
-                         format(input$date_range[2], '%d-%b%-%Y'))) + 
+                         format(input$date_range[1], '%d-%b%-%y'), 'to',
+                         format(input$date_range[2], '%d-%b%-%y'))) + 
       theme_bw() + 
       geom_smooth(se = FALSE)
     
