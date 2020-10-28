@@ -59,7 +59,10 @@ SEXP twoages(SEXP YS, SEXP YE, SEXP YI, SEXP YR, SEXP OS, SEXP OE, SEXP OI, SEXP
 		initialised = 1;
 	}
 
-	/* by default, assign initial Exposed and Infectious people in the E_1 and I_1, respectively */
+	/*
+	 * by default, assign initial Exposed and Infectious people
+	 * roughly evenly over E_i and I_i, respectively
+	 */
 	struct subcompartments SYS_Y, SYS_O;
 	SYS_Y.S = Y.S;
 	SYS_Y.E[0] = Y.E/E_length + Y.E%E_length;
@@ -265,7 +268,7 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 				    ((beta[0][0][0] * Ytmp[i].E +
 				      beta[1][0][0] * Ytmp[i].I) / total_Y +
 				     (beta[0][1][0] * Otmp[i].E +
-				     beta[1][1][0] * Otmp[i].I) / total_O)
+				      beta[1][1][0] * Otmp[i].I) / total_O)
 				);
 			if (Ytmp[i].S >= N_infected)
 				Ytotal_infected = N_infected;
@@ -275,9 +278,9 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 			/* Now figure out O group infections */
 			N_infected = poisson(dt * Otmp[i].S *
 				    ((beta[0][0][1] * Ytmp[i].E +
-				     beta[1][0][1] * Ytmp[i].I) / total_Y +
+				      beta[1][0][1] * Ytmp[i].I) / total_Y +
 				     (beta[0][1][1] * Otmp[i].E +
-				     beta[1][1][1] * Otmp[i].I) / total_O)
+				      beta[1][1][1] * Otmp[i].I) / total_O)
 				);
 			if (Otmp[i].S >= N_infected)
 				Ototal_infected = N_infected;
