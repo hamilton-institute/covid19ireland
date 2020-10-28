@@ -307,8 +307,11 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 			Otmp_calc.I[j] += OImovers[j-1] - OImovers[j];
 		Otmp_calc.R += OImovers[I_length-1];
 		
-		/* Vaccinate becomes effective for some people in S. */
-		if (i < Yvl) {
+		/*
+		 * Vaccinate becomes effective for some people in S.
+		 * We have seperate vaccine numbers for Y and O.
+		 */
+		if (i < Yvl) { /* There is vaccinations still on list */
 			if (Ytmp_calc.S >= Yv[i]) {
 				Ytmp_calc.S -= Yv[i];
 				Ytmp_calc.R += Yv[i];;
@@ -318,7 +321,7 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 			}
 		}
 
-		if (i < Ovl) {
+		if (i < Ovl) { /* There is vaccinations still on list */
 			if (Otmp_calc.S >= Ov[i]) {
 				Otmp_calc.S -= Ov[i];
 				Otmp_calc.R += Ov[i];;
