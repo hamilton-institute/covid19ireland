@@ -20,7 +20,7 @@ latest = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d774
 
 old_irish_county_data = readRDS('latest_irish_county_data.rds')
 if(nrow(latest) > nrow(old_irish_county_data)) {
-  saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')  
+  saveRDS(latest, file = 'latest_irish_county_data.rds')  
 } else {
   latest = readRDS(file = 'latest_irish_county_data.rds')
 }
@@ -159,18 +159,16 @@ server <- function(input, output) {
     estR0 = vector('list', length = n_counties)
     data_use$CountyName2 = data_use$CountyName
     for(i in 1:n_counties) {
-      curr_data = data_use %>% filter(CountyName == counties[i])
+      #browser()
+      curr_data = data_use %>% filter(CountyName == counties[i],
+                                      Date >= as.Date(input$date_range[1]), 
+                                      Date <= as.Date(input$date_range[2]))
       estR0[[i]] = try(estimate.R(epid = curr_data$cases, 
                                   GT = GT, 
                                   methods = input$R_method, 
                                   pop.size = curr_data$PopulationCensus16[1], 
                                   nsim = input$num_sim), silent = TRUE)
       if(class(estR0[[i]]) != 'try-error') {
-        # new_county_name = paste0(counties[i],"; R = ", 
-        #                         signif(estR0[[i]]$estimates[[input$R_method]]$R, 3),
-        #                         "\n(95% CI: ", 
-        #                         signif(estR0[[i]]$estimates[[input$R_method]]$conf.int[1], 3),', ',
-        #                         signif(estR0[[i]]$estimates[[input$R_method]]$conf.int[2], 3), ')')
         new_county_name = paste0(counties[i],"; R = ",
                                 signif(estR0[[i]]$estimates[[input$R_method]]$R, 3))
       } else {
@@ -188,8 +186,8 @@ server <- function(input, output) {
       labs(x = 'Date',
            y = 'Cases',
            title = paste('Cases from', 
-                         format(input$date_range[1], '%d-%b%-%Y'), 'to',
-                         format(input$date_range[2], '%d-%b%-%Y'))) + 
+                         format(input$date_range[1], '%d-%b'), 'to',
+                         format(input$date_range[2], '%d-%b'))) + 
       theme_bw() + 
       geom_smooth(se = FALSE)
     

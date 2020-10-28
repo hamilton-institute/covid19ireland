@@ -8,6 +8,7 @@ library(shinyjs)
 library(shinyWidgets)
 library(shinycssloaders)
 library(plotly)
+library(lubridate)
 
 latest = download_merged_data(silent = TRUE, cached = TRUE)
 
@@ -138,8 +139,8 @@ server <- function(input, output) {
       labs(x = 'Date',
            y = 'Cases',
            title = paste('Cases in',input$sel_cty, 'from', 
-                         format(input$date_range[1], '%d-%b%-%y'), 'to',
-                         format(input$date_range[2], '%d-%b%-%y'))) + 
+                         format(input$date_range[1], '%d-%b'), 'to',
+                         format(input$date_range[2], '%d-%b'))) + 
       theme_bw() + 
       geom_smooth(se = FALSE)
     
