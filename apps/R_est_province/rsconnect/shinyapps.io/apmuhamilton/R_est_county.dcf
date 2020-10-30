@@ -1,0 +1,12 @@
+name: R_est_county
+title: R_est_county
+username:
+account: apmuhamilton
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3039296
+bundleId: 3752967
+url: https://apmuhamilton.shinyapps.io/R_est_county/
+when: 1602963920.75974
+asMultiple: FALSE
+asStatic: FALSE
