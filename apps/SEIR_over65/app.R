@@ -16,7 +16,24 @@ library(shinycssloaders)
 library(shinyjs)
 
 diff2 = function(x) return(c(NA, diff(x)))
-diff3 = function(x) return(c(0, diff(x)))
+diff3 = function(x) return(c(diff(x), 0))
+
+# Get initial values for boxes
+latest = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv")
+data_use = latest %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  select(Date, TotalCovidDeaths, Aged1, 
+         Aged1to4, Aged5to14, Aged15to24, Aged25to34, Aged35to44, 
+         Aged45to54, Aged55to64, Aged65up) %>% 
+  mutate(`Under 65s` = Aged1+ 
+           Aged1to4+ Aged5to14+ Aged15to24+ Aged25to34+ Aged35to44+ 
+           Aged45to54+ Aged55to64,
+         `Over 65s` = Aged65up,
+         `Total` = TotalCovidDeaths) %>% 
+  select(Date, `Under 65s`, `Over 65s`, `Total`) %>% 
+  mutate_if(is.numeric, diff2) %>% 
+  filter(Date >= as.Date(Sys.time()) - 21) %>% 
+  pivot_longer(names_to = 'Age group', values_to = 'Value', -Date)
 
 ui <- fluidPage(
   
@@ -45,19 +62,19 @@ ui <- fluidPage(
               
                numericInput(inputId = "exp",
                             label = "Number of asymptomatic spreaders under 65 at start date",
-                            value = 3000),
+                            value = 10*data_use %>% filter(`Age group` == 'Under 65s') %>% select(Value) %>% pull %>% mean %>% round),
 
                numericInput(inputId = "inf",
                             label = "Number of symptomatic spreaders under 65 at start date",
-                            value = 3000),
+                            value = 10*data_use %>% filter(`Age group` == 'Under 65s') %>% select(Value) %>% pull %>% mean %>% round),
                
                numericInput(inputId = "exp2",
                             label = "Number of asymptomatic spreaders over 65 at start date",
-                            value = 400),
+                            value = 10*data_use %>% filter(`Age group` == 'Over 65s') %>% select(Value) %>% pull %>% mean %>% round),
                
                numericInput(inputId = "inf2",
                             label = "Number of symptomatic spreaders over 65 at start date",
-                            value = 400),
+                            value = 10*data_use %>% filter(`Age group` == 'Over 65s') %>% select(Value) %>% pull %>% mean %>% round),
                
                numericInput(inputId = "rec",
                             label = "Number of recovered (i.e. immune) people under 65 at start date",
@@ -86,7 +103,7 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      navbarPage("COVID-19 Over 65s Cocooning effect:",
+      navbarPage("COVID-19 Over 65s Shielding Effect:",
                  # Output: HTML table with requested number of observations ----
                  tabPanel("Spread",
       fluidPage(
@@ -128,8 +145,6 @@ server <- function(input, output) {
   })
   
   dataInput <- reactive({
-    # Load in latest data
-    latest = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv")
     data_use = latest %>% 
       mutate(Date = as.Date(Date)) %>% 
       select(Date, TotalCovidDeaths, Aged1, 
@@ -186,8 +201,7 @@ server <- function(input, output) {
                "YI" = 4, "YR" = 5, "OS" = 6,
                "OE" = 7, "OI" = 8, "OR" = 9)
     }
-    browser()
-    
+
     # Quick plot
     # plot(store[[1]]$Time, store[[1]]$YI, type = 'l')
     # lines(store[[1]]$Time, store[[1]]$OI, col = 'red')
@@ -274,7 +288,7 @@ server <- function(input, output) {
       geom_line(aes(y = `Value`)) +
       #geom_ribbon(aes(ymin = `low est`, ymax = `high est`, fill = `Age group`), alpha = 0.1) +
       labs(x = "Date", title = "Infected/dead per day", y = NULL) +
-      scale_x_date(date_breaks = "4 weeks", date_labels = "%d-%b") + 
+      scale_x_date(date_labels = "%d-%b") + 
       scale_y_continuous(expand = c(0, 0), labels = comma) +
       theme_bw() + 
       facet_wrap(~ Type , nrow = 2, scales = 'free_y')
