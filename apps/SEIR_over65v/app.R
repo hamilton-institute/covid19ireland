@@ -18,23 +18,6 @@ library(shinyjs)
 diff2 = function(x) return(c(NA, diff(x)))
 diff3 = function(x) return(c(diff(x), 0))
 
-# Get initial values for boxes
-latest = read.csv("https://opendata.arcgis.com/datasets/d8eb52d56273413b84b0187a4e9117be_0.csv")
-data_use = latest %>% 
-  mutate(Date = as.Date(Date)) %>% 
-  select(Date, TotalCovidDeaths, Aged1, 
-         Aged1to4, Aged5to14, Aged15to24, Aged25to34, Aged35to44, 
-         Aged45to54, Aged55to64, Aged65up) %>% 
-  mutate(`Under 65s` = Aged1+ 
-           Aged1to4+ Aged5to14+ Aged15to24+ Aged25to34+ Aged35to44+ 
-           Aged45to54+ Aged55to64,
-         `Over 65s` = Aged65up,
-         `Total` = TotalCovidDeaths) %>% 
-  select(Date, `Under 65s`, `Over 65s`, `Total`) %>% 
-  mutate_if(is.numeric, diff2) %>% 
-  filter(Date >= as.Date(Sys.time()) - 21) %>% 
-  pivot_longer(names_to = 'Age group', values_to = 'Value', -Date)
-
 ui <- fluidPage(
   
   sidebarLayout(
@@ -58,23 +41,27 @@ ui <- fluidPage(
                
                sliderInput("dead_1", "Case fatality rate (%) for over 65s", 0, 20, 10, step = 0.1),
                
+               sliderInput("vacc_Y", "Daily number of vaccinations for under 65s", 0, 50000, 2000, step = 100),
+               
+               sliderInput("vacc_O", "Daily number of vaccinations for over 65s", 0, 50000, 18000, step = 100),
+               
                actionButton(inputId = "button", label = "show extra options"),
               
                numericInput(inputId = "exp",
                             label = "Number of asymptomatic spreaders under 65 at start date",
-                            value = 10*data_use %>% filter(`Age group` == 'Under 65s') %>% select(Value) %>% pull %>% mean %>% round),
+                            value = 2000),
 
                numericInput(inputId = "inf",
                             label = "Number of symptomatic spreaders under 65 at start date",
-                            value = 10*data_use %>% filter(`Age group` == 'Under 65s') %>% select(Value) %>% pull %>% mean %>% round),
+                            value = 2000),
                
                numericInput(inputId = "exp2",
                             label = "Number of asymptomatic spreaders over 65 at start date",
-                            value = 10*data_use %>% filter(`Age group` == 'Over 65s') %>% select(Value) %>% pull %>% mean %>% round),
+                            value = 200),
                
                numericInput(inputId = "inf2",
                             label = "Number of symptomatic spreaders over 65 at start date",
-                            value = 10*data_use %>% filter(`Age group` == 'Over 65s') %>% select(Value) %>% pull %>% mean %>% round),
+                            value = 200),
                
                numericInput(inputId = "rec",
                             label = "Number of recovered (i.e. immune) people under 65 at start date",
@@ -103,7 +90,7 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      navbarPage("COVID-19 Over 65s Shielding Effect:",
+      navbarPage("COVID-19 Vaccination Planning:",
                  # Output: HTML table with requested number of observations ----
                  tabPanel("Spread",
       fluidPage(
@@ -140,27 +127,6 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  start_date = reactive({
-    as.Date(Sys.time()) - input$dead_shift
-  })
-  
-  dataInput <- reactive({
-    data_use = latest %>% 
-      mutate(Date = as.Date(Date)) %>% 
-      select(Date, TotalCovidDeaths, Aged1, 
-             Aged1to4, Aged5to14, Aged15to24, Aged25to34, Aged35to44, 
-             Aged45to54, Aged55to64, Aged65up) %>% 
-      mutate(`Under 65s` = Aged1+ 
-               Aged1to4+ Aged5to14+ Aged15to24+ Aged25to34+ Aged35to44+ 
-               Aged45to54+ Aged55to64,
-             `Over 65s` = Aged65up,
-             `Total` = TotalCovidDeaths) %>% 
-      select(Date, `Under 65s`, `Over 65s`, `Total`) %>% 
-      mutate_if(is.numeric, diff2) %>% 
-      filter(Date >= start_date()) %>% 
-      pivot_longer(names_to = 'Age group', values_to = 'Value', -Date)
-  })
-
   observeEvent(input$button, {
     shinyjs::toggle("exp")
     shinyjs::toggle("exp2")
@@ -184,7 +150,7 @@ server <- function(input, output) {
     num_sim = input$num_sim
     store = vector('list', num_sim)
     for (i in 1:num_sim) {
-      store[[i]] = twoages(YS = input$pop_under_65, # Under 65s susceptible
+      store[[i]] = twoagesv(YS = input$pop_under_65, # Under 65s susceptible
                            YE = input$exp,
                            YI = input$inf,
                            YR = input$rec,
@@ -195,7 +161,9 @@ server <- function(input, output) {
                            YR0Y = input$R0,
                            YR0O = input$R0_O_Y,
                            OR0Y = input$R0_O_Y,
-                           OR0O = input$R0_1) %>% 
+                           OR0O = input$R0_1,
+                           Yvac = rep(input$vacc_Y, 1000), 
+                           Ovac = rep(input$vacc_O, 1000)) %>% 
         as.data.frame %>% 
         rename("Time" = 1, "YS" = 2,"YE" = 3,
                "YI" = 4, "YR" = 5, "OS" = 6,
@@ -218,7 +186,8 @@ server <- function(input, output) {
     time_max = store[[which.max(nrows)]]$Time
     YR_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
     for(i in 1:length(YR_all)) {
-      YR_padded[,i] = c(diff3(YR_all[[i]][,1]), rep(0, max_row - nrows[i]))
+      #YR_padded[,i] = c(diff3(YR_all[[i]][,1]), rep(0, max_row - nrows[i]))
+      YR_padded[,i] = c(YR_all[[i]][,1], rep(0, max_row - nrows[i]))
     }
     
     # Now calculate medians and 90% CI
@@ -228,7 +197,7 @@ server <- function(input, output) {
     
     # Final data frame for YR
     dead_shift = input$dead_shift # Gap between cases and deaths
-    dates = as.Date(Sys.time())+time_max - dead_shift # Start from 3 weeks ago
+    dates = as.Date("2021-01-01") + time_max #- dead_shift # Start from 3 weeks ago
     YR_final = tibble(Date = dates, 
                       `Under 65sXXXInfected - Value` = YR_median,
                       `Under 65sXXXInfected - low est` = YR_low,
@@ -245,8 +214,10 @@ server <- function(input, output) {
     max_row = max(nrows)
     time_max = store[[which.max(nrows)]]$Time
     OR_padded = matrix(NA, ncol = num_sim, nrow = length(time_max))
+    browser()
     for(i in 1:length(OR_all)) {
-      OR_padded[,i] = c(diff3(OR_all[[i]][,1]), rep(0, max_row - nrows[i]))
+      #OR_padded[,i] = c(diff3(OR_all[[i]][,1]) - input$vacc_O, rep(0, max_row - nrows[i]))
+      OR_padded[,i] = c(OR_all[[i]][,1], rep(0, max_row - nrows[i]))
     }
     
     # Now calculate medians and 90% CI
@@ -264,6 +235,7 @@ server <- function(input, output) {
                       `Over 65sXXXDead - high est` = c(rep(0, dead_shift), head(OR_high, -dead_shift)*input$dead_1/100),
                       `TotalXXXDead - Value` = c(rep(0, dead_shift), head(OR_median, -dead_shift)*input$dead_1/100 + 
                                                        head(YR_median, -dead_shift)*input$dead_0/100))
+    # Tidy up into one data frame
     # Tidy up into one data frame
     final = left_join(YR_final, OR_final, by = "Date") %>% 
       pivot_longer(names_to = 'Type', values_to = 'Count', -Date)
@@ -283,7 +255,6 @@ server <- function(input, output) {
     
     # This caused a load of pain but replaced three of the above lines  
     #   tidyr::separate(Type, c("Age group", "Type"), sep = "XXX") %>% 
-    
     plt1 = ggplot(final2, aes(x = Date, colour = `Age group`)) +
       geom_line(aes(y = `Value`)) +
       #geom_ribbon(aes(ymin = `low est`, ymax = `high est`, fill = `Age group`), alpha = 0.1) +
@@ -295,18 +266,6 @@ server <- function(input, output) {
       # theme(axis.title.y = element_text(angle = 0, vjust = 1, hjust=0))
     if(input$log_scale) plt1 = plt1 + scale_y_log10(expand = c(0, 0), labels = comma)
     
-    if(input$show_data) {
-      df_use = tibble(
-        Date = dataInput()$Date,
-        `Age group` = dataInput()$`Age group`,
-        Value = dataInput()$Value
-      ) %>% 
-        mutate(Type = case_when(
-          `Age group` == "Total" ~ "Dead",
-          TRUE ~ "Infected"
-        ))
-      plt1 = plt1 + geom_point(data = df_use, aes(y = Value))
-    }
     ggplotly(plt1)
     
   })

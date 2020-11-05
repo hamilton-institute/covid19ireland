@@ -31,3 +31,21 @@ twoagesv <- function(YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O, Yva
 # Now try running it with differing values
 # result1 = twoagesv(4000000, 250, 2000000, 100000, 900000, 50, 50, 100000, 8, 0.3, 0.3, 0.6, rep(20000,100), rep(20000,100))
 # str(as.data.frame(result1))
+
+# Try different values of vaccinations
+# YS, YE, YI, YR, OS, OE, OI, OR, YR0Y, YR0O, OR0Y, OR0O, Yvac, Ovac
+# result = twoagesv(YS = 4000000, 
+#                    YE = 250, 
+#                    YI = 2000000, 
+#                    YR = 100000, 
+#                    OS = 900000, 
+#                    OE = 50, 
+#                    OI = 50, 
+#                    OR = 100000, 
+#                    YR0Y = 8, 
+#                    YR0O = 0.3, 
+#                    OR0Y = 0.3, 
+#                    OR0O = 0.6, 
+#                    Yvac = rep(20000,40), 
+#                    Ovac = rep(20000,40))
+# result[[9]]
