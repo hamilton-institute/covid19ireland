@@ -18,7 +18,7 @@ latest = read.csv('http://opendata-geohive.hub.arcgis.com/datasets/d9be85b30d774
 
 old_irish_county_data = readRDS('latest_irish_county_data.rds')
 if(nrow(latest) > nrow(old_irish_county_data)) {
-  saveRDS(latest_irish_county_data, file = 'latest_irish_county_data.rds')  
+  saveRDS(latest, file = 'latest_irish_county_data.rds')  
 } else {
   latest = readRDS(file = 'latest_irish_county_data.rds')
 }

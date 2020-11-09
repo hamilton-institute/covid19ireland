@@ -1,0 +1,12 @@
+name: R_est_province
+title: R_est_province
+username:
+account: apmuhamilton
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3125344
+bundleId: 3798725
+url: https://apmuhamilton.shinyapps.io/R_est_province/
+when: 1604014683.31294
+asMultiple: FALSE
+asStatic: FALSE
