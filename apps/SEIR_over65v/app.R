@@ -43,19 +43,19 @@ ui <- fluidPage(
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
                # Input: Selector for choosing dataset ----
                
-               sliderInput("R0", "Average number of infections from each infected person (R number) for under 65s", 0, 10, 1.5, step=0.1),
+               sliderInput("vacc_Y", "Daily number of vaccinations for under 65s", 0, 50000, 2000, step = 100),
+               
+               sliderInput("vacc_O", "Daily number of vaccinations for over 65s", 0, 50000, 18000, step = 100),
+               
+               sliderInput("vacc_ef", "Vaccine effectiveness (%)", 50, 100, 90, step = 1),
+               
+               sliderInput("R0", "Average number of infections from each infected person (R number) for under 65s", 0, 10, 0.8, step=0.1),
                
                sliderInput("R0_1", "Average number of infections from each infected person (R number) for over 65s", 0, 10, 0.8, step=0.1),
                
                sliderInput(inputId = "R0_O_Y",
                            label = "Average number of infections passed between under and over 65s per infected person (Cross R number)",
                            0, 10, 0.3, step=0.1),
-               
-               sliderInput("vacc_Y", "Daily number of vaccinations for under 65s", 0, 50000, 2000, step = 100),
-               
-               sliderInput("vacc_O", "Daily number of vaccinations for over 65s", 0, 50000, 18000, step = 100),
-               
-               sliderInput("vacc_pc", "Vaccine effectiveness/uptake (%)", 60, 100, 90, step = 1),
                
                actionButton(inputId = "button", label = "show extra options"),
               
@@ -157,11 +157,17 @@ server <- function(input, output) {
     num_sim = input$num_sim
     store = vector('list', num_sim)
     for (i in 1:num_sim) {
-      store[[i]] = twoagesv(YS = input$pop_under_65, # Under 65s susceptible
+      store[[i]] = twoagesv(YS = input$pop_under_65 - 
+                              input$exp - 
+                              input$inf - 
+                              input$rec, # Under 65s susceptible
                            YE = input$exp,
                            YI = input$inf,
                            YR = input$rec,
-                           OS = input$pop_over_65,
+                           OS = input$pop_over_65 - 
+                             input$exp2 - 
+                             input$inf2 - 
+                             input$rec2,
                            OE = input$exp2,
                            OI = input$inf2,
                            OR = input$rec2,
@@ -169,8 +175,10 @@ server <- function(input, output) {
                            YR0O = input$R0_O_Y,
                            OR0Y = input$R0_O_Y,
                            OR0O = input$R0_1,
-                           Yvac = (input$vacc_pc/100)*rep(input$vacc_Y, 1000), 
-                           Ovac = (input$vacc_pc/100)*rep(input$vacc_O, 1000)) %>% 
+                           Yvac = 
+                             (input$vacc_ef/100)*rep(input$vacc_Y, 1000), 
+                           Ovac = 
+                             (input$vacc_ef/100)*rep(input$vacc_O, 1000)) %>% 
         as.data.frame %>% 
         rename("Time" = 1, "YS" = 2,"YE" = 3,
                "YI" = 4, "YR" = 5, "OS" = 6,
@@ -178,9 +186,9 @@ server <- function(input, output) {
       
       len = length(store[[i]]$Time)
       store[[i]]$YV = pmin(store[[i]]$YS, 
-                           (input$vacc_pc/100)*input$vacc_Y) # Young vaccinated
+                           (input$vacc_ef/100)*input$vacc_Y) # Young vaccinated
       store[[i]]$OV = pmin(store[[i]]$OS, 
-                           (input$vacc_pc/100)*input$vacc_O) # Old vaccinated
+                           (input$vacc_ef/100)*input$vacc_O) # Old vaccinated
       store[[i]]$YR_NV = store[[i]]$YR - 
         lag(cumsum(store[[i]]$YV), default = 0) - 
         input$rec # Young recovered not vaccinated
