@@ -26,6 +26,40 @@ struct subcompartments {
 	int SU, SV[SV_length], SVNE, SNV, E[E_length], I[I_length], R, RV;
 };
 
+#define COMPARMENT_PACK(COMP,SUB) do { \
+		COMP.SU = SUB.SU; \
+		COMP.SV = SUB.SV[0]; \
+		for (int j = 1; j < SV_length; j++) \
+			COMP.SV += SUB.SV[j]; \
+		COMP.SVNE = SUB.SVNE; \
+		COMP.SNV = SUB.SNV; \
+		COMP.E = SUB.E[0]; \
+		for (int j = 1; j < E_length; j++) \
+			COMP.E += SUB.E[j]; \
+		COMP.I = SUB.I[0]; \
+		for (int j = 1; j < I_length; j++) \
+			COMP.I += SUB.I[j]; \
+		COMP.R = SUB.R; \
+		COMP.RV = SUB.RV; \
+	} while (0)
+
+#define COMPARTMENT_UNPACK(SUB,COMP) do { \
+		SUB.SU = COMP.SU; \
+		SUB.SV[0] = COMP.SV/SV_length + COMP.SV%SV_length; \
+		for (int j = 1; j < SV_length; j++) \
+			SUB.SV[j] = COMP.SV/SV_length; \
+		SUB.SVNE = COMP.SVNE; \
+		SUB.SNV = COMP.SNV; \
+		SUB.E[0] = COMP.E/E_length + COMP.E%E_length; \
+		for (int j = 1; j < E_length; j++) \
+			SUB.E[j] = COMP.E/E_length; \
+		SUB.I[0] = COMP.I/I_length + COMP.I%I_length; \
+		for (int j = 1; j < I_length; j++) \
+			SUB.I[j] = COMP.I/I_length; \
+		SUB.R = COMP.R; \
+		SUB.RV = COMP.RV; \
+	} while (0)
+
 struct simresult {
 	int steps;
 	double *Time;
@@ -73,34 +107,8 @@ SEXP twoages2(SEXP YSU, SEXP YSNV, SEXP YE, SEXP YI, SEXP YR, SEXP OSU, SEXP OSN
 	 * roughly evenly over SV_i, E_i and I_i, respectively
 	 */
 	struct subcompartments SYS_Y, SYS_O;
-	SYS_Y.SU = Y.SU;
-	SYS_Y.SV[0] = Y.SV/SV_length + Y.SV%SV_length;
-	for (int j = 1; j < SV_length; j++)
-		SYS_Y.SV[j] = Y.SV/SV_length;
-	SYS_Y.SVNE = Y.SVNE;
-	SYS_Y.SNV = Y.SNV;
-	SYS_Y.E[0] = Y.E/E_length + Y.E%E_length;
-	for (int j = 1; j < E_length; j++)
-		SYS_Y.E[j] = Y.E/E_length;
-	SYS_Y.I[0] = Y.I/I_length + Y.I%I_length;
-	for (int j = 1; j < I_length; j++)
-		SYS_Y.I[j] = Y.I/I_length;
-	SYS_Y.R = Y.R;
-	SYS_Y.RV = Y.RV;
-	SYS_O.SU = O.SU;
-	SYS_O.SV[0] = O.SV/SV_length + O.SV%SV_length;
-	for (int j = 1; j < SV_length; j++)
-		SYS_O.SV[j] = O.SV/SV_length;
-	SYS_O.SVNE = O.SVNE;
-	SYS_O.SNV = O.SNV;
-	SYS_O.E[0] = O.E/E_length + O.E%E_length;
-	for (int j = 1; j < E_length; j++)
-		SYS_O.E[j] = O.E/E_length;
-	SYS_O.I[0] = O.I/I_length + O.I%I_length;
-	for (int j = 1; j < I_length; j++)
-		SYS_O.I[j] = O.I/I_length;
-	SYS_O.R = O.R;
-	SYS_O.RV = O.RV;
+	COMPARTMENT_UNPACK(SYS_Y,Y);
+	COMPARTMENT_UNPACK(SYS_O,O);
 
 	/* Epidemic model setup: parameters */
 	int N_phases;
@@ -250,20 +258,7 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 
 	/* Check that what was passed in was consistent */
 	struct compartments check;
-	check.SU = Ytmp_calc.SU;
-	check.SV = Ytmp_calc.SV[0];
-	for (int j = 1; j < SV_length; j++)
-		check.SV += Ytmp_calc.SV[j];
-	check.SVNE = Ytmp_calc.SVNE;
-	check.SNV = Ytmp_calc.SNV;
-	check.E = Ytmp_calc.E[0];
-	for (int j = 1; j < E_length; j++)
-		check.E += Ytmp_calc.E[j];
-	check.I = Ytmp_calc.I[0];
-	for (int j = 1; j < I_length; j++)
-		check.I += Ytmp_calc.I[j];
-	check.R = Ytmp_calc.R;
-	check.RV = Ytmp_calc.RV;
+	COMPARMENT_PACK(check,Ytmp_calc);
 	assert(check.SU == Ytmp[0].SU);
 	assert(check.SV == Ytmp[0].SV);
 	assert(check.SVNE == Ytmp[0].SVNE);
@@ -273,20 +268,7 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 	assert(check.R == Ytmp[0].R);
 	assert(check.RV == Ytmp[0].RV);
 
-	check.SU = Otmp_calc.SU;
-	check.SV = Otmp_calc.SV[0];
-	for (int j = 1; j < SV_length; j++)
-		check.SV += Otmp_calc.SV[j];
-	check.SVNE = Otmp_calc.SVNE;
-	check.SNV = Otmp_calc.SNV;
-	check.E = Otmp_calc.E[0];
-	for (int j = 1; j < E_length; j++)
-		check.E += Otmp_calc.E[j];
-	check.I = Otmp_calc.I[0];
-	for (int j = 1; j < I_length; j++)
-		check.I += Otmp_calc.I[j];
-	check.R = Otmp_calc.R;
-	check.RV = Otmp_calc.RV;
+	COMPARMENT_PACK(check, Otmp_calc);
 	assert(check.SU == Otmp[0].SU);
 	assert(check.SV == Otmp[0].SV);
 	assert(check.SVNE == Otmp[0].SVNE);
@@ -481,36 +463,8 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 		}
 
 		/* Store the results and move on */
-		Ytmp[i+1].SU = Ytmp_calc.SU;
-		Ytmp[i+1].SV = Ytmp_calc.SV[0];
-		for (int j = 1; j < SV_length; j++)
-			Ytmp[i+1].SV += Ytmp_calc.SV[j];
-		Ytmp[i+1].SVNE = Ytmp_calc.SVNE;
-		Ytmp[i+1].SNV = Ytmp_calc.SNV;
-		Ytmp[i+1].E = Ytmp_calc.E[0];
-		for (int j = 1; j < E_length; j++)
-			Ytmp[i+1].E += Ytmp_calc.E[j];
-		Ytmp[i+1].I = Ytmp_calc.I[0];
-		for (int j = 1; j < I_length; j++)
-			Ytmp[i+1].I += Ytmp_calc.I[j];
-		Ytmp[i+1].R = Ytmp_calc.R;
-		Ytmp[i+1].RV = Ytmp_calc.RV;
-
-		Otmp[i+1].SU = Otmp_calc.SU;
-		Otmp[i+1].SV = Otmp_calc.SV[0];
-		for (int j = 1; j < SV_length; j++)
-			Otmp[i+1].SV += Otmp_calc.SV[j];
-		Otmp[i+1].SVNE = Otmp_calc.SVNE;
-		Otmp[i+1].SNV = Otmp_calc.SNV;
-		Otmp[i+1].E = Otmp_calc.E[0];
-		for (int j = 1; j < E_length; j++)
-			Otmp[i+1].E += Otmp_calc.E[j];
-		Otmp[i+1].I = Otmp_calc.I[0];
-		for (int j = 1; j < I_length; j++)
-			Otmp[i+1].I += Otmp_calc.I[j];
-		Otmp[i+1].R = Otmp_calc.R;
-		Otmp[i+1].RV = Otmp_calc.RV;
-
+		COMPARMENT_PACK(Ytmp[i+1], Ytmp_calc);
+		COMPARMENT_PACK(Otmp[i+1], Otmp_calc);
 		Time[i+1] = Time[i]+dt;
 	}
 
