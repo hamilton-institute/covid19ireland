@@ -27,38 +27,42 @@ struct subcompartments {
 };
 
 #define COMPARMENT_PACK(COMP,SUB) do { \
-		COMP.SU = SUB.SU; \
-		COMP.SV = SUB.SV[0]; \
+		(COMP).SU = SUB.SU; \
+		(COMP).SV = SUB.SV[0]; \
 		for (int j = 1; j < SV_length; j++) \
-			COMP.SV += SUB.SV[j]; \
-		COMP.SVNE = SUB.SVNE; \
-		COMP.SNV = SUB.SNV; \
-		COMP.E = SUB.E[0]; \
+			(COMP).SV += SUB.SV[j]; \
+		(COMP).SVNE = SUB.SVNE; \
+		(COMP).SNV = SUB.SNV; \
+		(COMP).E = SUB.E[0]; \
 		for (int j = 1; j < E_length; j++) \
-			COMP.E += SUB.E[j]; \
-		COMP.I = SUB.I[0]; \
+			(COMP).E += SUB.E[j]; \
+		(COMP).I = SUB.I[0]; \
 		for (int j = 1; j < I_length; j++) \
-			COMP.I += SUB.I[j]; \
-		COMP.R = SUB.R; \
-		COMP.RV = SUB.RV; \
+			(COMP).I += SUB.I[j]; \
+		(COMP).R = SUB.R; \
+		(COMP).RV = SUB.RV; \
 	} while (0)
 
 #define COMPARTMENT_UNPACK(SUB,COMP) do { \
-		SUB.SU = COMP.SU; \
-		SUB.SV[0] = COMP.SV/SV_length + COMP.SV%SV_length; \
+		(SUB).SU = (COMP).SU; \
+		(SUB).SV[0] = (COMP).SV/SV_length + (COMP).SV%SV_length; \
 		for (int j = 1; j < SV_length; j++) \
-			SUB.SV[j] = COMP.SV/SV_length; \
-		SUB.SVNE = COMP.SVNE; \
-		SUB.SNV = COMP.SNV; \
-		SUB.E[0] = COMP.E/E_length + COMP.E%E_length; \
+			(SUB).SV[j] = (COMP).SV/SV_length; \
+		(SUB).SVNE = (COMP).SVNE; \
+		(SUB).SNV = (COMP).SNV; \
+		(SUB).E[0] = (COMP).E/E_length + (COMP).E%E_length; \
 		for (int j = 1; j < E_length; j++) \
-			SUB.E[j] = COMP.E/E_length; \
-		SUB.I[0] = COMP.I/I_length + COMP.I%I_length; \
+			(SUB).E[j] = (COMP).E/E_length; \
+		(SUB).I[0] = (COMP).I/I_length + (COMP).I%I_length; \
 		for (int j = 1; j < I_length; j++) \
-			SUB.I[j] = COMP.I/I_length; \
-		SUB.R = COMP.R; \
-		SUB.RV = COMP.RV; \
+			(SUB).I[j] = (COMP).I/I_length; \
+		(SUB).R = (COMP).R; \
+		(SUB).RV = (COMP).RV; \
 	} while (0)
+
+#define COMPARTMENT_TOTAL(COMP) \
+	((COMP).SU + (COMP).SV + (COMP).SVNE + (COMP).SNV + (COMP).E + (COMP).I + (COMP).R + (COMP).RV)
+
 
 struct simresult {
 	int steps;
@@ -242,8 +246,8 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 	Otmp[0] = *O;
 
 	int total_Y, total_O;
-	total_Y = Y->SU + Y->SV + Y->SVNE + Y->SNV + Y->E + Y->I + Y->R + Y->RV;
-	total_O = O->SU + O->SV + O->SVNE + O->SNV + O->E + O->I + O->R + O->RV;
+	total_Y = COMPARTMENT_TOTAL(*Y);
+	total_O = COMPARTMENT_TOTAL(*O);
 
 	/* actual matrix to calculate with sub-compartments */
 	struct subcompartments Ytmp_calc, Otmp_calc;
@@ -417,12 +421,12 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 		 * After vaccine period, move to immunised or ineffective grp.
 		 */
 		int effective;
-		effective = binom(YEmovers[SV_length-1], veff);
+		effective = binom(YSVmovers[SV_length-1], veff);
 		Ytmp_calc.RV += effective;
-		Ytmp_calc.SVNE += YEmovers[SV_length-1] - effective;
-		effective = binom(OEmovers[SV_length-1], veff);
+		Ytmp_calc.SVNE += YSVmovers[SV_length-1] - effective;
+		effective = binom(OSVmovers[SV_length-1], veff);
 		Otmp_calc.RV += effective;
-		Otmp_calc.SVNE += OEmovers[SV_length-1] - effective;
+		Otmp_calc.SVNE += OSVmovers[SV_length-1] - effective;
 		
 		/*
 		 * Vaccinate for some people in SU.
@@ -466,6 +470,8 @@ seir_model_erlang(double t_phase, double time, double dt, const struct compartme
 		COMPARMENT_PACK(Ytmp[i+1], Ytmp_calc);
 		COMPARMENT_PACK(Otmp[i+1], Otmp_calc);
 		Time[i+1] = Time[i]+dt;
+		assert(COMPARTMENT_TOTAL(Ytmp[i+1]) == total_Y);
+		assert(COMPARTMENT_TOTAL(Otmp[i+1]) == total_O);
 	}
 
 	/* Fill out structure for returning the result */
