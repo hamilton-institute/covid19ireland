@@ -90,6 +90,7 @@ ui <- fluidPage(
                
                numericInput(inputId = "exp_Y",
                             label = "Number of asymptomatic spreaders under 65 at start date",
+                            min = 0,
                             value = 2000),
                
                numericInput(inputId = "inf_Y",
@@ -122,6 +123,7 @@ ui <- fluidPage(
                
                numericInput(inputId = "num_sim",
                             label = "Number of simulations to run (higher = slower but more accurate)",
+                            min = 0,
                             value = 200),
                
         ))),
