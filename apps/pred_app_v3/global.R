@@ -64,17 +64,10 @@ load("fitted_all.RData")
 fitted_values$country <- as.factor(fitted_values$country)
 fitted_values$country <- as.factor(gsub(pattern = "_", replacement = " ",
                                         fitted_values$country))
-last_60 <- fitted_values %>%
-  dplyr::filter(as.numeric(day) -
-                  max(as.numeric(fitted_values$day)) + 61 > 0) %>%
-      dplyr::select(day, country, ar) %>%
-      pivot_wider(id_cols = 1:2,
-                  names_from = "country",
-                  values_from = "ar") %>%
-      dplyr::select(-day)
-tsdist <- diss(t(last_60), "DTWARP")
-names(tsdist) <- colnames(last_60)
+load("last_60.RData")
+load("tsdist.RData")
 hc <- hclust(tsdist, "ward.D2")
+
 #=======================================================================
 # data_forecast
 #=======================================================================

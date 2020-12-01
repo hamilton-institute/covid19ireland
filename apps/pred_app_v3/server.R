@@ -495,11 +495,10 @@ server <- function(input, output, session) {
   sample_box <- reactive({
     country_sel <- shiny_data$Country
     country_sel <- country_sel[!country_sel %in% input$countryC]
-    set.seed(seed_sel)
-    sample_sel <- sample(country_sel, size = total)
-    shiny_data %>%
+    sample_sel <- shiny_data %>%
       filter(time == today) %>%
-      filter(Country %in% sample_sel)
+      filter(Country %in% country_sel)
+    sample_sel[order(sample_sel$cases,  decreasing = TRUE), ]
   })
   #---------------------------------------------------------------------
   output$IrelandC1Box <- renderValueBox({

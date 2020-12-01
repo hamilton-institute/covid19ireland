@@ -41,12 +41,12 @@ body  <- dashboardBody(
 
         /* navbar (rest of the header) */
         .skin-blue .main-header .navbar {
-                              background-color: #483C32;
+                              background-color: #1c1c1c;
                               }
 
         /* main sidebar */
         .skin-blue .main-sidebar {
-                              background-color: #483C32;
+                              background-color: #1c1c1c;
                               }
 
         /* active selected tab in the sidebarmenu */
@@ -790,7 +790,7 @@ header  <- dashboardHeaderPlus(
                 tags$a(href="https://prof-thiagooliveira.netlify.app",
                        "Thiago de Paula Oliveira",
                        style = "font-size:15px")),
-        tags$h5(class = "widget-user-desc", "NUI Galway,  ",
+        tags$h5(class = "widget-user-desc", "University of Edinburgh,  ",
                 tags$a(href = "https://twitter.com/_OliveiraTP_", "Twitter"))
       ),
       tags$li(

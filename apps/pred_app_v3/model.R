@@ -10,6 +10,8 @@ library(magrittr)
 library(gridExtra)
 library(corrplot)
 library(bayestestR)
+library(dplyr)
+library(TSclust)
 
 # download the dataset from the ECDC website to a local temporary file
 httr::GET("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv",
@@ -255,3 +257,22 @@ head(shiny_data)
 tail(shiny_data)
 save(shiny_data,
      file = "shiny_data.RData")
+#-----------------------------------------------------------------------
+# Cluster
+#-----------------------------------------------------------------------
+fitted_values$country <- as.factor(fitted_values$country)
+fitted_values$country <- as.factor(gsub(pattern = "_", replacement = " ",
+                                        fitted_values$country))
+last_60 <- fitted_values %>%
+  dplyr::filter(as.numeric(day) -
+                  max(as.numeric(fitted_values$day)) + 61 > 0) %>%
+      dplyr::select(day, country, ar) %>%
+      pivot_wider(id_cols = 1:2,
+                  names_from = "country",
+                  values_from = "ar") %>%
+      dplyr::select(-day)
+tsdist <- diss(t(last_60), "DTWARP")
+names(tsdist) <- colnames(last_60)
+save(last_60,  file = "last_60.RData")
+save(tsdist,  file = "tsdist.RData")
+#-----------------------------------------------------------------------
