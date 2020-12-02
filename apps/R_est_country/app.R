@@ -54,7 +54,7 @@ find_data <- function(date_max, latest_data = latest){
 
 
 # This model uses the last 21 days of R 
-model <-  readRDS("est_R0_final_model.rds")
+model <-  readRDS("est_R0_final_model_comp.rds")
 
 pred_country <- function(data, rf_model = model){
   data[, -1] <- scale(data[, -1])
