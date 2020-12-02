@@ -9,8 +9,65 @@ library(shinyWidgets)
 library(shinycssloaders)
 library(plotly)
 library(lubridate)
+library(ranger) # For making predictions 
 
-latest = download_merged_data(silent = TRUE, cached = TRUE)
+latest <- download_merged_data(silent = TRUE, cached = TRUE)
+
+find_data <- function(date_max, latest_data = latest){
+  data_use <- latest_data %>% 
+    dplyr::mutate(cum_cases = ecdc_cases,
+                  cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
+    dplyr::select(date, cases, country) %>% 
+    dplyr::filter(date >= date_max - 22, date <= date_max) %>% 
+    na.omit() %>% 
+    dplyr::group_by(country) %>% 
+    dplyr::mutate(
+      n_ind = 1:n(), 
+      R_name = paste0("R", n_ind)) %>% 
+    dplyr::select(-date) %>% 
+    dplyr::arrange(country) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::as_tibble() %>% 
+    tidyr::complete(R_name, fill = list(cases = NA)) %>% 
+    dplyr::group_by(country) %>% 
+    dplyr::arrange(country, n_ind) %>% 
+    tidyr::fill(cases, .direction = "down") %>% 
+    dplyr::select(-n_ind) %>% 
+    tidyr::spread(R_name, cases) %>% 
+    dplyr::ungroup() 
+  
+  df_remove <-  latest_data %>% 
+    dplyr::mutate(cum_cases = ecdc_cases,
+                  cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
+    dplyr::select(date, cases, country) %>% 
+    dplyr::filter(date >= date_max - 22, date <= date_max) %>% 
+    na.omit() %>% 
+    dplyr::group_by(country) %>% 
+    dplyr::summarise(s = sum(cases)) %>% 
+    dplyr::filter(s == 0) %>% 
+    dplyr::pull(country)
+  
+  data_use %>% 
+    dplyr::filter(!(country %in% df_remove))
+}
+
+
+
+# This model uses the last 21 days of R 
+model <-  readRDS("est_R0_final_model.rds")
+
+pred_country <- function(data, rf_model = model){
+  data[, -1] <- scale(data[, -1])
+  pred.R <- predict(rf_model, data = data,
+                    type = 'quantiles')
+  df <- data.frame(
+    low = pred.R$predictions[,1],
+    upp = pred.R$predictions[,3],
+    pred = pred.R$predictions[,2]
+  ) %>% 
+    dplyr::bind_cols(data)
+  df
+}
 
 ui <- fluidPage(
   
@@ -23,7 +80,7 @@ ui <- fluidPage(
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
                # Input: Selector for choosing dataset ----
                
-               dateInput("date_end", "End of two week period to estimate R:",
+               dateInput("date_end", "End of three week period to estimate R:",
                          value = max(latest$date),
                          format = "dd/mm/yyyy"),
                
@@ -35,7 +92,7 @@ ui <- fluidPage(
                                           `live-search` = TRUE),
                            multiple = FALSE),
                actionButton(inputId = "button", label = "show extra options"),
-              
+               
                pickerInput("R_method",
                            "Method for computing R",
                            choices = c("EG", "ML", "SB"),
@@ -55,11 +112,11 @@ ui <- fluidPage(
                numericInput(inputId = "GT_sd",
                             label = "Generation time standard deviation",
                             value = 0.4),
-
+               
                numericInput(inputId = "num_sim",
                             label = "Number of simulations to run (higher = slower but more accurate)",
                             value = 200),
-
+               
         ))),
     
     
@@ -99,7 +156,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-
+  
   observeEvent(input$button, {
     shinyjs::toggle("R_method")
     shinyjs::toggle("GD_dist")
@@ -107,30 +164,46 @@ server <- function(input, output) {
     shinyjs::toggle("GT_sd")
     shinyjs::toggle("num_sim")
   }, ignoreNULL = FALSE)
-
+  
   output$R_estim <- renderPlotly({
     
-    # Get the data
-    data_use = latest %>% 
-      filter(country == input$sel_cty) %>% 
+    # # Get the data
+    # data_use = latest %>% 
+    #   filter(country == input$sel_cty) %>% 
+    #   mutate(cum_cases = ecdc_cases,
+    #          cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
+    #   dplyr::select(date, cases, population) %>% 
+    #   filter(date >= input$date_end - 14, date <= input$date_end) %>% 
+    #   na.omit()
+    # 
+    # # COVID generation time
+    # GT = generation.time(input$GD_dist, c(input$GT_mean, input$GT_sd))
+    # 
+    # # Now get R0
+    # estR0 = try(estimate.R(epid = data_use$cases,
+    #                        t = data_use$date, 
+    #                        begin = as.integer(1),
+    #                        end = as.integer(length(data_use$cases)),
+    #                        GT = GT, 
+    #                        methods = input$R_method, 
+    #                        pop.size = data_use$population[1], 
+    #                        nsim = input$num_sim), silent = TRUE)
+    
+    latest_wrangled <- find_data(date_max = input$date_end)
+    all_res_counties <- pred_country(latest_wrangled) 
+    
+    
+    estR0 = all_res_counties %>% 
+      dplyr::filter(country == input$sel_cty)
+    
+    data_use = latest %>%
+      filter(country == input$sel_cty) %>%
       mutate(cum_cases = ecdc_cases,
-             cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
-      dplyr::select(date, cases, population) %>% 
-      filter(date >= input$date_end - 14, date <= input$date_end) %>% 
+             cases = c(cum_cases[1], diff(ecdc_cases))) %>%
+      dplyr::select(date, cases, population) %>%
+      filter(date >= input$date_end - 14, date <= input$date_end) %>%
       na.omit()
     
-    # COVID generation time
-    GT = generation.time(input$GD_dist, c(input$GT_mean, input$GT_sd))
-    
-    # Now get R0
-    estR0 = try(estimate.R(epid = data_use$cases,
-                           t = data_use$date, 
-                           begin = as.integer(1),
-                           end = as.integer(length(data_use$cases)),
-                           GT = GT, 
-                           methods = input$R_method, 
-                           pop.size = data_use$population[1], 
-                           nsim = input$num_sim), silent = TRUE)
     
     
     p = ggplot(data = data_use, aes(x = date, y = cases)) + 
@@ -162,23 +235,33 @@ server <- function(input, output) {
     #   shiny::need(class(estR0) != "try-error", "Case values or date range not appropriate for R0 estimation using this method.")
     # )
     
-    if(class(estR0) == "try-error" | any(data_use$cases < 10)) {
+    # if(class(estR0) == "try-error" | any(data_use$cases < 10)) {
+    #   a$text = "R0 not estimated (bad case values or date range)"
+    #   a$font = list(size = 14)
+    # } else {
+    #   if(input$R_method == "SB") {
+    #     R_est = signif(tail(estR0$estimates[[input$R_method]]$R, 1), 3)
+    #     R_low = signif(tail(estR0$estimates[[input$R_method]]$conf.int[1], 1), 3)
+    #     R_high = signif(tail(estR0$estimates[[input$R_method]]$conf.int[2], 1), 3)
+    #   } else {
+    #     R_est = signif(estR0$estimates[[input$R_method]]$R, 3)
+    #     R_low = signif(estR0$estimates[[input$R_method]]$conf.int[1], 3)
+    #     R_high = signif(estR0$estimates[[input$R_method]]$conf.int[2], 3)
+    #   }
+    
+    if(nrow(estR0) == 0 | any(data_use$cases < 10)) {
       a$text = "R0 not estimated (bad case values or date range)"
       a$font = list(size = 14)
     } else {
-      if(input$R_method == "SB") {
-        R_est = signif(tail(estR0$estimates[[input$R_method]]$R, 1), 3)
-        R_low = signif(tail(estR0$estimates[[input$R_method]]$conf.int[1], 1), 3)
-        R_high = signif(tail(estR0$estimates[[input$R_method]]$conf.int[2], 1), 3)
-      } else {
-        R_est = signif(estR0$estimates[[input$R_method]]$R, 3)
-        R_low = signif(estR0$estimates[[input$R_method]]$conf.int[1], 3)
-        R_high = signif(estR0$estimates[[input$R_method]]$conf.int[2], 3)
-      }
+      #if(input$R_method == "SB") {
+      R_est = signif(estR0$pred, 3)
+      R_low = signif(estR0$low, 3)
+      R_high = signif(estR0$upp, 3)
+      #} else {
       
-      a$text = paste0("R = ", R_est,
-                    " (95% CI: ", R_low,', ',
-                    R_high, ')')
+      a$text = paste0("Estimated R = ", R_est,
+                      ",  10-90 Quantile Interval: (", R_low,', ',
+                      R_high, ')')
     }
     ggplotly(p) %>% layout(annotations = a)  
     
