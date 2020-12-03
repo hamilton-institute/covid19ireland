@@ -13,12 +13,16 @@ library(ranger) # For making predictions
 
 latest <- download_merged_data(silent = TRUE, cached = TRUE)
 
-find_data <- function(date_max, latest_data = latest){
+find_data <- function(date_max, latest_data = latest, 
+                      country = current_country){
   data_use <- latest_data %>% 
+    dplyr::filter(country == current_country) %>% 
     dplyr::mutate(cum_cases = ecdc_cases,
                   cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
+    #dplyr::filter(date >= date_max - 90, date <= date_max) %>% 
+    #dplyr::mutate(cases = scale(cases)) %>% 
     dplyr::select(date, cases, country) %>% 
-    dplyr::filter(date >= date_max - 22, date <= date_max) %>% 
+    dplyr::filter(date >= date_max - 21, date <= date_max) %>% 
     na.omit() %>% 
     dplyr::group_by(country) %>% 
     dplyr::mutate(
@@ -57,7 +61,7 @@ find_data <- function(date_max, latest_data = latest){
 model <-  readRDS("est_R0_final_model_comp.rds")
 
 pred_country <- function(data, rf_model = model){
-  data[, -1] <- scale(data[, -1])
+  #data[, -1] <- scale(data[, -1])
   pred.R <- predict(rf_model, data = data,
                     type = 'quantiles')
   df <- data.frame(
@@ -189,12 +193,21 @@ server <- function(input, output) {
     #                        pop.size = data_use$population[1], 
     #                        nsim = input$num_sim), silent = TRUE)
     
-    latest_wrangled <- find_data(date_max = input$date_end)
-    all_res_counties <- pred_country(latest_wrangled) 
+    current_country <- input$sel_cty
+    date_max <- input$date_end
     
+    seq_dates <- seq.Date(date_max - 45, date_max,  by = 1)
     
-    estR0 = all_res_counties %>% 
-      dplyr::filter(country == input$sel_cty)
+    data_seq_dates <- purrr:::map(seq_dates, find_data, 
+                                  country = current_country) %>% 
+      dplyr::bind_rows()
+    
+    data_seq_dates <- data_seq_dates %>% 
+      dplyr::mutate_if(is.numeric, scale)
+  
+    pred_all_dates <- pred_country(data_seq_dates) 
+    
+    estR0 <-  pred_all_dates %>% dplyr::slice(nrow(pred_all_dates))
     
     data_use = latest %>%
       filter(country == input$sel_cty) %>%
