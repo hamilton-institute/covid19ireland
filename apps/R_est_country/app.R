@@ -14,7 +14,7 @@ library(ranger) # For making predictions
 latest <- download_merged_data(silent = TRUE, cached = TRUE)
 
 find_data <- function(date_max, latest_data = latest, 
-                      country = current_country){
+                      current_country = current_country){
   data_use <- latest_data %>% 
     dplyr::filter(country == current_country) %>% 
     dplyr::mutate(cum_cases = ecdc_cases,
@@ -199,7 +199,7 @@ server <- function(input, output) {
     seq_dates <- seq.Date(date_max - 45, date_max,  by = 1)
     
     data_seq_dates <- purrr:::map(seq_dates, find_data, 
-                                  country = current_country) %>% 
+                                  current_country = current_country) %>% 
       dplyr::bind_rows()
     
     data_seq_dates <- data_seq_dates %>% 
