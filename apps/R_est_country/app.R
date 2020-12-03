@@ -262,7 +262,8 @@ server <- function(input, output) {
     #     R_high = signif(estR0$estimates[[input$R_method]]$conf.int[2], 3)
     #   }
     
-    if(nrow(estR0) == 0 | any(data_use$cases < 10)) {
+    #if(nrow(estR0) == 0 | any(data_use$cases < 10)) {
+    if(nrow(estR0) == 0) {
       a$text = "R0 not estimated (bad case values or date range)"
       a$font = list(size = 14)
     } else {
