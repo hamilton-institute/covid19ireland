@@ -10,17 +10,16 @@ library(shinycssloaders)
 library(plotly)
 library(lubridate)
 library(ranger) # For making predictions 
+library(furrr)
 
 latest <- download_merged_data(silent = TRUE, cached = TRUE)
 
 find_data <- function(date_max, latest_data = latest, 
                       current_country = current_country){
   data_use <- latest_data %>% 
-    dplyr::filter(country == current_country) %>% 
+    #dplyr::filter(country == current_country) %>% 
     dplyr::mutate(cum_cases = ecdc_cases,
                   cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
-    #dplyr::filter(date >= date_max - 90, date <= date_max) %>% 
-    #dplyr::mutate(cases = scale(cases)) %>% 
     dplyr::select(date, cases, country) %>% 
     dplyr::filter(date >= date_max - 21, date <= date_max) %>% 
     na.omit() %>% 
@@ -40,26 +39,26 @@ find_data <- function(date_max, latest_data = latest,
     tidyr::spread(R_name, cases) %>% 
     dplyr::ungroup() 
   
-  df_remove <-  latest_data %>% 
-    dplyr::mutate(cum_cases = ecdc_cases,
-                  cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
-    dplyr::select(date, cases, country) %>% 
-    dplyr::filter(date >= date_max - 22, date <= date_max) %>% 
-    na.omit() %>% 
-    dplyr::group_by(country) %>% 
-    dplyr::summarise(s = sum(cases)) %>% 
-    dplyr::filter(s == 0) %>% 
-    dplyr::pull(country)
-  
-  data_use %>% 
-    dplyr::filter(!(country %in% df_remove))
+  # df_remove <-  latest_data %>% 
+  #   dplyr::mutate(cum_cases = ecdc_cases,
+  #                 cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
+  #   dplyr::select(date, cases, country) %>% 
+  #   dplyr::filter(date >= date_max - 22, date <= date_max) %>% 
+  #   na.omit() %>% 
+  #   dplyr::group_by(country) %>% 
+  #   dplyr::summarise(s = sum(cases)) %>% 
+  #   dplyr::filter(s == 0) %>% 
+  #   dplyr::pull(country)
+  # 
+  # data_use %>% 
+  #   dplyr::filter(!(country %in% df_remove))
+  data_use
 }
 
 
 
 # This model uses the last 21 days of R 
-model <-  readRDS("est_R0_final_model_comp.rds")
-
+model <-  read_rds("est_R0_final_model_comp.rds")
 pred_country <- function(data, rf_model = model){
   #data[, -1] <- scale(data[, -1])
   pred.R <- predict(rf_model, data = data,
@@ -203,6 +202,7 @@ server <- function(input, output) {
       dplyr::bind_rows()
     
     data_seq_dates <- data_seq_dates %>% 
+      dplyr::filter(country == current_country) %>% 
       dplyr::mutate_if(is.numeric, scale)
   
     pred_all_dates <- pred_country(data_seq_dates) 
