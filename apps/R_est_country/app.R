@@ -2,75 +2,18 @@
 
 rm(list = ls(all = TRUE))
 library(R0)
-library(tidyverse)
 library(tidycovid19)
+library(tidyverse)
 library(shinyjs)
 library(shinyWidgets)
 library(shinycssloaders)
 library(plotly)
 library(lubridate)
-library(ranger) # For making predictions 
-library(furrr)
 
-latest <- download_merged_data(silent = TRUE, cached = TRUE)
+latest <- download_merged_data(silent = TRUE, cached = TRUE) 
 
-find_data <- function(date_max, latest_data = latest, 
-                      current_country = current_country){
-  data_use <- latest_data %>% 
-    #dplyr::filter(country == current_country) %>% 
-    dplyr::mutate(cum_cases = ecdc_cases,
-                  cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
-    dplyr::select(date, cases, country) %>% 
-    dplyr::filter(date >= date_max - 21, date <= date_max) %>% 
-    na.omit() %>% 
-    dplyr::group_by(country) %>% 
-    dplyr::mutate(
-      n_ind = 1:n(), 
-      R_name = paste0("R", n_ind)) %>% 
-    dplyr::select(-date) %>% 
-    dplyr::arrange(country) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::as_tibble() %>% 
-    tidyr::complete(R_name, fill = list(cases = NA)) %>% 
-    dplyr::group_by(country) %>% 
-    dplyr::arrange(country, n_ind) %>% 
-    tidyr::fill(cases, .direction = "down") %>% 
-    dplyr::select(-n_ind) %>% 
-    tidyr::spread(R_name, cases) %>% 
-    dplyr::ungroup() 
-  
-  # df_remove <-  latest_data %>% 
-  #   dplyr::mutate(cum_cases = ecdc_cases,
-  #                 cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
-  #   dplyr::select(date, cases, country) %>% 
-  #   dplyr::filter(date >= date_max - 22, date <= date_max) %>% 
-  #   na.omit() %>% 
-  #   dplyr::group_by(country) %>% 
-  #   dplyr::summarise(s = sum(cases)) %>% 
-  #   dplyr::filter(s == 0) %>% 
-  #   dplyr::pull(country)
-  # 
-  # data_use %>% 
-  #   dplyr::filter(!(country %in% df_remove))
-  data_use
-}
+load("r0_predictions.rda")
 
-
-
-# This model uses the last 21 days of R 
-model <-  read_rds("est_R0_final_model_comp.rds")
-pred_country <- function(data, rf_model = model){
-  #data[, -1] <- scale(data[, -1])
-  pred.R <- predict(rf_model, data = data,
-                    type = 'quantiles')
-  df <- data.frame(
-    low = pred.R$predictions[,1],
-    upp = pred.R$predictions[,3],
-    pred = pred.R$predictions[,2]
-  ) %>% 
-    dplyr::bind_cols(data)
-  df
-}
 
 ui <- fluidPage(
   
@@ -79,12 +22,13 @@ ui <- fluidPage(
       useShinyjs(),
       fluidRow(
         column(width=12,
-               
                setSliderColor(c(rep("#b2df8a", 3)), sliderId=c(8,9,10)),
                # Input: Selector for choosing dataset ----
                
-               dateInput("date_end", "End of three week period to estimate R:",
+               dateInput("date_end", "Date for estimated R:",
                          value = max(latest$date),
+                         max = Sys.Date(), 
+                         min = Sys.Date() - 45, 
                          format = "dd/mm/yyyy"),
                
                pickerInput("sel_cty",
@@ -93,32 +37,32 @@ ui <- fluidPage(
                            selected = c('Ireland'),
                            options = list(`actions-box` = TRUE,
                                           `live-search` = TRUE),
-                           multiple = FALSE),
-               actionButton(inputId = "button", label = "show extra options"),
+                           multiple = FALSE)
+               #actionButton(inputId = "button", label = "show extra options"),
                
-               pickerInput("R_method",
-                           "Method for computing R",
-                           choices = c("EG", "ML", "SB"),
-                           selected = c('SB'),
-                           multiple = FALSE),
-               
-               pickerInput("GD_dist",
-                           "Generation time distribution", 
-                           choices = c("gamma", "weibull", "lognormal"),
-                           selected = c('gamma'),
-                           multiple = FALSE),
-               
-               numericInput(inputId = "GT_mean",
-                            label = "Generation time mean",
-                            value = 3.0),
-               
-               numericInput(inputId = "GT_sd",
-                            label = "Generation time standard deviation",
-                            value = 0.4),
-               
-               numericInput(inputId = "num_sim",
-                            label = "Number of simulations to run (higher = slower but more accurate)",
-                            value = 200),
+               # pickerInput("R_method",
+               #             "Method for computing R",
+               #             choices = c("EG", "ML", "SB"),
+               #             selected = c('SB'),
+               #             multiple = FALSE),
+               # 
+               # pickerInput("GD_dist",
+               #             "Generation time distribution", 
+               #             choices = c("gamma", "weibull", "lognormal"),
+               #             selected = c('gamma'),
+               #             multiple = FALSE),
+               # 
+               # numericInput(inputId = "GT_mean",
+               #              label = "Generation time mean",
+               #              value = 3.0),
+               # 
+               # numericInput(inputId = "GT_sd",
+               #              label = "Generation time standard deviation",
+               #              value = 0.4),
+               # 
+               # numericInput(inputId = "num_sim",
+               #              label = "Number of simulations to run (higher = slower but more accurate)",
+               #              value = 200),
                
         ))),
     
@@ -170,56 +114,32 @@ server <- function(input, output) {
   
   output$R_estim <- renderPlotly({
     
-    # # Get the data
-    # data_use = latest %>% 
-    #   filter(country == input$sel_cty) %>% 
-    #   mutate(cum_cases = ecdc_cases,
-    #          cases = c(cum_cases[1], diff(ecdc_cases))) %>% 
-    #   dplyr::select(date, cases, population) %>% 
-    #   filter(date >= input$date_end - 14, date <= input$date_end) %>% 
-    #   na.omit()
-    # 
-    # # COVID generation time
-    # GT = generation.time(input$GD_dist, c(input$GT_mean, input$GT_sd))
-    # 
-    # # Now get R0
-    # estR0 = try(estimate.R(epid = data_use$cases,
-    #                        t = data_use$date, 
-    #                        begin = as.integer(1),
-    #                        end = as.integer(length(data_use$cases)),
-    #                        GT = GT, 
-    #                        methods = input$R_method, 
-    #                        pop.size = data_use$population[1], 
-    #                        nsim = input$num_sim), silent = TRUE)
+
     
     current_country <- input$sel_cty
     date_max <- input$date_end
     
-    seq_dates <- seq.Date(date_max - 45, date_max,  by = 1)
     
-    data_seq_dates <- purrr:::map(seq_dates, find_data, 
-                                  current_country = current_country) %>% 
-      dplyr::bind_rows()
-    
-    data_seq_dates <- data_seq_dates %>% 
+    latest_filter <- latest %>% 
       dplyr::filter(country == current_country) %>% 
-      dplyr::mutate_if(is.numeric, scale)
-  
-    pred_all_dates <- pred_country(data_seq_dates) 
-    
-    estR0 <-  pred_all_dates %>% dplyr::slice(nrow(pred_all_dates))
-    
-    data_use = latest %>%
-      filter(country == input$sel_cty) %>%
-      mutate(cum_cases = ecdc_cases,
+      dplyr::mutate(cum_cases = ecdc_cases,
              cases = c(cum_cases[1], diff(ecdc_cases))) %>%
       dplyr::select(date, cases, population) %>%
-      filter(date >= input$date_end - 14, date <= input$date_end) %>%
+      dplyr::filter(date >= date_max - 14, date <= date_max) %>%
       na.omit()
+            
+    estR0 = r0_predictions %>%
+      dplyr::filter(country == current_country) 
+    
+    n_dates <- seq.Date(Sys.Date() - nrow(estR0) + 1, Sys.Date(),  by = 1)
+    
+    estR0 = estR0 %>% 
+      dplyr::mutate(date = n_dates) %>% 
+      dplyr::filter(date == date_max)
+  
     
     
-    
-    p = ggplot(data = data_use, aes(x = date, y = cases)) + 
+    p = ggplot(data = latest_filter, aes(x = date, y = cases)) + 
       geom_point() + 
       labs(x = 'Date',
            y = 'Cases',
@@ -243,24 +163,6 @@ server <- function(input, output) {
       showarrow = FALSE,
       font = list(size = 20)
     )
-    
-    # shiny::validate(
-    #   shiny::need(class(estR0) != "try-error", "Case values or date range not appropriate for R0 estimation using this method.")
-    # )
-    
-    # if(class(estR0) == "try-error" | any(data_use$cases < 10)) {
-    #   a$text = "R0 not estimated (bad case values or date range)"
-    #   a$font = list(size = 14)
-    # } else {
-    #   if(input$R_method == "SB") {
-    #     R_est = signif(tail(estR0$estimates[[input$R_method]]$R, 1), 3)
-    #     R_low = signif(tail(estR0$estimates[[input$R_method]]$conf.int[1], 1), 3)
-    #     R_high = signif(tail(estR0$estimates[[input$R_method]]$conf.int[2], 1), 3)
-    #   } else {
-    #     R_est = signif(estR0$estimates[[input$R_method]]$R, 3)
-    #     R_low = signif(estR0$estimates[[input$R_method]]$conf.int[1], 3)
-    #     R_high = signif(estR0$estimates[[input$R_method]]$conf.int[2], 3)
-    #   }
     
     #if(nrow(estR0) == 0 | any(data_use$cases < 10)) {
     if(nrow(estR0) == 0) {
