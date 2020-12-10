@@ -10,6 +10,7 @@ library(shinycssloaders)
 library(plotly)
 library(lubridate)
 library(geofacet)
+library(viridis)
 
 latest = download_merged_data(silent = TRUE, cached = TRUE)
 load("r0_predictions.rda")
